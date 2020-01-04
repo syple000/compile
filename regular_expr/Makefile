@@ -13,4 +13,4 @@ $(SUB_DIRS): $(START)
 $(START):
 
 $(CUR_OBJS):$(CUR_SOURCES)
-	$(CC) -c $^ -o $(ROOT_DIR)/$(OBJS_DIR)/$@
+	$(CC) -c -g $^ -o $(ROOT_DIR)/$(OBJS_DIR)/$@
