@@ -5,7 +5,7 @@
 #include "../buffer/buffer.h"
 
 #ifndef MATRIX_IO
-#define MATRIX_IO
+#define MATRIX_IO 1
 
 template<typename T>
 class MatrixIo {

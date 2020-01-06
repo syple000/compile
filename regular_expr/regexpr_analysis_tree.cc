@@ -100,10 +100,40 @@ int RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegEx
                     RegExprNode* left = elems.top();
                     elems.pop();
                     RegExprNode* newElem = new RegExprNode(op, nodeNumber++, left, right);
+                    newElem->_first.insert(left->_first.begin(), left->_first.end());
+                    newElem->_last.insert(right->_last.begin(), right->_last.end());
+                    left->_next.insert(right->_first.begin(), right->_first.end());
+                    break;
+
+                case '|':
+                    ops.pop();
+                    RegExprNode* right = elems.top();
+                    elems.pop();
+                    RegExprNode* left = elems.top();
+                    elems.pop();
+                    RegExprNode* newElem = new RegExprNode(op, nodeNumber++, left, right);
+                    newElem->_first.insert(left->_first.begin(), left->_first.end());
+                    newElem->_first.insert(right->_first.begin(), right->_first.end());
+                    newElem->_last.insert(right->_last.begin(), right->_last.end());
+                    newElem->_last.insert(left->_last.begin(), left->_last.end());
+                    break;
+
+                case '*':
+                    ops.pop();
+                    RegExprNode* left = elems.top();
+                    elems.pop();
+                    RegExprNode* newElem = new RegExprNode(op, nodeNumber++, left, nullptr);
+                    newElem->_first.insert(left->_first.begin(), left->_first.end());
+                    newElem->_last.insert(left->_last.begin(), left->_last.end());
+                    left->_next.insert(left->_first.begin(), left->_first.end());
+
+                default:
+                    return nodeNumber;
                     
             }
-            else if (op == '.') {}
-            else if
+        } else {
+            break;
         }
     }
+    return nodeNumber;
 }

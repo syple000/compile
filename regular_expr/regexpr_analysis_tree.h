@@ -2,7 +2,7 @@
 #include <set>
 
 #ifndef REGULAR_EXPR_ANALYSIS_TREE
-#define REGULAR_EXPR_ANALYSIS_TREE
+#define REGULAR_EXPR_ANALYSIS_TREE 1
 
 #define ESCAPE '\\'
 
@@ -24,8 +24,13 @@ struct RegExprNode {
     RegExprNode() = default;
     virtual ~RegExprNode() = default;
 
-    bool IsLeafNode() {
-        return _leftChildNode == nullptr && _rightChildNode == nullptr;
+    static void DestroyTree(RegExprNode* root) {
+        if (root == nullptr) {
+            return;
+        }
+        DestroyTree(root->_leftChildNode);
+        DestroyTree(root->_rightChildNode);
+        delete root;
     }
 };
 
@@ -49,12 +54,13 @@ private:
         }
     }
 
+    int DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
+        unsigned char nextOp, int priority, int nodeNumber);
+
 public:
     RegExprAnalysisTree() = default;
     virtual ~RegExprAnalysisTree() = default;
     RegExprNode* Analyze(const std::string&);
-    int DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
-        unsigned char nextOp, int priority, int nodeNumber);
 };
 
 #endif
