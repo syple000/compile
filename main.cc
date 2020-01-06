@@ -5,6 +5,7 @@
 #include <cstring>
 #include <vector>
 #include <cassert>
+#include <set>
 
 int Stoi(std::string str) {
     return std::stoi(str);
@@ -13,6 +14,22 @@ int Stoi(std::string str) {
 std::string ToString(int num) {
     return std::to_string(num);
 }
+
+struct TestNode {
+    int a;
+    TestNode(): a(1) {}
+
+    bool operator<(const TestNode& testNode) const {
+        return a < testNode.a;
+    }
+};
+
+class TestNodeCmp {
+public:
+    bool operator()(const TestNode* node1, const TestNode* node2) const {
+        return node1->a < node2->a;
+    }
+};
 
 int main() {
     std::vector<std::vector<int>> matrix(10, std::vector<int>(8));
@@ -31,7 +48,11 @@ int main() {
             assert(matrix[i][j] == rmatrix[i][j]);
         }
     }
+    TestNode* node = new TestNode(), *node1 = new TestNode();
+    std::set<TestNode*> s;
+    s.insert(node);
+    s.insert(node1);
 
-    std::cout << "test over!" << std::endl;
+    std::cout << "test over!" << s.size() << std::endl;
     return 0;
 }
