@@ -1,6 +1,5 @@
 SUB_DIRS=$(shell ls -l | grep ^d | awk '{print $$9}')
-CUR_SOURCES=$(wildcard *.cc)
-CUR_OBJS=$(patsubst %.cc, %.o, $(CUR_SOURCES))
+CUR_OBJS=$(patsubst %.cc, %.o, $(wildcard *.cc))
 START=start
 
 .PHONY: all
@@ -12,5 +11,5 @@ $(SUB_DIRS): $(START)
 
 $(START):
 
-$(CUR_OBJS):$(CUR_SOURCES)
-	$(CC) -c -g $^ -o $(ROOT_DIR)/$(OBJS_DIR)/$@
+%.o: %.cc %.h
+	$(CC) -c -g $< -o $(ROOT_DIR)/$(OBJS_DIR)/$@

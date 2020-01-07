@@ -1,4 +1,4 @@
-#include "./regular_expr/regular_expression_engine.h"
+#include "./regular_expr/regexpr_engine.h"
 #include "./matrix_io/matrix_io.h"
 #include <iostream>
 #include <cstdlib>
@@ -53,6 +53,10 @@ int main() {
     s.insert(node);
     s.insert(node1);
 
-    std::cout << "test over!" << s.size() << std::endl;
+    std::set<TestNode*> sc;
+    sc.insert(node);
+    sc.insert(node1);
+
+    std::cout << "test over!" << (s < sc ? "true" : "false") << (s > sc ? "true" : "false") << std::endl;
     return 0;
 }

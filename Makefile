@@ -11,8 +11,7 @@ START=start
 MKDIR_P=@mkdir -p
 SUB_DIRS=$(shell ls -l | grep ^d | awk '{if ($$9 != "'$(DEBUG_DIR)'") print $$9}')
 ROOT_DIR=$(shell pwd)
-CUR_SOURCES=$(wildcard *.cc)
-CUR_OBJS=$(patsubst %.cc, %.o, $(CUR_SOURCES))
+CUR_OBJS=$(patsubst %.cc, %.o, $(wildcard *.cc))
 
 export CC ROOT_DIR OBJS_DIR BIN_DIR TARGET
 
@@ -28,13 +27,14 @@ $(DEBUG_DIR) $(OBJS_DIR) $(BIN_DIR): $(START)
 $(SUB_DIRS): $(START)
 	make -C $@
 
-$(CUR_OBJS): $(CUR_SOURCES)
-	$(CC) -c -g $^ -o $(OBJS_DIR)/$@
+%.o: %.cc
+	$(CC) -c -g $< -o $(OBJS_DIR)/$@
 
 $(TARGET): $(DEBUG_DIR)
 	make -C $(DEBUG_DIR)
 
 $(START):
+	@echo $(CUR_OBJS)
 
 run:
 	$(ROOT_DIR)/$(BIN_DIR)/$(TARGET)

@@ -31,7 +31,6 @@ RegExprNode* RegExprAnalysisTree::Analyze(const std::string& expr) {
     std::stack<RegExprNode*> elems;
     bool connectable = false;
     int indexOfExpr = 0;
-    int nodeNumber = 0;
 
     while (indexOfExpr <= expr.size()) {
         char ch = RegExprAnalysisTree::GetCharactorOfIndex(expr, indexOfExpr++);
@@ -49,23 +48,22 @@ RegExprNode* RegExprAnalysisTree::Analyze(const std::string& expr) {
 
         if (connectable) {
             if (priority == -1 || ch == '(') {
-                nodeNumber = RegExprAnalysisTree::DoCalc(ops, elems, '.', RegExprAnalysisTree::GetPriority('.'),
-                    nodeNumber);
+                RegExprAnalysisTree::DoCalc(ops, elems, '.', RegExprAnalysisTree::GetPriority('.'));
                 ops.push('.');
                 if (priority == -1) {
-                    elems.push(new RegExprNode(ch, nodeNumber++, nullptr, nullptr));
+                    elems.push(new RegExprNode(ch, nullptr, nullptr));
                 } else {
                     ops.push(ch);
                 }
             } else {
-                nodeNumber = RegExprAnalysisTree::DoCalc(ops, elems, ch, priority, nodeNumber);
+                RegExprAnalysisTree::DoCalc(ops, elems, ch, priority);
                 if (ch != ')') {
                     ops.push(ch);
                 }
             }
         } else {
             if (priority == -1) {
-                elems.push(new RegExprNode(ch, nodeNumber++, nullptr, nullptr));
+                elems.push(new RegExprNode(ch, nullptr, nullptr));
             } else {
                 if (ch != '(') {
                     return nullptr;
@@ -81,59 +79,64 @@ RegExprNode* RegExprAnalysisTree::Analyze(const std::string& expr) {
     }
 }
 
-int RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
-    unsigned char nextOp, int priority, int nodeNumber) {
+void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
+    unsigned char nextOp, int priority) {
     while (!ops.empty()) {
         char op = ops.top();
         if (RegExprAnalysisTree::GetPriority(op) >= priority) {
             switch (op) {
-                case '(': 
+                case '(': {
                     if (nextOp == ')') {
                         ops.pop();
                     }
-                    return nodeNumber;
+                    return;
+                }
                 
-                case '.':
+                case '.': {
                     ops.pop();
                     RegExprNode* right = elems.top();
                     elems.pop();
                     RegExprNode* left = elems.top();
                     elems.pop();
-                    RegExprNode* newElem = new RegExprNode(op, nodeNumber++, left, right);
+                    RegExprNode* newElem = new RegExprNode(op, left, right);
                     newElem->_first.insert(left->_first.begin(), left->_first.end());
                     newElem->_last.insert(right->_last.begin(), right->_last.end());
-                    left->_next.insert(right->_first.begin(), right->_first.end());
+                    RegExprAnalysisTree::SetNext(left->_last, right->_first);
                     break;
+                }
 
-                case '|':
+                case '|': {
                     ops.pop();
                     RegExprNode* right = elems.top();
                     elems.pop();
                     RegExprNode* left = elems.top();
                     elems.pop();
-                    RegExprNode* newElem = new RegExprNode(op, nodeNumber++, left, right);
+                    RegExprNode* newElem = new RegExprNode(op, left, right);
                     newElem->_first.insert(left->_first.begin(), left->_first.end());
                     newElem->_first.insert(right->_first.begin(), right->_first.end());
                     newElem->_last.insert(right->_last.begin(), right->_last.end());
                     newElem->_last.insert(left->_last.begin(), left->_last.end());
                     break;
+                }
 
-                case '*':
+                case '*': {
                     ops.pop();
                     RegExprNode* left = elems.top();
                     elems.pop();
-                    RegExprNode* newElem = new RegExprNode(op, nodeNumber++, left, nullptr);
+                    RegExprNode* newElem = new RegExprNode(op, left, nullptr);
                     newElem->_first.insert(left->_first.begin(), left->_first.end());
                     newElem->_last.insert(left->_last.begin(), left->_last.end());
-                    left->_next.insert(left->_first.begin(), left->_first.end());
+                    RegExprAnalysisTree::SetNext(left->_last, left->_first);
+                    break;
+                }
 
                 default:
-                    return nodeNumber;
+                    return;
                     
             }
         } else {
             break;
         }
     }
-    return nodeNumber;
+    return;
 }

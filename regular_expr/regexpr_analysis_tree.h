@@ -1,5 +1,7 @@
 #include <stack>
 #include <set>
+#include <vector>
+#include <string>
 
 #ifndef REGULAR_EXPR_ANALYSIS_TREE
 #define REGULAR_EXPR_ANALYSIS_TREE 1
@@ -8,16 +10,15 @@
 
 struct RegExprNode {
     unsigned char _content;
-    int _pos;
     RegExprNode* _leftChildNode, * _rightChildNode;
-    std::set<int> _first, _last, _next;
+    std::set<RegExprNode*> _first, _last, _next;
 
-    RegExprNode(char content, int pos, RegExprNode* leftChildNode, RegExprNode* rightChildNode) 
-    : _content(content), _pos(pos), _leftChildNode(leftChildNode), _rightChildNode(rightChildNode){
+    RegExprNode(char content, RegExprNode* leftChildNode, RegExprNode* rightChildNode) 
+    : _content(content), _leftChildNode(leftChildNode), _rightChildNode(rightChildNode){
         // init first and last
         if (_leftChildNode == nullptr && _rightChildNode == nullptr) {
-            _first.insert(pos);
-            _last.insert(pos);
+            _first.insert(this);
+            _last.insert(this);
         }
     }
 
@@ -54,8 +55,14 @@ private:
         }
     }
 
-    int DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
-        unsigned char nextOp, int priority, int nodeNumber);
+    void SetNext(const std::set<RegExprNode*>& preSet, const std::set<RegExprNode*>& postSet) {
+        for (RegExprNode* preNode : preSet) {
+            preNode->_next.insert(postSet.begin(), postSet.end());
+        }
+    }
+
+    void DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
+        unsigned char nextOp, int priority);
 
 public:
     RegExprAnalysisTree() = default;
