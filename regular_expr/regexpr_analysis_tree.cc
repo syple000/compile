@@ -99,8 +99,8 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                     RegExprNode* left = elems.top();
                     elems.pop();
                     RegExprNode* newElem = new RegExprNode(op, left, right);
-                    newElem->_first.insert(left->_first.begin(), left->_first.end());
-                    newElem->_last.insert(right->_last.begin(), right->_last.end());
+                    newElem->_first->insert(left->_first->begin(), left->_first->end());
+                    newElem->_last->insert(right->_last->begin(), right->_last->end());
                     RegExprAnalysisTree::SetNext(left->_last, right->_first);
                     break;
                 }
@@ -112,10 +112,10 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                     RegExprNode* left = elems.top();
                     elems.pop();
                     RegExprNode* newElem = new RegExprNode(op, left, right);
-                    newElem->_first.insert(left->_first.begin(), left->_first.end());
-                    newElem->_first.insert(right->_first.begin(), right->_first.end());
-                    newElem->_last.insert(right->_last.begin(), right->_last.end());
-                    newElem->_last.insert(left->_last.begin(), left->_last.end());
+                    newElem->_first->insert(left->_first->begin(), left->_first->end());
+                    newElem->_first->insert(right->_first->begin(), right->_first->end());
+                    newElem->_last->insert(right->_last->begin(), right->_last->end());
+                    newElem->_last->insert(left->_last->begin(), left->_last->end());
                     break;
                 }
 
@@ -124,8 +124,8 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                     RegExprNode* left = elems.top();
                     elems.pop();
                     RegExprNode* newElem = new RegExprNode(op, left, nullptr);
-                    newElem->_first.insert(left->_first.begin(), left->_first.end());
-                    newElem->_last.insert(left->_last.begin(), left->_last.end());
+                    newElem->_first->insert(left->_first->begin(), left->_first->end());
+                    newElem->_last->insert(left->_last->begin(), left->_last->end());
                     RegExprAnalysisTree::SetNext(left->_last, left->_first);
                     break;
                 }
