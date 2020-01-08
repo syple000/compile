@@ -3,14 +3,6 @@
 #include "./regexpr_engine.h"
 #include "./regexpr_analysis_tree.h"
 
-bool RegExprEngine::IsMatched(const std::string& string) {
-    return true;
-}
-
-int RegExprEngine::TransferStatus(char ch) {
-    return 0;
-}
-
 void RegExprEngine::AddState(std::map<std::set<RegExprNode*>*, int, RegExprEngine::SetCmp> &statesMap, 
     std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet) {
     statesMap.insert(std::pair<std::set<RegExprNode*>*, int>(posSet, statesVec.size()));
@@ -23,6 +15,7 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
     if (root == nullptr) {
         return;
     }
+    RegExprNode* terminalState = root->_rightChildNode;
     std::map<std::set<RegExprNode*>*, int, RegExprEngine::SetCmp> statesMap;
     std::vector<std::set<RegExprNode*>*> statesVec;
     RegExprEngine::AddState(statesMap, statesVec, root->_first);
@@ -35,11 +28,45 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
             for (RegExprNode* elem : *curSet) {
                 auto it = statesMap.find(elem->_next);
                 if (it == statesMap.end()) {
-                    // new state
+                    RegExprEngine::AddState(statesMap, statesVec, elem->_next);
+                    this->_stateTransTable[i][(int)elem->_content] = statesVec.size() - 1;
+                    if (elem->_next->find(terminalState) != elem->_next->end()) {
+                        this->_terminalStates.insert(statesVec.size() - 1);
+                    }
                 } else {
-                    _stateTransTable[i][(int)elem->_content] = it->second;
+                    this->_stateTransTable[i][(int)elem->_content] = it->second;
                 }
             }
         }
+        oldStateCount = stateCount;
+        stateCount = statesVec.size();
     }
 }
+
+RegExprEngine::RegExprEngine(const std::string& input, bool isExpr) {
+    if (isExpr) {
+        RegExprEngine::CreateTableByExpr(input);
+    } else {
+        //
+    }
+}
+
+bool RegExprEngine::IsMatched(const std::string& str) {
+    int curState = 0;
+    for (int i = 0; i < str.size(); i++) {
+        curState = RegExprEngine::TransferStatus(curState, str[i]);
+        if (curState == -1) {
+            return false;
+        }
+    }
+    return this->_terminalStates.find(curState) != this->_terminalStates.end();
+}
+
+int RegExprEngine::TransferStatus(int curState, unsigned char ch) {
+    return this->_stateTransTable[curState][(int)ch];
+}
+
+bool RegExprEngine::InitSuccess() {
+    return this->_stateTransTable.size() != 0;
+}
+

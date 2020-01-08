@@ -10,11 +10,12 @@
 
 struct RegExprNode {
     unsigned char _content;
+    bool _nullable;
     RegExprNode* _leftChildNode, * _rightChildNode;
     std::set<RegExprNode*> *_first = nullptr, *_last = nullptr, *_next = nullptr;
 
-    RegExprNode(char content, RegExprNode* leftChildNode, RegExprNode* rightChildNode) 
-    : _content(content), _leftChildNode(leftChildNode), _rightChildNode(rightChildNode){
+    RegExprNode(char content, RegExprNode* leftChildNode, RegExprNode* rightChildNode, bool nullable) 
+    : _content(content), _leftChildNode(leftChildNode), _rightChildNode(rightChildNode), _nullable(nullable) {
         _first = new std::set<RegExprNode*>();
         _last = new std::set<RegExprNode*>();
         // init first and last
@@ -49,7 +50,7 @@ private:
 
     unsigned char GetCharactorOfIndex(const std::string& expr, int index) {
         if (index >= expr.size()) {
-            return '\0';
+            return '.';
         } else {
             return expr[index];
         }
