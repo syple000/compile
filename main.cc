@@ -35,12 +35,13 @@ int main() {
     }
 
     // regular expr test
-    std::string repat = "b|c*";
+    std::string repat = "a()";
     RegExprEngine regExprEngine(repat, true);
     if (regExprEngine.InitSuccess()) {
-        std::cout << regExprEngine.IsMatched("b") << std::endl;
-        std::cout << regExprEngine.IsMatched("c") << std::endl;
-        std::cout << regExprEngine.IsMatched("cc") << std::endl;
+        std::cout << regExprEngine.IsMatched("abd*") << std::endl;
+        std::cout << regExprEngine.IsMatched("abddd*") << std::endl;
+        std::cout << regExprEngine.IsMatched("add*") << std::endl;
+        std::cout << regExprEngine.IsMatched("acccddd*") << std::endl;
     }
 
     std::cout << std::endl << "test over!" << std::endl;

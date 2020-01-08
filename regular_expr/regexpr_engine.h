@@ -20,7 +20,7 @@ private:
     void CreateTableByFile(const std::string& filePath);
     void CreateTableByExpr(const std::string& expr);
     void AddState(std::map<std::set<RegExprNode*>*, int, RegExprEngine::SetCmp> &statesMap, 
-        std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet);
+        std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState);
 
 public:
 
