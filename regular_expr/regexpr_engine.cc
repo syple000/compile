@@ -12,7 +12,8 @@ void RegExprEngine::AddState(std::map<std::set<RegExprNode*>*, int, RegExprEngin
 }
 
 void RegExprEngine::CreateTableByExpr(const std::string& expr) {
-    RegExprNode* root = RegExprAnalysisTree().Analyze(expr);
+    std::string finalExpr = RegExprEngine::StandardizeExpr(expr);
+    RegExprNode* root = RegExprAnalysisTree().Analyze(finalExpr);
     if (root == nullptr) {
         return;
     }
@@ -46,7 +47,7 @@ RegExprEngine::RegExprEngine(const std::string& input, bool isExpr) {
     if (isExpr) {
         RegExprEngine::CreateTableByExpr(input);
     } else {
-        //
+        // read from file
     }
 }
 
@@ -67,5 +68,10 @@ int RegExprEngine::TransferStatus(int curState, unsigned char ch) const {
 
 bool RegExprEngine::InitSuccess() {
     return this->_stateTransTable.size() != 0;
+}
+
+// hook function
+std::string RegExprEngine::StandardizeExpr(const std::string& expr) {
+    return expr;
 }
 
