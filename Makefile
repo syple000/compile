@@ -6,6 +6,8 @@ TARGET=out
 DEBUG_DIR=debug
 OBJS_DIR=$(DEBUG_DIR)/obj
 BIN_DIR=$(DEBUG_DIR)/bin
+VALGRIND=valgrind
+VALGRIND_PARAM=--tool=memcheck --leak-check=full
 START=start
 
 MKDIR_P=@mkdir -p
@@ -37,7 +39,7 @@ $(START):
 	@echo $(CUR_OBJS)
 
 run:
-	$(ROOT_DIR)/$(BIN_DIR)/$(TARGET)
+	$(VALGRIND) $(VALGRIND_PARAM) $(ROOT_DIR)/$(BIN_DIR)/$(TARGET)
 
 gdb:
 	$(GDB) $(ROOT_DIR)/$(BIN_DIR)/$(TARGET)

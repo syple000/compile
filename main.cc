@@ -24,7 +24,7 @@ int main() {
         }
     }
     MatrixIo<int> io("/home/syple/code/test.txt", Stoi, ToString);
-    assert(0 == io.WriteFile(matrix));
+    assert(0 == io.WriteFile(matrix, std::ios::out));
     std::vector<std::vector<int>> rmatrix = io.ReadFile();
     assert(rmatrix.size() == 10);
     assert(rmatrix[0].size() == 8);
@@ -35,13 +35,15 @@ int main() {
     }
 
     // regular expr test
-    std::string repat = "a()";
+    // std::string repat = "((a)(b|cd*|e))f*";
+    std::string repat = "((a)(b|cd*|e))f*";
     RegExprEngine regExprEngine(repat, true);
     if (regExprEngine.InitSuccess()) {
-        std::cout << regExprEngine.IsMatched("abd*") << std::endl;
-        std::cout << regExprEngine.IsMatched("abddd*") << std::endl;
-        std::cout << regExprEngine.IsMatched("add*") << std::endl;
-        std::cout << regExprEngine.IsMatched("acccddd*") << std::endl;
+        std::cout << regExprEngine.IsMatched("ab") << std::endl;
+        std::cout << regExprEngine.IsMatched("ae") << std::endl;
+        std::cout << regExprEngine.IsMatched("acf") << std::endl;
+        std::cout << regExprEngine.IsMatched("acdddff") << std::endl;
+        std::cout << regExprEngine.IsMatched("abfffff") << std::endl;
     }
 
     std::cout << std::endl << "test over!" << std::endl;

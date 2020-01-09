@@ -46,32 +46,19 @@ struct RegExprNode {
 
 class RegExprAnalysisTree {
 private:
-    int GetPriority(unsigned char);
 
-    unsigned char GetCharactorOfIndex(const std::string& expr, int index) {
-        if (index >= expr.size()) {
-            return '.';
-        } else {
-            return expr[index];
-        }
-    }
+    inline unsigned char GetCharactorOfIndex(const std::string& expr, int index);
 
-    bool IsConnectable(unsigned char ch, int priority, bool isElemsEmpty) {
-        if (priority == -1) {
-            return true;
-        } else {
-            return ch == '*' || (ch == ')' && !isElemsEmpty);
-        }
-    }
+    inline bool IsConnectable(unsigned char ch, int priority);
 
-    void SetNext(const std::set<RegExprNode*>* preSet, const std::set<RegExprNode*>* postSet) {
-        for (const RegExprNode* preNode : *preSet) {
-            preNode->_next->insert(postSet->begin(), postSet->end());
-        }
-    }
+    inline void SetNext(const std::set<RegExprNode*>* preSet, const std::set<RegExprNode*>* postSet);
 
-    void DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
+    inline void DestroyElems(std::stack<RegExprNode*>&);
+
+    bool DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
         unsigned char nextOp, int priority);
+
+    int GetPriority(unsigned char);
 
 public:
     RegExprAnalysisTree() = default;

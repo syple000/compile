@@ -17,7 +17,7 @@ public:
     MatrixIo(const std::string& filePath, T (*transFromString)(std::string), std::string (*transToString)(T));
     ~MatrixIo() = default;
     std::vector<std::vector<T>> ReadFile();
-    int WriteFile(const std::vector<std::vector<T>>&);
+    int WriteFile(const std::vector<std::vector<T>>&, std::ios::openmode);
 };
 
 template<typename T>
@@ -51,11 +51,11 @@ std::vector<std::vector<T>> MatrixIo<T>::ReadFile() {
 }
 
 template<typename T>
-int MatrixIo<T>::WriteFile(const std::vector<std::vector<T>>& matrix) {
+int MatrixIo<T>::WriteFile(const std::vector<std::vector<T>>& matrix, std::ios::openmode ioMode) {
     if (matrix.size() == 0 || matrix[0].size() == 0) {
         return -2;
     }
-    std::ofstream out = std::ofstream(_filePath, std::ios::binary | std::ios::out);
+    std::ofstream out = std::ofstream(_filePath, std::ios::binary | ioMode);
     if (!out.is_open()) {
         return -1;
     }

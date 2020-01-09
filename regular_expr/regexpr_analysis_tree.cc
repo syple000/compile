@@ -23,6 +23,36 @@ int RegExprAnalysisTree::GetPriority(unsigned char ch) {
     }
 }
 
+inline void RegExprAnalysisTree::SetNext(const std::set<RegExprNode*>* preSet, const std::set<RegExprNode*>* postSet) {
+    for (const RegExprNode* preNode : *preSet) {
+        preNode->_next->insert(postSet->begin(), postSet->end());
+    }
+}
+
+inline bool RegExprAnalysisTree::IsConnectable(unsigned char ch, int priority) {
+    if (priority == -1) {
+        return true;
+    } else {
+        return ch == '*' || (ch == ')');
+    }
+}
+
+inline unsigned char RegExprAnalysisTree::GetCharactorOfIndex(const std::string& expr, int index) {
+    if (index >= expr.size()) {
+        return '.';
+    } else {
+        return expr[index];
+    }
+}
+
+inline void RegExprAnalysisTree::DestroyElems(std::stack<RegExprNode*>& elems) {
+    while (!elems.empty()) {
+        RegExprNode* root = elems.top();
+        elems.pop();
+        RegExprNode::DestroyTree(root);
+    }
+}
+
 RegExprNode* RegExprAnalysisTree::Analyze(const std::string& expr) {
     std::stack<unsigned char> ops;
     std::stack<RegExprNode*> elems;
@@ -40,19 +70,25 @@ RegExprNode* RegExprAnalysisTree::Analyze(const std::string& expr) {
         }
 
         if (connectable && (priority == -1 || ch == '(')) {
-            RegExprAnalysisTree::DoCalc(ops, elems, '.', RegExprAnalysisTree::GetPriority('.'));
+            if (!RegExprAnalysisTree::DoCalc(ops, elems, '.', RegExprAnalysisTree::GetPriority('.'))) {
+                this->DestroyElems(elems);
+                return nullptr;
+            }
             ops.push('.');
         }
 
         if (priority == -1) {
             elems.push(new RegExprNode(ch, nullptr, nullptr, false));
         } else {
-            RegExprAnalysisTree::DoCalc(ops, elems, ch, priority);
+            if (!RegExprAnalysisTree::DoCalc(ops, elems, ch, priority)) {
+                this->DestroyElems(elems);
+                return nullptr;
+            }
             if (ch != ')') {
                 ops.push(ch);
             }
         }
-        connectable = RegExprAnalysisTree::IsConnectable(ch, priority, elems.empty());
+        connectable = RegExprAnalysisTree::IsConnectable(ch, priority);
     }
 
     if (ops.size() == 1 && ops.top() == '.' && elems.size() == 1) {
@@ -60,11 +96,12 @@ RegExprNode* RegExprAnalysisTree::Analyze(const std::string& expr) {
         RegExprAnalysisTree::DoCalc(ops, elems, '.', RegExprAnalysisTree::GetPriority('.'));
         return elems.top();
     } else {
+        this->DestroyElems(elems);
         return nullptr;
     }
 }
 
-void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
+bool RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegExprNode*>& elems, 
     unsigned char nextOp, int priority) {
     while (!ops.empty()) {
         char op = ops.top();
@@ -74,10 +111,13 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                     if (nextOp == ')') {
                         ops.pop();
                     }
-                    return;
+                    return true;
                 }
                 
                 case '.': {
+                    if (elems.size() < 2) {
+                        return false;
+                    }
                     ops.pop();
                     RegExprNode* right = elems.top();
                     elems.pop();
@@ -98,6 +138,9 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                 }
 
                 case '|': {
+                    if (elems.size() < 2) {
+                        return false;
+                    }
                     ops.pop();
                     RegExprNode* right = elems.top();
                     elems.pop();
@@ -113,6 +156,9 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                 }
 
                 case '*': {
+                    if (elems.size() < 1) {
+                        return false;
+                    }
                     ops.pop();
                     RegExprNode* left = elems.top();
                     elems.pop();
@@ -125,12 +171,12 @@ void RegExprAnalysisTree::DoCalc(std::stack<unsigned char>& ops, std::stack<RegE
                 }
 
                 default:
-                    return;
+                    return false;
                     
             }
         } else {
             break;
         }
     }
-    return;
+    return true;
 }

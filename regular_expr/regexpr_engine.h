@@ -16,17 +16,18 @@ private:
     };
 
     std::vector<std::vector<int>> _stateTransTable;
-    std::set<int> _terminalStates;
+    std::vector<bool> _terminalStates;
     void CreateTableByFile(const std::string& filePath);
     void CreateTableByExpr(const std::string& expr);
     void AddState(std::map<std::set<RegExprNode*>*, int, RegExprEngine::SetCmp> &statesMap, 
         std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState);
+    std::string StandardizeExpr(const std::string& expr);
 
 public:
 
     RegExprEngine(const std::string& input, bool isExpr);
-    bool IsMatched(const std::string&);  // 当前正则引擎是否匹配该字符串
-    int TransferStatus(int, unsigned char);  // 引擎在匹配当前字符后的状态
+    bool IsMatched(const std::string&) const;  // 当前正则引擎是否匹配该字符串
+    int TransferStatus(int, unsigned char) const;  // 引擎在匹配当前字符后的状态
     bool InitSuccess();
     virtual ~RegExprEngine() = default;
 };
