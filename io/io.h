@@ -21,6 +21,8 @@ public:
     }
     std::vector<std::vector<T>> GetMatrixFromBuf();
     std::vector<T> GetVecFromBuf();
+    std::string GetNextStrFromBuf();
+    std::string GetNextLineFromBuf();
     void AppendMatrixToBuf(const std::vector<std::vector<T>>& matrix);
     void AppendVecToBuf(const std::vector<T>& vec);
     int SetIndexOfBuf(int index);
@@ -51,6 +53,7 @@ int IO<T>::ReadFile(const std::string& filePath) {
         this->_buf = new Buffer(bufSize);
     }
     this->_buf->_curPos = 0;
+    this->_buf->_contentSize = bufSize;
     in.read(this->_buf->_buf, bufSize);
     in.close();
     return 0;
@@ -148,10 +151,20 @@ int IO<T>::WriteFile(const std::string& filePath, std::ios::openmode ioMode) {
     if (!out.is_open()) {
         return -1;
     }
-    out.write(this->_buf->_buf, this->_buf->_curPos);
+    out.write(this->_buf->_buf, this->_buf->_contentSize);
     out.close();
 
     return 0;
+}
+
+template<typename T>
+std::string IO<T>::GetNextStrFromBuf() {
+    return this->_buf->GetNextStringSplitByBlank();
+}
+
+template<typename T>
+std::string IO<T>::GetNextLineFromBuf() {
+    return this->_buf->GetNextLine();
 }
 
 #endif

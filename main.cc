@@ -28,12 +28,11 @@ int main() {
     IO<int> io(Stoi, ToString);
     io.AppendVecToBuf(vec);
     io.AppendMatrixToBuf(matrix);
+    io.AppendVecToBuf(vec);
     assert(0 == io.WriteFile("/home/syple/code/test.txt", std::ios::out));
-    io.SetIndexOfBuf(0);
-    IO<int> newio(Stoi, ToString);
-    newio.ReadFile("/home/syple/code/test.txt");
-    std::vector<int> rvec = newio.GetVecFromBuf();
-    std::vector<std::vector<int>> rmatrix = newio.GetMatrixFromBuf();
+    io.ReadFile("/home/syple/code/test.txt");
+    std::vector<int> rvec = io.GetVecFromBuf();
+    std::vector<std::vector<int>> rmatrix = io.GetMatrixFromBuf();
     assert(rvec.size() == 10);
     assert(rmatrix.size() == 10);
     assert(rmatrix[0].size() == 8);
@@ -43,26 +42,34 @@ int main() {
         }
         assert(rvec[i] == vec[i]);
     }
+    assert(io.GetNextStrFromBuf() == "10");
+    std::cout << io.GetNextLineFromBuf() << std::endl;
+    std::cout << io.GetNextLineFromBuf() << std::endl;
 
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";
-    std::string repat = "((a)(b|cd*|e))f*";
-    std::string repat2 = "e(a|bb|c)*d";
-    RegExprEngine regExprEngine(repat, true);
+    std::string repat1 = "((a)(b|cd*|e))f*";
+    std::string repat2 = "e(a|bb|c)**d";
+    std::string repat3 = "a*";
+    RegExprEngine regExprEngine1(repat1, true);
     RegExprEngine regExprEngine2(repat2, true);
-    if (regExprEngine.InitSuccess()) {
-        std::cout << regExprEngine.IsMatched("ab") << std::endl;
-        std::cout << regExprEngine.IsMatched("ae") << std::endl;
-        std::cout << regExprEngine.IsMatched("acf") << std::endl;
-        std::cout << regExprEngine.IsMatched("acdddff") << std::endl;
-        std::cout << regExprEngine.IsMatched("abfffff") << std::endl;
+    RegExprEngine regExprEngine3(repat3, true);
+    if (regExprEngine1.InitSuccess()) {
+        std::cout << regExprEngine1.IsMatched("ab") << std::endl;
+        std::cout << regExprEngine1.IsMatched("ae") << std::endl;
+        std::cout << regExprEngine1.IsMatched("acf") << std::endl;
+        std::cout << regExprEngine1.IsMatched("acdddff") << std::endl;
+        std::cout << regExprEngine1.IsMatched("abfffff") << std::endl;
 
         std::cout << regExprEngine2.IsMatched("ed") << std::endl;
         std::cout << regExprEngine2.IsMatched("eaaad") << std::endl;
         std::cout << regExprEngine2.IsMatched("ebbbbd") << std::endl;
         std::cout << regExprEngine2.IsMatched("ecd") << std::endl;
+
+        std::cout << regExprEngine3.IsMatched("") << std::endl;
+        std::cout << regExprEngine3.IsMatched("aa") << std::endl;
     }
 
-    std::cout << std::endl << "test over!" << std::endl;
+    std::cout << "test over!" << std::endl;
     return 0;
 }

@@ -6,11 +6,13 @@
 struct Buffer {
     char* _buf;
     int _curPos;
+    int _contentSize;
     int _bufSize;
 
     Buffer(int bufSize) {
         _buf = new char[bufSize];
         _curPos = 0;
+        _contentSize = 0;
         _bufSize = bufSize;
     }
 
@@ -20,19 +22,29 @@ struct Buffer {
 
     std::string GetNextStringSplitByBlank() {
         std::string str;
-        while (_curPos < _bufSize) {
-            while ((_buf[_curPos] == ' ' || _buf[_curPos] == '\n' 
-                || _buf[_curPos] == '\t') && _curPos < _bufSize) {
-                _curPos++;
+        if (this->_curPos < this->_contentSize) {
+            while ((this->_buf[this->_curPos] == ' ' || this->_buf[this->_curPos] == '\n' 
+                || this->_buf[this->_curPos] == '\t') && this->_curPos < this->_contentSize) {
+                this->_curPos++;
             }
-            if (_curPos == _bufSize) {
-                break;
+            while (this->_buf[this->_curPos] != ' ' && this->_buf[this->_curPos] != '\n' 
+                && this->_buf[this->_curPos] != '\t' && this->_curPos < this->_contentSize) {
+                str += this->_buf[this->_curPos++];
             }
-            while (_buf[_curPos] != ' ' && _buf[_curPos] != '\n' 
-                && _buf[_curPos] != '\t' && _curPos < _bufSize) {
-                str += _buf[_curPos++];
+        }
+        return str;
+    }
+
+    std::string GetNextLine() {
+        // skip blank line
+        std::string str;
+        if (this->_curPos < this->_contentSize) {
+            while (this->_buf[this->_curPos] == '\n' && this->_curPos < this->_contentSize) {
+                this->_curPos++;
             }
-            break;
+            while (this->_buf[this->_curPos] != '\n' && this->_curPos < this->_contentSize) {
+                str += this->_buf[this->_curPos++];
+            }
         }
         return str;
     }
@@ -40,15 +52,17 @@ struct Buffer {
     void AppendToBuffer(const char* str, int length) {
         if (this->_curPos + length > this->_bufSize) {
             char* oldBuf = this->_buf;
-            int oldBufSize = this->_bufSize;
             this->_bufSize = (this->_curPos + length) < 1 << 30 ? (this->_curPos + length) << 1 : 1 << 31;
             this->_buf = new char[this->_bufSize];
-            memcpy(this->_buf, oldBuf, oldBufSize);
+            memcpy(this->_buf, oldBuf, this->_contentSize);
             delete[] oldBuf;
         }
         int copyLength = length < this->_bufSize - this->_curPos ? length : this->_bufSize - this->_curPos;
-        memcpy(_buf + _curPos, str, copyLength);
-        _curPos += copyLength;
+        memcpy(this->_buf + this->_curPos, str, copyLength);
+        this->_curPos += copyLength;
+        if (this->_curPos > this->_contentSize) {
+            this->_contentSize = this->_curPos;
+        }
     }
 
 };
