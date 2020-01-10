@@ -48,10 +48,15 @@ int IO<T>::ReadFile(const std::string& filePath) {
     in.seekg(0, std::ios::end);
     int bufSize = in.tellg();
     in.seekg(0, std::ios::beg);
-    if (this->_buf == nullptr || this->_buf->_bufSize < bufSize) {
-        delete this->_buf;
+
+    if (this->_buf == nullptr) {
         this->_buf = new Buffer(bufSize);
+    } else if (this->_buf->_bufSize < bufSize) {
+        delete[] this->_buf->_buf;
+        this->_buf->_buf = new char[bufSize];
+        this->_buf->_bufSize = bufSize;
     }
+
     this->_buf->_curPos = 0;
     this->_buf->_contentSize = bufSize;
     in.read(this->_buf->_buf, bufSize);
