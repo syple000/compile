@@ -4,4 +4,8 @@
 #ifndef CONTEXT_FREE_ANALYSIS
 #define CONTEXT_FREE_ANALYSIS 1
 
+class ContextFreeAnalysis {
+    
+};
+
 #endif

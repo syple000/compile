@@ -24,7 +24,7 @@ int RegExprAnalysisTree::GetPriority(unsigned char ch) {
 }
 
 inline void RegExprAnalysisTree::SetNext(const std::set<RegExprNode*>* preSet, const std::set<RegExprNode*>* postSet) {
-    for (const RegExprNode* preNode : *preSet) {
+    for (const auto preNode : *preSet) {
         preNode->_next->insert(postSet->begin(), postSet->end());
     }
 }

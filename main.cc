@@ -6,6 +6,7 @@
 #include <set>
 #include "./regular_expr/regexpr_engine.h"
 #include "./io/io.h"
+#include "./context_free/context_free_expr.h"
 
 int Stoi(std::string str) {
     return std::stoi(str);
@@ -69,6 +70,43 @@ int main() {
         std::cout << regExprEngine3.IsMatched("") << std::endl;
         std::cout << regExprEngine3.IsMatched("aa") << std::endl;
     }
+
+    // 正则解析测试
+    ContextFreeSymbol* symbol1 = new ContextFreeSymbol("A", "A", false, 2, 0);
+    ContextFreeSymbol* symbol2 = new ContextFreeSymbol("B", "B", false, 2, 1);
+    ContextFreeSymbol* symbol3 = new ContextFreeSymbol("a", "a", true, 0, 2);
+    ContextFreeSymbol* symbol4 = new ContextFreeSymbol("b", "b", true, 0, 3);
+    ContextFreeSymbol* symbol5 = new ContextFreeSymbol("c", "c", true, 1, 4);
+    ContextFreeExpr* expr1 = new ContextFreeExpr();
+    expr1->_nullable = 2;
+    expr1->_sourceSymbol = symbol1;
+    expr1->_production.push_back(symbol2);
+    ContextFreeExpr* expr2 = new ContextFreeExpr();
+    expr2->_nullable = 2;
+    expr2->_sourceSymbol = symbol1;
+    expr2->_production.push_back(symbol3);
+
+    ContextFreeExpr* expr3 = new ContextFreeExpr();
+    expr3->_nullable = 2;
+    expr3->_sourceSymbol = symbol2;
+    expr3->_production.push_back(symbol1);
+
+    ContextFreeExpr* expr5 = new ContextFreeExpr();
+    expr5->_nullable = 2;
+    expr5->_sourceSymbol = symbol2;
+    expr5->_production.push_back(symbol5);
+    // ContextFreeExpr* expr4 = new ContextFreeExpr();
+    // expr4->_nullable = 2;
+    // expr4->_sourceSymbol = symbol2;
+    // expr4->_production.push_back(symbol4);
+
+    ContextFreeExprUtil util;
+    util._exprMap["A"] = {expr1, expr2};
+    util._exprMap["B"] = {expr3, expr5};
+    std::set<ContextFreeSymbol*> dependentSymbols;
+    util.IsNullable(symbol1, dependentSymbols);
+    util.IsNullable(symbol2, dependentSymbols);
+    std::cout << symbol1->_nullable << " " << symbol2->_nullable << std::endl;
 
     std::cout << "test over!" << std::endl;
     return 0;
