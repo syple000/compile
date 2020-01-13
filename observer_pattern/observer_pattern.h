@@ -43,6 +43,7 @@ void Subject<T, K>::NotifyObservers() {
                 this->_observers.erase(itr++);
             }
         }
+        this->_updated = false;
     }
 }
 
@@ -60,17 +61,17 @@ template<typename T, typename K>
 class Observer {
 private:
     K _observer;
-    bool (*_update)(const T&, const K&);
+    bool (*_update)(const T&, K&);
 
 public:
-    Observer(const K&, bool(*update)(const T&, const K&));
+    Observer(K&, bool(*update)(const T&, K&));
     // return value: wether to remove itsalf from the observer list
     bool Update(const T&);
     bool operator< (const Observer& observer) const;
 };
 
 template<typename T, typename K>
-Observer<T, K>::Observer(const K& observer, bool(*update)(const T&, const K&)) {
+Observer<T, K>::Observer(K& observer, bool(*update)(const T&, K&)) {
     this->_observer = observer;        
     this->_update = update;
 }

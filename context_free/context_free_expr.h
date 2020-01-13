@@ -16,13 +16,16 @@ struct ContextFreeExprState;
 class ContextFreeExprUtil;
 
 struct SymbolCalcCache {
-    static bool NullableInfoObserverUpdate(const ContextFreeSymbol* subject, ContextFreeSymbol* observer) {
-        
+    static bool NullableInfoObserverUpdate(ContextFreeSymbol* const &subjectSymbol, std::set<ContextFreeExpr*> &observerExprs) {
+        int nullable = 0;
+        for (auto expr : observerExprs) {
+
+        }
     }
 
     std::set<ContextFreeSymbol*> _first, _last;
     std::map<ContextFreeExpr*, int> _positionInExpr;
-    Subject<ContextFreeSymbol*, ContextFreeSymbol*> _nullableInfoSubject;
+    Subject<ContextFreeSymbol*, std::set<ContextFreeExpr*>> _nullableInfoSubject;
 
     SymbolCalcCache(ContextFreeSymbol* symbol) : _nullableInfoSubject(symbol) {}
 };
@@ -34,12 +37,38 @@ struct ContextFreeSymbol {
     // 不可空：0， 可空：1， 未知：2
     int _nullable;
     bool _isTerminator;
-    SymbolCalcCache *calcCache = nullptr;
+    SymbolCalcCache *_calcCache = nullptr;
 
     ContextFreeSymbol(const std::string& key, const std::string& keyRegExpr,  int number, bool isTerminator, int nullable) 
         : _key(key), _keyRegExpr(keyRegExpr), _number(number), _nullable(nullable), _isTerminator(isTerminator) {
-        calcCache = new SymbolCalcCache(this);
+        this->_calcCache = new SymbolCalcCache(this);
     } 
+
+};
+
+struct ContextFreeExpr {
+    ContextFreeSymbol* _sourceSymbol;
+    std::vector<ContextFreeSymbol*> _production;
+    int _nullable = 2;
+};
+
+struct ContextFreeExpr
+
+struct ContextFreeExprState {
+    ContextFreeExpr* expr;
+    int index;
+};
+
+class ContextFreeExprUtil {
+private:
+    std::unordered_map<std::string, ContextFreeSymbol*> _symbolMap;
+    std::unordered_map<std::string, std::set<ContextFreeExpr*>> _exprMap;
+
+    void GenNullable();
+
+    void GenFirst();
+
+    void GenLast();
 
     static int IsExprNullable(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>& dependings) {
         if (expr->_nullable != 2) {
@@ -60,34 +89,35 @@ struct ContextFreeSymbol {
 
     static int IsSymbolNullable(ContextFreeSymbol* symbol, const std::set<ContextFreeExpr*>& exprs) {
         if (symbol->_nullable != 2) {
-            
+            return symbol->_nullable;
         }
         std::set<ContextFreeSymbol*> dependings;
-
+        std::set<ContextFreeExpr*> dependingsExprs;
+        int nullable = 0;
+        for (auto expr : exprs) {
+            std::set<ContextFreeSymbol*> exprDependings;
+            int exprNullable = IsExprNullable(expr, exprDependings);
+            if (exprNullable == 1) {
+                nullable = 1;
+                break;
+            } else if (exprNullable == 2) {
+                dependings.insert(exprDependings.begin(), exprDependings.end());
+                dependingsExprs.insert(expr);
+                nullable = 2;
+            }
+        }
+        if (nullable == 2) {
+            for (auto dependingSymbol : dependings) {
+                dependingSymbol->_calcCache->_nullableInfoSubject.Insert(
+                    Observer<ContextFreeSymbol*, std::set<ContextFreeExpr*>>(dependingsExprs, SymbolCalcCache::NullableInfoObserverUpdate));
+            }
+        } else {
+            symbol->_nullable = nullable;
+            symbol->_calcCache->_nullableInfoSubject.SetUpdated(true);
+            symbol->_calcCache->_nullableInfoSubject.NotifyObservers();
+        }
+        return nullable;
     }
-};
-
-struct ContextFreeExpr {
-    ContextFreeSymbol* _sourceSymbol;
-    std::vector<ContextFreeSymbol*> _production;
-    int _nullable = 2;
-};
-
-struct ContextFreeExprState {
-    ContextFreeExpr* expr;
-    int index;
-};
-
-class ContextFreeExprUtil {
-private:
-    std::unordered_map<std::string, ContextFreeSymbol*> _symbolMap;
-    std::unordered_map<std::string, std::set<ContextFreeExpr*>> _exprMap;
-
-    void GenNullable();
-
-    void GenFirst();
-
-    void GenLast();
 };
 
 #endif
