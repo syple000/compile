@@ -20,16 +20,11 @@ struct SymbolSubject {
             return true;
         }
         int nullable = 0;
-        std::set<ContextFreeSymbol*> dependings;
-        std::set<ContextFreeExpr*> dependingExprs;
         for (auto expr : observerExprs->_exprs) {
-            std::set<ContextFreeSymbol*> exprDependings;
-            int exprNullable = ContextFreeUtil::IsExprNullable(expr, exprDependings);
+            int exprNullable = ContextFreeUtil::IsExprNullable(expr, nullptr);
             if (exprNullable == 1) {
                 break;
             } else if (exprNullable == 2) {
-                dependings.insert(exprDependings.begin(), exprDependings.end());
-                dependingExprs.insert(expr);
                 nullable = 2;
             }
         }
@@ -42,20 +37,18 @@ struct SymbolSubject {
         return false;
     }
 
-    static bool FirstInfoObserverUpdate(ContextFreeSymbol* const& subjectSymbol, SiblingExprs* &observerExprs) {
-        if (!subjectSymbol->_updated) {
-            return false;
-        }
-        if (ContextFreeUtil::FirstOfSymbol(observerExprs->_sourceSymbol, observerExprs, false)) {
-            observerExprs->_sourceSymbol->_subjects->_firstInfoSubject.SetUpdated(true);
-            observerExprs->_sourceSymbol->_subjects->_firstInfoSubject.NotifyObservers();
-            observerExprs->_sourceSymbol->_updated = false;
+    static bool FirstInfoObserverUpdate(ContextFreeSymbol* const& subjectSymbol, ContextFreeSymbol* &observerSymbol) {
+        int size = observerSymbol->_first.size();
+        observerSymbol->_first.insert(subjectSymbol->_first.begin(), subjectSymbol->_first.end());
+        if (size != observerSymbol->_first.size()) {
+            observerSymbol->_subjects->_firstInfoSubject.SetUpdated(true);
+            observerSymbol->_subjects->_firstInfoSubject.NotifyObservers();
         }
         return false;
     }
 
     Subject<ContextFreeSymbol*, SiblingExprs*> _nullableInfoSubject;
-    Subject<ContextFreeSymbol*, SiblingExprs*> _firstInfoSubject;
+    Subject<ContextFreeSymbol*, ContextFreeSymbol*> _firstInfoSubject;
 
     SymbolSubject(ContextFreeSymbol* symbol) : _nullableInfoSubject(symbol), _firstInfoSubject(symbol) {}
 };
@@ -67,8 +60,6 @@ struct ContextFreeSymbol {
     // 不可空：0， 可空：1， 未知：2
     int _nullable;
     bool _isTerminator;
-    // first is updated
-    bool _updated = false;
     std::set<ContextFreeSymbol*> _first, _last;
     std::map<ContextFreeExpr*, int> _positionInExpr;
     SymbolSubject *_subjects;
@@ -114,7 +105,7 @@ private:
 
 public:
 
-    static int IsExprNullable(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>& dependings) {
+    static int IsExprNullable(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>* dependings) {
         if (expr->_nullable != 2) {
             return expr->_nullable;
         }
@@ -124,7 +115,7 @@ public:
                 nullable = 0;
                 break;
             } else if (innerSymbol->_nullable == 2){
-                dependings.insert(innerSymbol);
+                if (dependings != nullptr) dependings->insert(innerSymbol);
                 nullable = 2;
             }
         }
@@ -136,18 +127,20 @@ public:
             return symbol->_nullable;
         }
         std::set<ContextFreeSymbol*> dependings;
+        auto exprDependings = new std::set<ContextFreeSymbol*>();
         int nullable = 0;
         for (auto expr : exprs->_exprs) {
-            std::set<ContextFreeSymbol*> exprDependings;
             int exprNullable = IsExprNullable(expr, exprDependings);
             if (exprNullable == 1) {
                 nullable = 1;
                 break;
             } else if (exprNullable == 2) {
-                dependings.insert(exprDependings.begin(), exprDependings.end());
+                dependings.insert(exprDependings->begin(), exprDependings->end());
                 nullable = 2;
             }
+            exprDependings->clear();
         }
+        delete exprDependings;
         if (nullable == 2) {
             for (auto dependingSymbol : dependings) {
                 dependingSymbol->_subjects->_nullableInfoSubject.InsertObserver(
@@ -161,33 +154,30 @@ public:
         return nullable;
     }
 
-    static bool FirstOfSymbol(ContextFreeSymbol* symbol, SiblingExprs* exprs, bool isInit) {
+    static bool FirstOfSymbol(ContextFreeSymbol* symbol, SiblingExprs* exprs) {
         bool updated = false;
-        std::set<ContextFreeSymbol*> dependings;
+        auto dependings = new std::set<ContextFreeSymbol*>();
         for (auto expr : exprs->_exprs) {
-            updated = updated || FirstOfExpr(expr, dependings, isInit);
+            updated = updated || FirstOfExpr(expr, dependings);
         }
-        for (auto dependingSymbol : dependings) {
+        for (auto dependingSymbol : *dependings) {
             dependingSymbol->_subjects->_firstInfoSubject.InsertObserver(
-                Observer<ContextFreeSymbol*, SiblingExprs*>(exprs, SymbolSubject::FirstInfoObserverUpdate));
+                Observer<ContextFreeSymbol*, ContextFreeSymbol*>(symbol, SymbolSubject::FirstInfoObserverUpdate));
         }
+        delete dependings;
         if (updated) {
-            symbol->_updated = true;
             symbol->_subjects->_firstInfoSubject.SetUpdated(true);
             symbol->_subjects->_firstInfoSubject.NotifyObservers();
-            symbol->_updated = false;
         }
     }
 
-    static bool FirstOfExpr(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>& dependings, bool isInit) {
+    static bool FirstOfExpr(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>* dependings) {
         ContextFreeSymbol* sourceSymbol = expr->_sourceSymbol;
         int size = sourceSymbol->_first.size();
         for (auto innerSymbol : expr->_production) {
-            if (innerSymbol->_updated || isInit) {
-                sourceSymbol->_first.insert(innerSymbol->_first.begin(), innerSymbol->_first.end());
-            }
+            sourceSymbol->_first.insert(innerSymbol->_first.begin(), innerSymbol->_first.end());
             if (!innerSymbol->_isTerminator) {
-                dependings.insert(innerSymbol);
+                if (dependings != nullptr) dependings->insert(innerSymbol);
             }
             if (innerSymbol->_nullable != 1) {
                 break;
@@ -208,6 +198,16 @@ void ContextFreeUtil::GenNullable() {
             itr.first->_nullable = 0;
         }
     }
+}
+
+void ContextFreeUtil::GenFirst() {
+    for (auto itr : this->_exprMap) {
+        ContextFreeUtil::FirstOfSymbol(itr.first, itr.second);
+    }
+}
+
+void ContextFreeUtil::GenLast() {
+    
 }
 
 #endif
