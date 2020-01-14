@@ -20,8 +20,8 @@ public:
     Subject(const T&);
     void SetUpdated(bool);
     void NotifyObservers();
-    void Insert(Observer<T, K>&&);
-    void Remove(Observer<T, K>&);
+    void InsertObserver(Observer<T, K>&&);
+    void RemoveObserver(Observer<T, K>&);
 };
 
 template<typename T, typename K>
@@ -48,12 +48,12 @@ void Subject<T, K>::NotifyObservers() {
 }
 
 template<typename T, typename K>
-void Subject<T, K>::Insert(Observer<T, K>&& observer) {
+void Subject<T, K>::InsertObserver(Observer<T, K>&& observer) {
     this->_observers.insert(std::move(observer));
 }
 
 template<typename T, typename K>
-void Subject<T, K>::Remove(Observer<T, K>& observer) {
+void Subject<T, K>::RemoveObserver(Observer<T, K>& observer) {
     this->_observers.erase(observer);
 }
 
@@ -64,7 +64,8 @@ private:
     bool (*_update)(const T&, K&);
 
 public:
-    Observer(K&, bool(*update)(const T&, K&));
+    Observer(K& observer, bool(*update)(const T&, K&));
+    Observer(K&& observer, bool(*update)(const T&, K&));
     // return value: wether to remove itsalf from the observer list
     bool Update(const T&);
     bool operator< (const Observer& observer) const;
@@ -73,6 +74,12 @@ public:
 template<typename T, typename K>
 Observer<T, K>::Observer(K& observer, bool(*update)(const T&, K&)) {
     this->_observer = observer;        
+    this->_update = update;
+}
+
+template<typename T, typename K>
+Observer<T, K>::Observer(K&& observer, bool(*update)(const T&, K&)) {
+    this->_observer = std::move(observer);        
     this->_update = update;
 }
 
