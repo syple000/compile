@@ -10,18 +10,18 @@
 #ifndef CONTEXT_FREE
 #define CONTEXT_FREE 1
 
-struct ContextFreeExpr;
-struct ContextFreeSymbol;
+struct CfExpr;
+struct CfSymbol;
 struct SiblingExprs;
 
 struct SymbolSubject {
-    static bool NullableInfoObserverUpdate(ContextFreeSymbol* const &subjectSymbol, SiblingExprs* &observerExprs) {
+    static bool NullableInfoObserverUpdate(CfSymbol* const &subjectSymbol, SiblingExprs* &observerExprs) {
         if (observerExprs->_sourceSymbol->_nullable != 2) {
             return true;
         }
         int nullable = 0;
         for (auto expr : observerExprs->_exprs) {
-            int exprNullable = ContextFreeUtil::IsExprNullable(expr, nullptr);
+            int exprNullable = CfUtil::IsExprNullable(expr, nullptr);
             if (exprNullable == 1) {
                 break;
             } else if (exprNullable == 2) {
@@ -37,7 +37,7 @@ struct SymbolSubject {
         return false;
     }
 
-    static bool FirstInfoObserverUpdate(ContextFreeSymbol* const& subjectSymbol, ContextFreeSymbol* &observerSymbol) {
+    static bool FirstInfoObserverUpdate(CfSymbol* const& subjectSymbol, CfSymbol* &observerSymbol) {
         int size = observerSymbol->_first.size();
         observerSymbol->_first.insert(subjectSymbol->_first.begin(), subjectSymbol->_first.end());
         if (size != observerSymbol->_first.size()) {
@@ -47,70 +47,80 @@ struct SymbolSubject {
         return false;
     }
 
-    Subject<ContextFreeSymbol*, SiblingExprs*> _nullableInfoSubject;
-    Subject<ContextFreeSymbol*, ContextFreeSymbol*> _firstInfoSubject;
-    Subject<ContextFreeSymbol*, >
+    static bool NextInfoObserverUpdate(CfSymbol* const& subjectSymbol, CfSymbol* &observerSymbol) {
+        int size = observerSymbol->_next.size();
+        observerSymbol->_next.insert(subjectSymbol->_next.begin(), subjectSymbol->_next.end());
+        if (size != observerSymbol->_next.size()) {
+            observerSymbol->_subjects->_nextInfoSubject.SetUpdated(true);
+            observerSymbol->_subjects->_nextInfoSubject.NotifyObservers();
+        }
+        return false;
+    }
 
-    SymbolSubject(ContextFreeSymbol* symbol) : _nullableInfoSubject(symbol), _firstInfoSubject(symbol) {}
+    Subject<CfSymbol*, SiblingExprs*> _nullableInfoSubject;
+    Subject<CfSymbol*, CfSymbol*> _firstInfoSubject;
+    Subject<CfSymbol*, CfSymbol*> _nextInfoSubject;
+
+    SymbolSubject(CfSymbol* symbol) : _nullableInfoSubject(symbol), _firstInfoSubject(symbol), _nextInfoSubject(symbol) {}
 };
 
-struct ContextFreeSymbol {
+struct CfSymbol {
     std::string _key;
     std::string _keyRegExpr;
     int _number;
     // 不可空：0， 可空：1， 未知：2
     int _nullable;
     bool _isTerminator;
-    std::set<ContextFreeSymbol*> _first, _last;
-    std::map<ContextFreeExpr*, int> _positionInExpr;
+    std::set<CfSymbol*> _first, _next;
+    std::map<CfExpr*, int> _positionInExpr;
     SymbolSubject *_subjects;
 
-    ContextFreeSymbol(const std::string& key, const std::string& keyRegExpr,  int number, bool isTerminator, int nullable) 
+    CfSymbol(const std::string& key, const std::string& keyRegExpr,  int number, bool isTerminator, int nullable) 
         : _key(key), _keyRegExpr(keyRegExpr), _number(number), _nullable(nullable), _isTerminator(isTerminator) {
         this->_subjects = new SymbolSubject(this);
     }
 
-    virtual ~ContextFreeSymbol() {
+    virtual ~CfSymbol() {
         delete this->_subjects;
     }
 
 };
 
-struct ContextFreeExpr {
-    ContextFreeSymbol* _sourceSymbol;
-    std::vector<ContextFreeSymbol*> _production;
+struct CfExpr {
+    CfSymbol* _sourceSymbol;
+    std::vector<CfSymbol*> _production;
     int _nullable = 2;
 };
 
-struct ContextFreeExprState {
-    ContextFreeExpr* expr;
+struct CfExprState {
+    CfExpr* expr;
     int index;
 };
 
 struct SiblingExprs {
     // exprs with same source symbol
-    ContextFreeSymbol* _sourceSymbol;
-    std::set<ContextFreeExpr*> _exprs;
+    CfSymbol* _sourceSymbol;
+    std::set<CfExpr*> _exprs;
 };
 
-class ContextFreeUtil {
+class CfUtil {
 private:
-    std::unordered_map<std::string, ContextFreeSymbol*> _symbolMap;
-    std::unordered_map<ContextFreeSymbol*, SiblingExprs*> _exprMap;
+    std::unordered_map<std::string, CfSymbol*> _symbolMap;
+    std::unordered_map<CfSymbol*, SiblingExprs*> _exprMap;
 
     void GenNullable();
 
     void GenFirst();
 
-    void GenLast();
+    void GenNext();
 
-    bool GetFirstOfSymbols(std::vector<ContextFreeSymbol*>& symbols, int index, std::set<ContextFreeSymbol*>& firstSet);
+    bool GetFirstOfSymbolVec(std::vector<CfSymbol*>& symbols, int index, std::set<CfSymbol*>& firstSet);
 
-    void GenLastOfSymbol(ContextFreeSymbol* symbol);
+    void GenNextOfSymbol(CfSymbol* symbol);
 
 public:
 
-    static int IsExprNullable(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>* dependings) {
+    static int IsExprNullable(CfExpr* expr, std::set<CfSymbol*>* dependings) {
         if (expr->_nullable != 2) {
             return expr->_nullable;
         }
@@ -127,12 +137,12 @@ public:
         return nullable;
     }
 
-    static int IsSymbolNullable(ContextFreeSymbol* symbol, SiblingExprs* exprs) {
+    static int IsSymbolNullable(CfSymbol* symbol, SiblingExprs* exprs) {
         if (symbol->_nullable != 2) {
             return symbol->_nullable;
         }
-        std::set<ContextFreeSymbol*> dependings;
-        auto exprDependings = new std::set<ContextFreeSymbol*>();
+        std::set<CfSymbol*> dependings;
+        auto exprDependings = new std::set<CfSymbol*>();
         int nullable = 0;
         for (auto expr : exprs->_exprs) {
             int exprNullable = IsExprNullable(expr, exprDependings);
@@ -149,7 +159,7 @@ public:
         if (nullable == 2) {
             for (auto dependingSymbol : dependings) {
                 dependingSymbol->_subjects->_nullableInfoSubject.InsertObserver(
-                    Observer<ContextFreeSymbol*, SiblingExprs*>(exprs, SymbolSubject::NullableInfoObserverUpdate));
+                    Observer<CfSymbol*, SiblingExprs*>(exprs, SymbolSubject::NullableInfoObserverUpdate));
             }
         } else {
             symbol->_nullable = nullable;
@@ -159,15 +169,15 @@ public:
         return nullable;
     }
 
-    static bool FirstOfSymbol(ContextFreeSymbol* symbol, SiblingExprs* exprs) {
+    static bool FirstOfSymbol(CfSymbol* symbol, SiblingExprs* exprs) {
         bool updated = false;
-        auto dependings = new std::set<ContextFreeSymbol*>();
+        auto dependings = new std::set<CfSymbol*>();
         for (auto expr : exprs->_exprs) {
             updated = updated || FirstOfExpr(expr, dependings);
         }
         for (auto dependingSymbol : *dependings) {
             dependingSymbol->_subjects->_firstInfoSubject.InsertObserver(
-                Observer<ContextFreeSymbol*, ContextFreeSymbol*>(symbol, SymbolSubject::FirstInfoObserverUpdate));
+                Observer<CfSymbol*, CfSymbol*>(symbol, SymbolSubject::FirstInfoObserverUpdate));
         }
         delete dependings;
         if (updated) {
@@ -176,8 +186,8 @@ public:
         }
     }
 
-    static bool FirstOfExpr(ContextFreeExpr* expr, std::set<ContextFreeSymbol*>* dependings) {
-        ContextFreeSymbol* sourceSymbol = expr->_sourceSymbol;
+    static bool FirstOfExpr(CfExpr* expr, std::set<CfSymbol*>* dependings) {
+        CfSymbol* sourceSymbol = expr->_sourceSymbol;
         int size = sourceSymbol->_first.size();
         for (auto innerSymbol : expr->_production) {
             sourceSymbol->_first.insert(innerSymbol->_first.begin(), innerSymbol->_first.end());
@@ -193,9 +203,9 @@ public:
 
 };
 
-void ContextFreeUtil::GenNullable() {
+void CfUtil::GenNullable() {
     for (auto itr : this->_exprMap) {
-        ContextFreeUtil::IsSymbolNullable(itr.first, itr.second);
+        CfUtil::IsSymbolNullable(itr.first, itr.second);
     }
     // circular dependence exists. the nullable is 0 by constradiction
     for (auto itr : this->_exprMap) {
@@ -205,13 +215,13 @@ void ContextFreeUtil::GenNullable() {
     }
 }
 
-void ContextFreeUtil::GenFirst() {
+void CfUtil::GenFirst() {
     for (auto itr : this->_exprMap) {
-        ContextFreeUtil::FirstOfSymbol(itr.first, itr.second);
+        CfUtil::FirstOfSymbol(itr.first, itr.second);
     }
 }
 
-bool ContextFreeUtil::GetFirstOfSymbols(std::vector<ContextFreeSymbol*>& symbols, int index, std::set<ContextFreeSymbol*>& firstSet) {
+bool CfUtil::GetFirstOfSymbolVec(std::vector<CfSymbol*>& symbols, int index, std::set<CfSymbol*>& firstSet) {
     int i;
     for (i = index; i < symbols.size(); i++) {
         firstSet.insert(symbols[i]->_first.begin(), symbols[i]->_first.end());
@@ -222,28 +232,37 @@ bool ContextFreeUtil::GetFirstOfSymbols(std::vector<ContextFreeSymbol*>& symbols
     return i == symbols.size();
 }
 
-void ContextFreeUtil::GenLastOfSymbol(ContextFreeSymbol* symbol) {
-    std::set<ContextFreeSymbol*> visSymbols;
-    visSymbols.insert(symbol);
+void CfUtil::GenNextOfSymbol(CfSymbol* symbol) {
+    int size = symbol->_next.size();
     for (auto itr : symbol->_positionInExpr) {
-        // symbol's last set is the first set of the expr
-        bool nullable = ContextFreeUtil::GetFirstOfSymbols(itr.first->_production, itr.second + 1, symbol->_last);
-        if (nullable)
+        // symbol's next set is the first set of the expr
+        bool nullable = CfUtil::GetFirstOfSymbolVec(itr.first->_production, itr.second + 1, symbol->_next);
+        if (nullable) {
+            symbol->_next.insert(itr.first->_sourceSymbol->_next.begin(), itr.first->_sourceSymbol->_next.end());
+            itr.first->_sourceSymbol->_subjects->_nextInfoSubject.InsertObserver(
+                Observer<CfSymbol*, CfSymbol*>(symbol, SymbolSubject::NextInfoObserverUpdate));
+        }
+    }
+    if (symbol->_next.size() != size) {
+        symbol->_subjects->_nextInfoSubject.SetUpdated(true);
+        symbol->_subjects->_nextInfoSubject.NotifyObservers();
     }
 }
 
-void ContextFreeUtil::GenLast() {
+void CfUtil::GenNext() {
     for (auto itr : this->_exprMap) {
         for (auto expr : itr.second->_exprs) {
             for (int i = 0; i < expr->_production.size(); i++) {
                 if (!expr->_production[i]->_isTerminator) {
-                    expr->_production[i]->_positionInExpr.insert(std::pair<ContextFreeExpr*, int>(expr, i));
+                    expr->_production[i]->_positionInExpr.insert(std::pair<CfExpr*, int>(expr, i));
                 }
             }
         }
     }
 
-
+    for (auto itr : this->_exprMap) {
+        CfUtil::GenNextOfSymbol(itr.first);
+    }
 }
 
 #endif
