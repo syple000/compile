@@ -49,6 +49,7 @@ struct SymbolSubject {
 
     Subject<ContextFreeSymbol*, SiblingExprs*> _nullableInfoSubject;
     Subject<ContextFreeSymbol*, ContextFreeSymbol*> _firstInfoSubject;
+    Subject<ContextFreeSymbol*, >
 
     SymbolSubject(ContextFreeSymbol* symbol) : _nullableInfoSubject(symbol), _firstInfoSubject(symbol) {}
 };
@@ -102,6 +103,10 @@ private:
     void GenFirst();
 
     void GenLast();
+
+    bool GetFirstOfSymbols(std::vector<ContextFreeSymbol*>& symbols, int index, std::set<ContextFreeSymbol*>& firstSet);
+
+    void GenLastOfSymbol(ContextFreeSymbol* symbol);
 
 public:
 
@@ -206,8 +211,39 @@ void ContextFreeUtil::GenFirst() {
     }
 }
 
+bool ContextFreeUtil::GetFirstOfSymbols(std::vector<ContextFreeSymbol*>& symbols, int index, std::set<ContextFreeSymbol*>& firstSet) {
+    int i;
+    for (i = index; i < symbols.size(); i++) {
+        firstSet.insert(symbols[i]->_first.begin(), symbols[i]->_first.end());
+        if (symbols[i]->_nullable == 0) {
+            break;
+        }
+    }
+    return i == symbols.size();
+}
+
+void ContextFreeUtil::GenLastOfSymbol(ContextFreeSymbol* symbol) {
+    std::set<ContextFreeSymbol*> visSymbols;
+    visSymbols.insert(symbol);
+    for (auto itr : symbol->_positionInExpr) {
+        // symbol's last set is the first set of the expr
+        bool nullable = ContextFreeUtil::GetFirstOfSymbols(itr.first->_production, itr.second + 1, symbol->_last);
+        if (nullable)
+    }
+}
+
 void ContextFreeUtil::GenLast() {
-    
+    for (auto itr : this->_exprMap) {
+        for (auto expr : itr.second->_exprs) {
+            for (int i = 0; i < expr->_production.size(); i++) {
+                if (!expr->_production[i]->_isTerminator) {
+                    expr->_production[i]->_positionInExpr.insert(std::pair<ContextFreeExpr*, int>(expr, i));
+                }
+            }
+        }
+    }
+
+
 }
 
 #endif
