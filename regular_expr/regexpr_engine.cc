@@ -3,7 +3,7 @@
 #include "./regexpr_engine.h"
 #include "./regexpr_analysis_tree.h"
 
-void RegExprEngine::AddState(std::map<std::set<RegExprNode*>*, int, RegExprEngine::SetCmp> &statesMap, 
+void RegExprEngine::AddState(std::map<std::set<RegExprNode*>*, int, SetCmp<RegExprNode*>> &statesMap, 
     std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState) {
     statesMap.insert(std::pair<std::set<RegExprNode*>*, int>(posSet, statesVec.size()));
     statesVec.push_back(posSet);
@@ -18,7 +18,7 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
         return;
     }
     RegExprNode* terminalState = root->_rightChildNode;
-    std::map<std::set<RegExprNode*>*, int, RegExprEngine::SetCmp> statesMap;
+    std::map<std::set<RegExprNode*>*, int, SetCmp<RegExprNode*>> statesMap;
     std::vector<std::set<RegExprNode*>*> statesVec;
     RegExprEngine::AddState(statesMap, statesVec, root->_first, terminalState);
 
@@ -54,7 +54,7 @@ RegExprEngine::RegExprEngine(const std::string& input, bool isExpr) {
 bool RegExprEngine::IsMatched(const std::string& str) const {
     int curState = 0;
     for (int i = 0; i < str.size(); i++) {
-        curState = RegExprEngine::TransferStatus(curState, str[i]);
+        curState = RegExprEngine::TransferState(curState, str[i]);
         if (curState == -1) {
             return false;
         }
@@ -62,12 +62,16 @@ bool RegExprEngine::IsMatched(const std::string& str) const {
     return this->_terminalStates[curState];
 }
 
-int RegExprEngine::TransferStatus(int curState, unsigned char ch) const {
+int RegExprEngine::TransferState(int curState, unsigned char ch) const {
     return this->_stateTransTable[curState][(int)ch];
 }
 
 bool RegExprEngine::InitSuccess() {
     return this->_stateTransTable.size() != 0;
+}
+
+bool RegExprEngine::IsTerminalState(int state) {
+    return this->_terminalStates[state];
 }
 
 // hook function
