@@ -1,4 +1,5 @@
 #include <string>
+#include <cstring>
 
 #ifndef RE_BUFFER
 #define RE_BUFFER 1
