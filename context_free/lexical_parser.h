@@ -1,6 +1,7 @@
 
 #include "./cf_expr.h"
 #include "../regular_expr/regexpr_engine.h"
+#include "../buffer/buffer.h"
 
 #ifndef LEXICAL_ANALYSIS
 #define LEXICAL_ANALYSIS 1
@@ -8,12 +9,12 @@
 class LexicalParser {
     struct RegExprState {
         RegExprEngine* _regExprEngine;
+        std::string _key;
+        int _priority;
         int _curState;
 
-        RegExprState(RegExprEngine* regExprEngine, int curState)
-         : _regExprEngine(regExprEngine), _curState(curState) {}
-
-        RegExprState(RegExprState&&) = default;
+        RegExprState(RegExprEngine* regExprEngine, const std::string& key, int priority, int curState)
+         : _regExprEngine(regExprEngine), _key(key), _priority(priority), _curState(curState) {}
 
         bool operator< (const RegExprState& regExprState) const {
             if (this->_regExprEngine == regExprState._regExprEngine) {
@@ -25,15 +26,9 @@ class LexicalParser {
     };
 
     struct LexicalParserState {
-        int _number;
         std::set<RegExprState> _regExprStateSet;
         std::string _matchingValue;
-
-        LexicalParserState(int number) : _number(number) {}
-
-        LexicalParserState(LexicalParserState&&) = default;
-
-        LexicalParserState(const LexicalParserState&) = default;
+        int _priority = -1;
 
         bool operator< (const LexicalParserState& lexicalParserState) {
             return this->_regExprStateSet < lexicalParserState._regExprStateSet;
@@ -45,59 +40,41 @@ private:
     std::vector<LexicalParserState> _stateVec;
     std::map<LexicalParserState, int> _stateMap;
     std::vector<RegExprEngine*> _regExprEngineVec;
+    int _maxPriority;
 
 public:
-    LexicalParser(const std::map<std::string, std::string>& keyRegExpMap) {
-        LexicalParserState parserState(this->_stateVec.size());
+    LexicalParser(const std::map<std::string, std::pair<std::string, int>>& keyRegExpMap) {
+        LexicalParserState parserState;
         for (auto itr : keyRegExpMap) {
-            RegExprEngine* regExprEngine = new RegExprEngine(itr.second, true);
-            if (regExprEngine->IsTerminalState(0)) {
+            RegExprEngine* regExprEngine = new RegExprEngine(itr.second.first, true);
+            if (regExprEngine->IsTerminalState(0) && itr.second.second > parserState._priority) {
                 parserState._matchingValue = itr.first;
+                parserState._priority = itr.second.second;
+            }
+            if (itr.second.second > this->_maxPriority) {
+                this->_maxPriority = itr.second.second;
             }
             this->_regExprEngineVec.push_back(regExprEngine);
-            parserState._regExprStateSet.insert(RegExprState(regExprEngine, 0));
+            parserState._regExprStateSet.insert(RegExprState(regExprEngine, itr.first, itr.second.second, 0));
         }
         InsertLexicalParserState(parserState);
         int oldSize = 0;
         while (this->_stateVec.size() != oldSize) {
             int size = this->_stateVec.size();
             for (; oldSize < size; oldSize++) {
-                LexicalParserState& state = this->_stateVec[oldSize];
-
+                GenStatesByCurState(this->_stateVec[oldSize], oldSize);
             }
         }
     }
 
     virtual ~LexicalParser() {}
 
-    void GenStatesByCurState(const LexicalParserState& state) {
-        unsigned char ch = 0;
-        for (int i = 0; i < 256; i++, ch++) {
-            LexicalParserState nextLexState(this->_stateVec.size());
-            for (auto& regExprState : state._regExprStateSet) {
-                int nextRegState = regExprState._regExprEngine->TransferState(regExprState._curState, ch);
-                if (nextRegState != -1) {
-                    nextLexState._regExprStateSet.insert(RegExprState(regExprState._regExprEngine, nextRegState));
-                    if (regExprState._regExprEngine->IsTerminalState(nextRegState)) {
-                        nextLexState._matchingValue = 
-                    }
-                }
-            }
-            LexicalParserState nextLexState(this->_stateVec.size());
-            if (this->_stateMap.find(nextLexState) != this->_stateMap.end()) {
+    void GenStatesByCurState(const LexicalParserState& state, int number);
 
-            }
-        }
-    }
+    bool InsertLexicalParserState(LexicalParserState& state);
 
-    bool InsertLexicalParserState(LexicalParserState& state) {
-        if (this->_stateMap.find(state) == this->_stateMap.end()) {
-            this->_stateMap.insert(std::pair<LexicalParserState, int>(std::move(state), this->_stateVec.size()));
-            this->_stateVec.push_back(state);
-            return true;
-        }
-        return false;
-    }
+    // 空格/换行是默认分割符
+    std::string GetNextWord(Buffer& buffer);
 };
 
 #endif

@@ -7,7 +7,7 @@ void RegExprEngine::AddState(std::map<std::set<RegExprNode*>*, int, SetCmp<RegEx
     std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState) {
     statesMap.insert(std::pair<std::set<RegExprNode*>*, int>(posSet, statesVec.size()));
     statesVec.push_back(posSet);
-    _terminalStates.push_back(posSet->find(terminalState) != posSet->end());
+    this->_terminalStates.push_back(posSet->find(terminalState) != posSet->end());
     this->_stateTransTable.push_back(std::vector<int>(256, -1));
 }
 

@@ -24,13 +24,23 @@ struct Buffer {
     std::string GetNextStringSplitByBlank() {
         std::string str;
         if (this->_curPos < this->_contentSize) {
-            while ((this->_buf[this->_curPos] == ' ' || this->_buf[this->_curPos] == '\n' 
-                || this->_buf[this->_curPos] == '\t') && this->_curPos < this->_contentSize) {
-                this->_curPos++;
+            char ch = GetCurrentChar();
+            while (ch == ' ' || ch == '\n' || ch == '\t') {
+                MoveOnByChar();
+                if (CurrentCharAvailable()) {
+                    ch = GetCurrentChar();
+                } else {
+                    break;
+                }
             }
-            while (this->_buf[this->_curPos] != ' ' && this->_buf[this->_curPos] != '\n' 
-                && this->_buf[this->_curPos] != '\t' && this->_curPos < this->_contentSize) {
-                str += this->_buf[this->_curPos++];
+            while (ch != ' ' && ch != '\n' && ch != '\t') {
+                str += ch;
+                MoveOnByChar();
+                if (CurrentCharAvailable()) {
+                    ch = GetCurrentChar();
+                } else {
+                    break;
+                }
             }
         }
         return str;
@@ -40,11 +50,24 @@ struct Buffer {
         // skip blank line
         std::string str;
         if (this->_curPos < this->_contentSize) {
-            while (this->_buf[this->_curPos] == '\n' && this->_curPos < this->_contentSize) {
-                this->_curPos++;
+            char ch = GetCurrentChar();
+            while (ch == '\n') {
+                MoveOnByChar();
+                if (CurrentCharAvailable()) {
+                    ch = GetCurrentChar();
+                } else {
+                    break;
+                }
             }
-            while (this->_buf[this->_curPos] != '\n' && this->_curPos < this->_contentSize) {
-                str += this->_buf[this->_curPos++];
+
+            while (ch != '\n') {
+                str += ch;
+                MoveOnByChar();
+                if (CurrentCharAvailable()) {
+                    ch = GetCurrentChar();
+                } else {
+                    break;
+                }
             }
         }
         return str;
@@ -64,6 +87,18 @@ struct Buffer {
         if (this->_curPos > this->_contentSize) {
             this->_contentSize = this->_curPos;
         }
+    }
+
+    char GetCurrentChar() {
+        return this->_buf[this->_curPos];
+    }
+
+    bool CurrentCharAvailable() {
+        return this->_curPos < this->_contentSize;
+    }
+
+    void MoveOnByChar() {
+        this->_curPos++;
     }
 
 };
