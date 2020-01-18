@@ -1,5 +1,6 @@
 #include <string>
 #include <cstring>
+#include <vector>
 
 #ifndef RE_BUFFER
 #define RE_BUFFER 1
@@ -23,7 +24,7 @@ struct Buffer {
 
     std::string GetNextStringSplitByBlank() {
         std::string str;
-        if (this->_curPos < this->_contentSize) {
+        if (CurrentCharAvailable()) {
             char ch = GetCurrentChar();
             while (ch == ' ' || ch == '\n' || ch == '\t') {
                 MoveOnByChar();
@@ -46,10 +47,10 @@ struct Buffer {
         return str;
     }
 
+    // 下一行有内容的行，跳过空行（当前行若有剩余元素，取出返回）
     std::string GetNextLine() {
-        // skip blank line
         std::string str;
-        if (this->_curPos < this->_contentSize) {
+        if (CurrentCharAvailable()) {
             char ch = GetCurrentChar();
             while (ch == '\n') {
                 MoveOnByChar();
@@ -71,6 +72,41 @@ struct Buffer {
             }
         }
         return str;
+    }
+
+    // 不跳过空行(若当前行仍有元素,包含\n，返回)
+    std::vector<std::string> GetStringsOfNextLine() {
+        std::vector<std::string> strVec;
+        if (CurrentCharAvailable()) {
+            char ch = GetCurrentChar();
+            while (CurrentCharAvailable() && ch != '\n') {
+                while (ch == ' ') {
+                    MoveOnByChar();
+                    if (CurrentCharAvailable()) {
+                        ch = GetCurrentChar();
+                    } else {
+                        break;
+                    }
+                }
+                std::string str;
+                while (ch != ' ' && ch != '\n') {
+                    str += ch;
+                    MoveOnByChar();
+                    if (CurrentCharAvailable()) {
+                        ch = GetCurrentChar();
+                    } else {
+                        break;
+                    }
+                }
+                if (str.size() != 0) {
+                    strVec.push_back(std::move(str));
+                }
+            }
+        }
+        if (CurrentCharAvailable()) {
+            MoveOnByChar();
+        }
+        return strVec;
     }
 
     void AppendToBuffer(const char* str, int length) {

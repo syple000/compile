@@ -42,36 +42,14 @@ private:
     std::vector<RegExprEngine*> _regExprEngineVec;
     int _maxPriority;
 
-public:
-    LexicalParser(const std::map<std::string, std::pair<std::string, int>>& keyRegExpMap) {
-        LexicalParserState parserState;
-        for (auto itr : keyRegExpMap) {
-            RegExprEngine* regExprEngine = new RegExprEngine(itr.second.first, true);
-            if (regExprEngine->IsTerminalState(0) && itr.second.second > parserState._priority) {
-                parserState._matchingValue = itr.first;
-                parserState._priority = itr.second.second;
-            }
-            if (itr.second.second > this->_maxPriority) {
-                this->_maxPriority = itr.second.second;
-            }
-            this->_regExprEngineVec.push_back(regExprEngine);
-            parserState._regExprStateSet.insert(RegExprState(regExprEngine, itr.first, itr.second.second, 0));
-        }
-        InsertLexicalParserState(parserState);
-        int oldSize = 0;
-        while (this->_stateVec.size() != oldSize) {
-            int size = this->_stateVec.size();
-            for (; oldSize < size; oldSize++) {
-                GenStatesByCurState(this->_stateVec[oldSize], oldSize);
-            }
-        }
-    }
-
-    virtual ~LexicalParser() {}
-
     void GenStatesByCurState(const LexicalParserState& state, int number);
 
     bool InsertLexicalParserState(LexicalParserState& state);
+
+public:
+    LexicalParser(const std::map<std::string, std::pair<std::string, int>>& keyRegExpMap);
+
+    virtual ~LexicalParser();
 
     // 空格/换行是默认分割符
     std::string GetNextWord(Buffer& buffer);

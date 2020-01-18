@@ -1,4 +1,5 @@
 #include "./cf_expr.h"
+#include "./lexical_parser.h"
 
 bool SymbolSubject::NullableInfoObserverUpdate(CfSymbol* const &subjectSymbol, SiblingExprs* &observerExprs) {
     if (observerExprs->_sourceSymbol->_nullable != 2) {
@@ -195,4 +196,116 @@ bool CfUtil::FirstOfExpr(CfExpr* expr, std::set<CfSymbol*>* dependings) {
         }
     }
     return size != sourceSymbol->_first.size();
+}
+
+CfUtil::~CfUtil() {
+    for (auto itr : this->_exprMap) {
+        auto exprs = itr.second;
+        for (auto expr : exprs->_exprs) {
+            delete expr;
+        }
+        delete exprs;
+    }
+
+    for (auto symbol : this->_symbolMap) {
+        delete symbol.second;
+    }
+}
+
+// 词法与语法之间有一个空行
+CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
+    // key, key_reg_expr, ptiority(数字大，优先级高), is_terminator(1表示是), is_nullable(0,1,2 含义与之前定义一致)
+    // #表示注释行
+    std::vector<std::string> strVec = lexicalBuffer.GetStringsOfNextLine();
+    std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
+
+    while (lexicalBuffer.CurrentCharAvailable()) {
+        strVec = lexicalBuffer.GetStringsOfNextLine();
+        if (strVec.size() == 0 || strVec[0][0] == '#' || this->_symbolMap.find(strVec[0]) != this->_symbolMap.end()) {
+            continue;
+        }
+        int priority = atoi(strVec[2].c_str());
+        int isTerminator = atoi(strVec[3].c_str());
+        int isNullable = atoi(strVec[4].c_str());
+        CfSymbol* symbol = new CfSymbol(strVec[0], strVec[1], this->_symbolMap.size(), isTerminator == 1, isNullable);
+        this->_symbolMap.insert(std::pair<std::string, CfSymbol*>(strVec[0], symbol));
+        this->_symbolVec.push_back(symbol);
+        keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], std::pair<std::string, int>(strVec[1], priority)));
+    }
+    LexicalParser lexicalParser = LexicalParser(keyRegExprMap);
+    
+    // 表达式第一个单词表示源产生式
+    std::string initkey = exprBuffer.GetNextStringSplitByBlank();
+    auto initSymbolItr = this->_symbolMap.find(initkey);
+    if (initSymbolItr == this->_symbolMap.end()) {
+        return;
+    } else {
+        this->_initSymbol = initSymbolItr->second;
+    }
+
+    while (exprBuffer.CurrentCharAvailable()) {
+        while (exprBuffer.GetCurrentChar() == '\n' && exprBuffer.CurrentCharAvailable()) {
+            exprBuffer.MoveOnByChar();
+        }
+        CfExpr* expr = new CfExpr();
+        while (exprBuffer.GetCurrentChar() != '\n' && exprBuffer.CurrentCharAvailable()) {
+            std::string key = lexicalParser.GetNextWord(exprBuffer);
+            auto symbolItr = this->_symbolMap.find(key);
+            if (symbolItr == this->_symbolMap.end()) {
+                delete expr;
+                return;
+            } else {
+                if (expr->_sourceSymbol == nullptr) {
+                    expr->_sourceSymbol = symbolItr->second;
+                } else {
+                    expr->_production.push_back(symbolItr->second);
+                }
+            }
+        }
+        auto exprItr = this->_exprMap.find(expr->_sourceSymbol);
+        if (exprItr != this->_exprMap.end()) {
+            exprItr->second->_exprs.insert(expr);
+        } else {
+            SiblingExprs* exprs = new SiblingExprs();
+            exprs->_sourceSymbol = expr->_sourceSymbol;
+            exprs->_exprs.insert(expr);
+            this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
+        }
+    }
+
+    GenNullable();
+
+    GenFirst();
+
+    GenNext();
+}
+
+CfSymbol* CfUtil::GetCfSymbol(const std::string& symbolKey) {
+    auto itr = this->_symbolMap.find(symbolKey);
+    if (itr == this->_symbolMap.end()) {
+        return nullptr;
+    } else {
+        return itr->second;
+    }
+}
+
+SiblingExprs* CfUtil::GetSiblingExprs(CfSymbol* symbol) {
+    auto itr = this->_exprMap.find(symbol);
+    if (itr == this->_exprMap.end()) {
+        return nullptr;
+    } else {
+        return itr->second;
+    }
+}
+
+CfSymbol* CfUtil::GetInitSymbol() {
+    return this->_initSymbol;
+}
+
+CfSymbol* CfUtil::GetSymbolByIndex(int index) {
+    return this->_symbolVec[index];
+}
+
+int CfUtil::GetSymbolCount() {
+    return this->_symbolVec.size();
 }

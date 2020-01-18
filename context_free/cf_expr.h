@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "../observer_pattern/observer_pattern.h"
+#include "../buffer/buffer.h"
 
 #ifndef CONTEXT_FREE
 #define CONTEXT_FREE 1
@@ -47,14 +48,9 @@ struct SymbolSubject {
 };
 
 struct CfExpr {
-    CfSymbol* _sourceSymbol;
+    CfSymbol* _sourceSymbol = nullptr;
     std::vector<CfSymbol*> _production;
     int _nullable = 2;
-};
-
-struct CfExprState {
-    CfExpr* expr;
-    int index;
 };
 
 struct SiblingExprs {
@@ -67,6 +63,8 @@ class CfUtil {
 private:
     std::unordered_map<std::string, CfSymbol*> _symbolMap;
     std::unordered_map<CfSymbol*, SiblingExprs*> _exprMap;
+    std::vector<CfSymbol*> _symbolVec;
+    CfSymbol* _initSymbol = nullptr;
 
     void GenNullable();
 
@@ -80,6 +78,10 @@ private:
 
 public:
 
+    CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer);
+
+    virtual ~CfUtil();
+
     static int IsExprNullable(CfExpr* expr, std::set<CfSymbol*>* dependings);
 
     static int IsSymbolNullable(CfSymbol* symbol, SiblingExprs* exprs);
@@ -87,6 +89,16 @@ public:
     static bool FirstOfSymbol(CfSymbol* symbol, SiblingExprs* exprs);
 
     static bool FirstOfExpr(CfExpr* expr, std::set<CfSymbol*>* dependings);
+
+    CfSymbol* GetCfSymbol(const std::string& symbolKey);
+
+    SiblingExprs* GetSiblingExprs(CfSymbol* symbol);
+
+    CfSymbol* GetInitSymbol();
+
+    CfSymbol* GetSymbolByIndex(int index);
+
+    int GetSymbolCount();
 
 };
 
