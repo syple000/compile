@@ -68,7 +68,7 @@ int main() {
     }
 
     // context free test
-    CfEngine
+    CfEngine cfEngine("/home/syple/code/expr_lexical_file.txt", "/home/syple/code/expr_file.txt", "/home/syple/code/lexical_file.txt");
 
 
     std::cout << "test over!" << std::endl;

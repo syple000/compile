@@ -95,7 +95,8 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
         }
         buffer.MoveOnByChar();
     }
-
-    buffer._curPos = qualifiedPos + 1;
+    if (qualifiedPos != -1) {
+        buffer._curPos = qualifiedPos + 1;
+    }
     return word;
 }

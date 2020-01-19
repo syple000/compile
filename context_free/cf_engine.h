@@ -119,14 +119,17 @@ public:
     CfEngine(const std::string& exprLexicalFile, const std::string& exprFile, const std::string& lexicalFile) {
         IO<std::string> io(String2String, String2String);
         Buffer exprLexicalBuf(100), exprBuf(100), lexicalBuf(100);
-        io.ReadFile(exprLexicalBuf, exprLexicalFile);
-        io.ReadFile(exprBuf, exprFile);
+        if (io.ReadFile(exprLexicalBuf, exprLexicalFile) != 0 || io.ReadFile(exprBuf, exprFile) != 0) {
+            return;
+        }
         this->_cfUtil = new CfUtil(exprLexicalBuf, exprBuf);
         if (this->_cfUtil->GetInitSymbol() == nullptr) {
             return;
         }
         // key, key reg expr, priority
-        io.ReadFile(lexicalBuf, lexicalFile);
+        if (io.ReadFile(lexicalBuf, lexicalFile) != 0) {
+            return;
+        }
         std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
         while (lexicalBuf.CurrentCharAvailable()) {
             std::vector<std::string> strVec = lexicalBuf.GetStringsOfNextLine();

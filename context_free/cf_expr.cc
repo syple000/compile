@@ -244,11 +244,9 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
     }
 
     while (exprBuffer.CurrentCharAvailable()) {
-        while (exprBuffer.GetCurrentChar() == '\n' && exprBuffer.CurrentCharAvailable()) {
-            exprBuffer.MoveOnByChar();
-        }
+        
         CfExpr* expr = new CfExpr();
-        while (exprBuffer.GetCurrentChar() != '\n' && exprBuffer.CurrentCharAvailable()) {
+        while (exprBuffer.CurrentCharAvailable()) {
             std::string key = lexicalParser.GetNextWord(exprBuffer);
             auto symbolItr = this->_symbolMap.find(key);
             if (symbolItr == this->_symbolMap.end()) {
@@ -262,8 +260,16 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
                     expr->_production.push_back(symbolItr->second);
                 }
             }
+            while (exprBuffer.GetCurrentChar() == ' ' && exprBuffer.CurrentCharAvailable()) {
+                exprBuffer.MoveOnByChar();
+            }
+            if (!exprBuffer.CurrentCharAvailable() || exprBuffer.GetCurrentChar() == '\n') {
+                break;
+            }
         }
         if (expr == nullptr) {
+            // 跳过该行
+            exprBuffer.GetNextLine();
             continue;
         }
         auto exprItr = this->_exprMap.find(expr->_sourceSymbol);
