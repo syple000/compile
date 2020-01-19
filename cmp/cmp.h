@@ -6,3 +6,10 @@ struct SetCmp {
         return *set1 < *set2;
     }
 };
+
+template<typename T>
+struct PointerObjectCmp {
+    bool operator() (const T* t1, const T* t2) const {
+        return *t1 < *t2;
+    }
+};

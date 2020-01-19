@@ -224,9 +224,9 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         if (strVec.size() == 0 || strVec[0][0] == '#' || this->_symbolMap.find(strVec[0]) != this->_symbolMap.end()) {
             continue;
         }
-        int priority = atoi(strVec[2].c_str());
-        int isTerminator = atoi(strVec[3].c_str());
-        int isNullable = atoi(strVec[4].c_str());
+        int priority = std::stoi(strVec[2].c_str());
+        int isTerminator = std::stoi(strVec[3].c_str());
+        int isNullable = std::stoi(strVec[4].c_str());
         CfSymbol* symbol = new CfSymbol(strVec[0], strVec[1], this->_symbolMap.size(), isTerminator == 1, isNullable);
         this->_symbolMap.insert(std::pair<std::string, CfSymbol*>(strVec[0], symbol));
         this->_symbolVec.push_back(symbol);
@@ -253,7 +253,8 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
             auto symbolItr = this->_symbolMap.find(key);
             if (symbolItr == this->_symbolMap.end()) {
                 delete expr;
-                return;
+                expr = nullptr;
+                break;
             } else {
                 if (expr->_sourceSymbol == nullptr) {
                     expr->_sourceSymbol = symbolItr->second;
@@ -261,6 +262,9 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
                     expr->_production.push_back(symbolItr->second);
                 }
             }
+        }
+        if (expr == nullptr) {
+            continue;
         }
         auto exprItr = this->_exprMap.find(expr->_sourceSymbol);
         if (exprItr != this->_exprMap.end()) {

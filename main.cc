@@ -4,17 +4,12 @@
 #include <vector>
 #include <cassert>
 #include <set>
+
 #include "./regular_expr/regexpr_engine.h"
 #include "./io/io.h"
-#include "./context_free/context_free_expr.h"
-
-int Stoi(std::string str) {
-    return std::stoi(str);
-}
-
-std::string ToString(int num) {
-    return std::to_string(num);
-}
+#include "./context_free/cf_expr.h"
+#include "./context_free/cf_engine.h"
+#include "./io/format_conversion.h"
 
 int main() {
     // matrix io test
@@ -26,14 +21,15 @@ int main() {
         }
         vec[i] = rand() % 100;
     }
-    IO<int> io(Stoi, ToString);
-    io.AppendVecToBuf(vec);
-    io.AppendMatrixToBuf(matrix);
-    io.AppendVecToBuf(vec);
-    assert(0 == io.WriteFile("/home/syple/code/test.txt", std::ios::out));
-    io.ReadFile("/home/syple/code/test.txt");
-    std::vector<int> rvec = io.GetVecFromBuf();
-    std::vector<std::vector<int>> rmatrix = io.GetMatrixFromBuf();
+    IO<int> io(String2Int, Int2String);
+    Buffer buf(100);
+    io.AppendVecToBuf(buf, vec);
+    io.AppendMatrixToBuf(buf, matrix);
+    io.AppendVecToBuf(buf, vec);
+    assert(0 == io.WriteFile(buf, "/home/syple/code/test.txt", std::ios::out));
+    io.ReadFile(buf, "/home/syple/code/test.txt");
+    std::vector<int> rvec = io.GetVecFromBuf(buf);
+    std::vector<std::vector<int>> rmatrix = io.GetMatrixFromBuf(buf);
     assert(rvec.size() == 10);
     assert(rmatrix.size() == 10);
     assert(rmatrix[0].size() == 8);
@@ -43,9 +39,9 @@ int main() {
         }
         assert(rvec[i] == vec[i]);
     }
-    assert(io.GetNextStrFromBuf() == "10");
-    std::cout << io.GetNextLineFromBuf() << std::endl;
-    std::cout << io.GetNextLineFromBuf() << std::endl;
+    assert(buf.GetNextStringSplitByBlank() == "10");
+    std::cout << buf.GetNextLine() << std::endl;
+    std::cout << buf.GetNextLine() << std::endl;
 
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";
@@ -70,6 +66,9 @@ int main() {
         std::cout << regExprEngine3.IsMatched("") << std::endl;
         std::cout << regExprEngine3.IsMatched("aa") << std::endl;
     }
+
+    // context free test
+    CfEngine
 
 
     std::cout << "test over!" << std::endl;
