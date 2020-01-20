@@ -1,5 +1,8 @@
 #include <set>
 
+#ifndef CMP
+#define CMP 1
+
 template<typename T>
 struct SetCmp {
     bool operator() (const std::set<T>* set1, const std::set<T>* set2) const {
@@ -13,3 +16,5 @@ struct PointerObjectCmp {
         return *t1 < *t2;
     }
 };
+
+#endif

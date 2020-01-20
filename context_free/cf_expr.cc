@@ -9,6 +9,7 @@ bool SymbolSubject::NullableInfoObserverUpdate(CfSymbol* const &subjectSymbol, S
     for (auto expr : observerExprs->_exprs) {
         int exprNullable = CfUtil::IsExprNullable(expr, nullptr);
         if (exprNullable == 1) {
+            nullable = 1;
             break;
         } else if (exprNullable == 2) {
             nullable = 2;
@@ -67,6 +68,11 @@ void CfUtil::GenNullable() {
 }
 
 void CfUtil::GenFirst() {
+    for (auto symbol : this->_symbolVec) {
+        if (symbol->_isTerminator) {
+            symbol->_first.insert(symbol);
+        }
+    }
     for (auto itr : this->_exprMap) {
         CfUtil::FirstOfSymbol(itr.first, itr.second);
     }
@@ -169,7 +175,7 @@ bool CfUtil::FirstOfSymbol(CfSymbol* symbol, SiblingExprs* exprs) {
     bool updated = false;
     auto dependings = new std::set<CfSymbol*>();
     for (auto expr : exprs->_exprs) {
-        updated = updated || FirstOfExpr(expr, dependings);
+        updated = FirstOfExpr(expr, dependings) || updated;
     }
     for (auto dependingSymbol : *dependings) {
         dependingSymbol->_subjects->_firstInfoSubject.InsertObserver(
@@ -189,7 +195,7 @@ bool CfUtil::FirstOfExpr(CfExpr* expr, std::set<CfSymbol*>* dependings) {
     for (auto innerSymbol : expr->_production) {
         sourceSymbol->_first.insert(innerSymbol->_first.begin(), innerSymbol->_first.end());
         if (!innerSymbol->_isTerminator) {
-            if (dependings != nullptr) dependings->insert(innerSymbol);
+            dependings->insert(innerSymbol);
         }
         if (innerSymbol->_nullable != 1) {
             break;
@@ -216,7 +222,7 @@ CfUtil::~CfUtil() {
 CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
     // key, key_reg_expr, ptiority(数字大，优先级高), is_terminator(1表示是), is_nullable(0,1,2 含义与之前定义一致)
     // #表示注释行
-    std::vector<std::string> strVec = lexicalBuffer.GetStringsOfNextLine();
+    std::vector<std::string> strVec;
     std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
 
     while (lexicalBuffer.CurrentCharAvailable()) {

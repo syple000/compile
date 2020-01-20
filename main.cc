@@ -48,27 +48,36 @@ int main() {
     std::string repat1 = "((a)(b|cd*|e))f*";
     std::string repat2 = "e(a|bb|c)**d";
     std::string repat3 = "a*";
+    std::string repat4 = "";
     RegExprEngine regExprEngine1(repat1, true);
     RegExprEngine regExprEngine2(repat2, true);
     RegExprEngine regExprEngine3(repat3, true);
-    if (regExprEngine1.InitSuccess()) {
-        std::cout << regExprEngine1.IsMatched("ab") << std::endl;
-        std::cout << regExprEngine1.IsMatched("ae") << std::endl;
-        std::cout << regExprEngine1.IsMatched("acf") << std::endl;
-        std::cout << regExprEngine1.IsMatched("acdddff") << std::endl;
-        std::cout << regExprEngine1.IsMatched("abfffff") << std::endl;
+    RegExprEngine regExprEngine4(repat4, true);
+    assert(regExprEngine1.InitSuccess());
+    assert(regExprEngine2.InitSuccess());
+    assert(regExprEngine3.InitSuccess());
+    assert(!regExprEngine4.InitSuccess());
+    
+    assert(regExprEngine1.IsMatched("ab"));
+    assert(regExprEngine1.IsMatched("ae"));
+    assert(regExprEngine1.IsMatched("acf"));
+    assert(regExprEngine1.IsMatched("acdddff"));
+    assert(regExprEngine1.IsMatched("abfffff"));
 
-        std::cout << regExprEngine2.IsMatched("ed") << std::endl;
-        std::cout << regExprEngine2.IsMatched("eaaad") << std::endl;
-        std::cout << regExprEngine2.IsMatched("ebbbbd") << std::endl;
-        std::cout << regExprEngine2.IsMatched("ecd") << std::endl;
+    assert(regExprEngine2.IsMatched("ed"));
+    assert(regExprEngine2.IsMatched("eaaad"));
+    assert(regExprEngine2.IsMatched("ebbbbd"));
+    assert(regExprEngine2.IsMatched("ecd"));
 
-        std::cout << regExprEngine3.IsMatched("") << std::endl;
-        std::cout << regExprEngine3.IsMatched("aa") << std::endl;
-    }
+    assert(regExprEngine3.IsMatched(""));
+    assert(regExprEngine3.IsMatched("aa"));
+
+    assert(!regExprEngine3.IsMatched("b"));
+
 
     // context free test
     CfEngine cfEngine("/home/syple/code/expr_lexical_file.txt", "/home/syple/code/expr_file.txt", "/home/syple/code/lexical_file.txt");
+    assert(cfEngine.InitSuccess());
 
 
     std::cout << "test over!" << std::endl;

@@ -30,21 +30,21 @@ class LexicalParser {
         std::string _matchingValue;
         int _priority = -1;
 
-        bool operator< (const LexicalParserState& lexicalParserState) {
+        bool operator< (const LexicalParserState& lexicalParserState) const {
             return this->_regExprStateSet < lexicalParserState._regExprStateSet;
         }
     };
 
 private:
     std::vector<std::vector<int>> _transTable;
-    std::vector<LexicalParserState> _stateVec;
-    std::map<LexicalParserState, int> _stateMap;
+    std::vector<LexicalParserState*> _stateVec;
+    std::map<LexicalParserState*, int, PointerObjectCmp<LexicalParserState>> _stateMap;
     std::vector<RegExprEngine*> _regExprEngineVec;
-    int _maxPriority;
+    int _maxPriority = -1;
 
-    void GenStatesByCurState(const LexicalParserState& state, int number);
+    void GenStatesByCurState(LexicalParserState* state, int number);
 
-    bool InsertLexicalParserState(LexicalParserState& state);
+    bool InsertLexicalParserState(LexicalParserState* state);
 
 public:
     LexicalParser(const std::map<std::string, std::pair<std::string, int>>& keyRegExpMap);

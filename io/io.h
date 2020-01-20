@@ -35,7 +35,7 @@ int IO<T>::ReadFile(Buffer& buf, const std::string& filePath) {
     in.seekg(0, std::ios::beg);
     
     if (buf._bufSize < bufSize) {
-        delete[] this->_buf->_buf;
+        delete[] buf._buf;
         buf._buf = new char[bufSize];
         buf._bufSize = bufSize;
     }

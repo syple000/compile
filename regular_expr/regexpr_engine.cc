@@ -20,6 +20,7 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
     RegExprNode* terminalState = root->_rightChildNode;
     std::map<std::set<RegExprNode*>*, int, SetCmp<RegExprNode*>> statesMap;
     std::vector<std::set<RegExprNode*>*> statesVec;
+    // init state can't be terminal state
     RegExprEngine::AddState(statesMap, statesVec, root->_first, terminalState);
 
     int oldStateCount = 0, stateCount = 1;

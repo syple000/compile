@@ -1,4 +1,4 @@
-#include <set>
+#include <list>
 
 #ifndef OBSERVER_PATTERN
 #define OBSERVER_PATTERN 1
@@ -13,7 +13,7 @@ template<typename T, typename K>
 class Subject {
 private:
     T _subject;
-    std::set<Observer<T, K>> _observers;
+    std::list<Observer<T, K>> _observers;
     bool _updated;
 
 public:
@@ -38,9 +38,11 @@ void Subject<T, K>::SetUpdated(bool updated) {
 template<typename T, typename K>
 void Subject<T, K>::NotifyObservers() {
     if (this->_updated) {
-        for (auto itr = this->_observers.begin(); itr != this->_observers.end(); ) {
+        for (auto itr = this->_observers.begin(); itr != this->_observers.end();) {
             if (itr->Update(this->_subject)) {
                 this->_observers.erase(itr++);
+            } else {
+                itr++;
             }
         }
         this->_updated = false;
@@ -49,12 +51,22 @@ void Subject<T, K>::NotifyObservers() {
 
 template<typename T, typename K>
 void Subject<T, K>::InsertObserver(Observer<T, K>&& observer) {
-    this->_observers.insert(std::move(observer));
+    for (auto itr = this->_observers.begin(); itr != this->_observers.end(); itr++) {
+        if (observer == *itr) {
+            return;
+        }
+    }
+    this->_observers.push_back(std::move(observer));
 }
 
 template<typename T, typename K>
 void Subject<T, K>::RemoveObserver(Observer<T, K>& observer) {
-    this->_observers.erase(observer);
+    for (auto itr = this->_observers.begin(); itr != this->_observers.end(); itr++) {
+        if (observer == *itr) {
+            this->_observers.erase(itr);
+            return;
+        }
+    }
 }
 
 template<typename T, typename K>
@@ -68,12 +80,12 @@ public:
     Observer(K&& observer, bool(*update)(const T&, K&));
     // return value: wether to remove itsalf from the observer list
     bool Update(const T&);
-    bool operator< (const Observer& observer) const;
+    bool operator== (const Observer& observer) const;
 };
 
 template<typename T, typename K>
 Observer<T, K>::Observer(K& observer, bool(*update)(const T&, K&)) {
-    this->_observer = observer;        
+    this->_observer = observer;
     this->_update = update;
 }
 
@@ -89,8 +101,8 @@ bool Observer<T, K>::Update(const T& subject) {
 }
 
 template<typename T, typename K>
-bool Observer<T, K>::operator< (const Observer& observer) const {
-    return this->_observer < observer._observer;
+bool Observer<T, K>::operator== (const Observer& observer) const {
+    return this->_observer == observer._observer;
 }
 
 #endif

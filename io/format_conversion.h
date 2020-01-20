@@ -1,14 +1,13 @@
 #include <string>
 #include <cstring>
 
-std::string String2String(const std::string& str) {
-    return str;
-}
+#ifndef FORMAT_CONVERSION
+#define FORMAT_CONVERSION 1
 
-std::string Int2String(const int& num) {
-    return std::to_string(num);
-}
+std::string String2String(const std::string& str);
 
-int String2Int(const std::string& str) {
-    return std::stoi(str);
-}
+std::string Int2String(const int& num);
+
+int String2Int(const std::string& str);
+
+#endif
