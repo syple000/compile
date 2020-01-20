@@ -42,7 +42,7 @@ struct StateTrans {
 
 class CfEngine {
 private:
-    // 四个文件： 1. 表达式词法分析文件 2. 表达式分析文件 3. 词法分析文件 4. 分析文件
+    // 四个文件： 1. 表达式词法分析文件 2. 表达式分析文件 3. 词法分析文件(仅包含对1中非终结字符的正则表达式说明) 4. 分析文件
     CfUtil* _cfUtil = nullptr;
     std::set<CfState*, PointerObjectCmp<CfState>> _stateSet;
     std::vector<CfState*> _stateVec;
