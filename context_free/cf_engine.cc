@@ -55,7 +55,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
             delete itr.second;
             nextState = *stateItr;
         }
-        this->_stateTransTable[state->_number][itr.first]._nextState.insert(nextState->_number);
+        this->_stateTransTable[state->_number][itr.first]._nextState = nextState->_number;
     }
 }
 
@@ -82,6 +82,7 @@ CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFi
     if (this->_cfUtil->GetInitSymbol() == nullptr) {
         return;
     }
+    // reduce first nonterminal symbol
     // key, key reg expr, priority
     if (io.ReadFile(lexicalBuf, lexicalFile) != 0) {
         return;
@@ -95,8 +96,9 @@ CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFi
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], 
             std::pair<std::string, int>(strVec[1], std::stoi(strVec[2]))));
     }
-
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
     this->_lexicalParser = new LexicalParser(keyRegExprMap);
+
     CfState* initState = new CfState();
     for (auto expr : this->_cfUtil->GetSiblingExprs(this->_cfUtil->GetInitSymbol())->_exprs) {
         initState->_exprPosSet.insert(CfExprPos(expr, 0));
@@ -116,5 +118,18 @@ CfEngine::~CfEngine() {
     delete this->_lexicalParser;
     for (auto state : this->_stateVec) {
         delete state;
+    }
+}
+
+CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
+    Buffer codeBuf(100);
+    IO<std::string> io(String2String, String2String);
+    io.ReadFile(codeBuf, codeFile);
+    // init: empty; final: a elememt with initSymbol as root
+    std::stack<StackInfo> infoStack;
+    while (codeBuf.CurrentCharAvailable()) {
+        int oldPos = codeBuf._curPos;
+        std::string str = this->_lexicalParser->GetNextWord(codeBuf);
+        std::string value = codeBuf.GetString(oldPos, codeBuf._curPos);
     }
 }

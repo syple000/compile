@@ -5,6 +5,7 @@
 #include "../io/format_conversion.h"
 #include "../cmp/cmp.h"
 #include "./lexical_parser.h"
+#include "../tree_node/tree_node.h"
 
 #ifndef CONTEXT_FREE_ENGINE 
 #define CONTEXT_FREE_ENGINE 1
@@ -34,10 +35,23 @@ struct CfState {
 };
 
 struct StateTrans {
-    std::set<int> _nextState;
+    int _nextState = -1;
     std::set<CfExpr*> _reducedExpr;
 
     StateTrans() = default;
+};
+
+struct StackInfo {
+    CfTreeNode* _cfNode;
+    int _state;
+
+    StackInfo(int state, const std::string& key, const std::string& value) : _state(state) {
+        this->_cfNode = new CfTreeNode(key, value);
+    }
+
+    StackInfo(int state, const std::string& key, const std::vector<CfTreeNode*>& cnodes) : _state(state) {
+        this->_cfNode = new CfTreeNode(key, cnodes);
+    }
 };
 
 class CfEngine {
@@ -63,6 +77,8 @@ public:
     virtual ~CfEngine();
 
     bool InitSuccess();
+
+    CfTreeNode* GenCfAnalysisTree(const std::string& codeFile);
 
 };
 

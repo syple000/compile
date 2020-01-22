@@ -233,37 +233,66 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         int priority = std::stoi(strVec[2].c_str());
         int isTerminator = std::stoi(strVec[3].c_str());
         int isNullable = std::stoi(strVec[4].c_str());
-        CfSymbol* symbol = new CfSymbol(strVec[0], strVec[1], this->_symbolMap.size(), isTerminator == 1, isNullable);
-        this->_symbolMap.insert(std::pair<std::string, CfSymbol*>(strVec[0], symbol));
-        this->_symbolVec.push_back(symbol);
+        CfSymbol* symbol = AddSymbol(strVec[0], strVec[1], this->_symbolVec.size(), isTerminator == 1, isNullable);
+        if (symbol->_isTerminator == 1 && symbol->_nullable == 1) {
+            // null terminal symbol is unique
+            if (this->_nullSymbol == nullptr) {
+                this->_nullSymbol = symbol;
+            } else {
+                return;
+            }
+        }
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], std::pair<std::string, int>(strVec[1], priority)));
     }
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("#", std::pair<std::string, int>("#", 0)));
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_START_SYMBOL_", std::pair<std::string, int>("_START_SYMBOL_", 1)));
+    CfSymbol* endSymbol = AddSymbol("_END_SYMBOL_", "_END_SYMBOL_", this->_symbolVec.size(), true, 0);
+    CfSymbol* startSymbol = AddSymbol("_START_SYMBOL_", "_START_SYMBOL_", this->_symbolVec.size(), false, 2);
     LexicalParser lexicalParser = LexicalParser(keyRegExprMap);
     
-    // 表达式第一个单词表示源产生式
+    // 表达式第一个单词
     std::string initkey = exprBuffer.GetNextStringSplitByBlank();
     auto initSymbolItr = this->_symbolMap.find(initkey);
     if (initSymbolItr == this->_symbolMap.end()) {
         return;
     } else {
-        this->_initSymbol = initSymbolItr->second;
+        CfExpr* expr = new CfExpr();
+        expr->_sourceSymbol = startSymbol;
+        expr->_production.push_back(initSymbolItr->second);
+        expr->_production.push_back(endSymbol);
+        SiblingExprs* exprs = new SiblingExprs();
+        exprs->_sourceSymbol = startSymbol;
+        exprs->_exprs.insert(expr);
+        this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
     }
+
+    this->_initSymbol = startSymbol;
 
     while (exprBuffer.CurrentCharAvailable()) {
         
         CfExpr* expr = new CfExpr();
+        bool isMainBody = true;
         while (exprBuffer.CurrentCharAvailable()) {
             std::string key = lexicalParser.GetNextWord(exprBuffer);
-            auto symbolItr = this->_symbolMap.find(key);
-            if (symbolItr == this->_symbolMap.end()) {
-                delete expr;
-                expr = nullptr;
-                break;
+            if (key == "#") {
+                isMainBody = false;
             } else {
-                if (expr->_sourceSymbol == nullptr) {
-                    expr->_sourceSymbol = symbolItr->second;
+                auto symbolItr = this->_symbolMap.find(key);
+                if (symbolItr == this->_symbolMap.end()) {
+                    delete expr;
+                    expr = nullptr;
+                    break;
                 } else {
-                    expr->_production.push_back(symbolItr->second);
+                    if (isMainBody) {
+                        if (expr->_sourceSymbol == nullptr) {
+                            expr->_sourceSymbol = symbolItr->second;
+                        } else {
+                            expr->_production.push_back(symbolItr->second);
+                        }
+                    } else {
+                        expr->_reductionFirst.insert(symbolItr->second);
+                    }
                 }
             }
             while (exprBuffer.GetCurrentChar() == ' ' && exprBuffer.CurrentCharAvailable()) {
@@ -324,4 +353,11 @@ CfSymbol* CfUtil::GetSymbolByIndex(int index) {
 
 int CfUtil::GetSymbolCount() {
     return this->_symbolVec.size();
+}
+
+CfSymbol* CfUtil::AddSymbol(const std::string& key, const std::string& keyRegExpr, int number, bool isTerminator, int nullable) {
+    CfSymbol* symbol = new CfSymbol(key, keyRegExpr, number, isTerminator, nullable);
+    this->_symbolVec.push_back(symbol);
+    this->_symbolMap.insert(std::pair<std::string, CfSymbol*>(key, symbol));
+    return symbol;
 }

@@ -125,6 +125,30 @@ struct Buffer {
         }
     }
 
+    std::string GetString(int start, int end) {
+        std::string str;
+        for (; start < end; start++) {
+            str += this->_buf[start];
+        }
+        int startIndex = 0;
+        int endIndex = str.size();
+        for (; startIndex < str.size(); startIndex++) {
+            if (str[startIndex] != ' ' || str[startIndex] != '\n') {
+                break;
+            }
+        }
+        for (; endIndex > 0; endIndex--) {
+            if (str[endIndex - 1] != ' ' || str[endIndex - 1] != '\n') {
+                break;
+            }
+        }
+        if (startIndex >= endIndex) {
+            return "";
+        } else {
+            return str.substr(startIndex, endIndex - startIndex);
+        }
+    }
+
     char GetCurrentChar() {
         return this->_buf[this->_curPos];
     }

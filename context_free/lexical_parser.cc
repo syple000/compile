@@ -57,6 +57,8 @@ void LexicalParser::GenStatesByCurState(LexicalParserState* state, int number) {
                 delete nextLexState;
                 this->_transTable[number][i] = itr->second;
             }
+        } else {
+            delete nextLexState;
         }
     }
 }

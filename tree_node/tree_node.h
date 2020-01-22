@@ -12,6 +12,24 @@ struct CfTreeNode {
     std::string _value;
     // generated code
     std::string _code;
+
+    CfTreeNode(const std::string& key, const std::string& value) : _key(key), _value(value) {}
+
+    CfTreeNode(const std::string& key, const std::vector<CfTreeNode*>& cnodes) : _cnodes(cnodes), _key(key) {
+        for (int i = 0; i < this->_cnodes.size(); i++) {
+            this->_cnodes[i]->_pnode = this;
+        }
+    }
+
+    static void DestroyTree(CfTreeNode* root) {
+        if (root == nullptr) {
+            return;
+        }
+        for (int i = 0; i < root->_cnodes.size(); i++) {
+            DestroyTree(root->_cnodes[i]);
+        }
+        delete root;
+    }
 };
 
 struct RegExprNode {

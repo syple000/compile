@@ -51,6 +51,8 @@ struct CfExpr {
     CfSymbol* _sourceSymbol = nullptr;
     std::vector<CfSymbol*> _production;
     int _nullable = 2;
+    // reduced first symbols
+    std::set<CfSymbol*> _reductionFirst;
 };
 
 struct SiblingExprs {
@@ -65,6 +67,7 @@ private:
     std::unordered_map<CfSymbol*, SiblingExprs*> _exprMap;
     std::vector<CfSymbol*> _symbolVec;
     CfSymbol* _initSymbol = nullptr;
+    CfSymbol* _nullSymbol = nullptr;
 
     void GenNullable();
 
@@ -75,6 +78,8 @@ private:
     bool GetFirstOfSymbolVec(std::vector<CfSymbol*>& symbols, int index, std::set<CfSymbol*>& firstSet);
 
     void GenNextOfSymbol(CfSymbol* symbol);
+
+    CfSymbol* AddSymbol(const std::string& key, const std::string& keyRegExpr, int number, bool isTerminator, int nullable);
 
 public:
 
