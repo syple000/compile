@@ -36,7 +36,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
     for (auto& exprPos : exprPosSet) {
         if (exprPos._index == exprPos._expr->_production.size()) {
             for (auto reducedSymbol : exprPos._expr->_sourceSymbol->_next) {
-                this->_stateTransTable[state->_number][reducedSymbol->_number]._reducedExpr.insert(exprPos._expr);
+                this->_StateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr.insert(exprPos._expr);
             }
             continue;
         }
@@ -55,7 +55,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
             delete itr.second;
             nextState = *stateItr;
         }
-        this->_stateTransTable[state->_number][itr.first]._nextState = nextState->_number;
+        this->_StateTransInfoTable[state->_number][itr.first]._nextState = nextState->_number;
     }
 }
 
@@ -63,12 +63,12 @@ CfState* CfEngine::AddState(CfState* state) {
     state->_number = this->_stateVec.size();
     this->_stateSet.insert(state);
     this->_stateVec.push_back(state);
-    this->_stateTransTable.push_back(std::vector<StateTrans>(this->_cfUtil->GetSymbolCount(), StateTrans()));
+    this->_StateTransInfoTable.push_back(std::vector<StateTransInfo>(this->_cfUtil->GetSymbolCount(), StateTransInfo()));
     return state;
 }
 
 bool CfEngine::InitSuccess() {
-    return this->_stateTransTable.size() != 0;
+    return this->_StateTransInfoTable.size() != 0;
 }
 
 // lexical file is explanation of lexical parsing
@@ -142,6 +142,8 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     std::stack<StackInfo> infoStack;
     infoStack.push(StackInfo(0, "_START_SYMBOL_", "_START_SYMBOL_"));
     CfSymbol* nullSymbol = this->_cfUtil->GetNullSymbol();
+    bool matched = true;
+
     while (codeBuf.CurrentCharAvailable()) {
         int oldPos = codeBuf._curPos;
         std::string key = this->_lexicalParser->GetNextWord(codeBuf);
@@ -155,34 +157,51 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
             continue;
         }
 
-        StateTrans info = this->_stateTransTable[infoStack.top()._state][symbol->_number];
-        if (info._nextState == -1 && info._reducedExpr.size() == 0) {
-            if (nullSymbol != nullptr) {
-                // skip null symbol
-                info = this->_stateTransTable[infoStack.top()._state][nullSymbol->_number];
-                if (info._nextState == -1 && info._reducedExpr.size() == 0) {
-                    HandleGrammarError(codeBuf);
-                    continue;
-                } else {
-                    if (info._nextState != -1) {
-                        infoStack.push(StackInfo(info._nextState, nullSymbol->_key, ""));
-                    } else {
-
-                    }
-                }
+        while (true) {
+            // 非空符号优先
+            if (StateTrans(infoStack, symbol, value)) {
+                break;
             } else {
-                HandleGrammarError(codeBuf);
-                continue;
-            }
-        }
-
-
-        if (info._nextState != -1) {
-            if (info._reducedExpr.size() == 0) {
-                infoStack.
+                if (!StateTrans(infoStack, this->_cfUtil->GetNullSymbol(), "")) {
+                    HandleGrammarError(codeBuf);
+                    matched = false;
+                    break;
+                }
             }
         }
     }
+
+    if (matched) {
+        CfSymbol* symbol = this->_cfUtil->GetCfSymbol("_END_SYMBOL_");
+        while (true) {
+            // 非空符号优先
+            if (StateTrans(infoStack, symbol, "_END_SYMBOL_")) {
+                break;
+            } else {
+                if (!StateTrans(infoStack, this->_cfUtil->GetNullSymbol(), "")) {
+                    HandleGrammarError(codeBuf);
+                    matched = false;
+                    break;
+                }
+            }
+        }
+    }
+
+    CfTreeNode* root = nullptr;
+    if (matched) {
+        CfTreeNode::DestroyTree(infoStack.top()._cfNode);
+        infoStack.pop();
+        root = infoStack.top()._cfNode;
+        infoStack.pop();
+    }
+
+    while (infoStack.size() != 0) {
+        CfTreeNode::DestroyTree(infoStack.top()._cfNode);
+        infoStack.pop();
+    }
+
+    return root;
+
 }
 
 void CfEngine::MoveOn(std::stack<StackInfo>& infoStack, int nextState, const std::string& key, const std::string& value) {
@@ -190,7 +209,14 @@ void CfEngine::MoveOn(std::stack<StackInfo>& infoStack, int nextState, const std
 }
 
 void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
-    
+    int symbolCount = cfExpr->_production.size();
+    std::vector<CfTreeNode*> cnodes(symbolCount, nullptr);
+    for (int i = 0; i < symbolCount; i++) {
+        cnodes[symbolCount - i - 1] = infoStack.top()._cfNode;
+        infoStack.pop();
+    }
+    int nextState = this->_StateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
+    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes));
 }
 
 CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
@@ -201,4 +227,37 @@ CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
         }
     }
     return expr;
+}
+
+CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbol) {
+    if (transInfo._reducedExpr.size() == 0) {
+        return nullptr;
+    } else {
+        for (auto expr : transInfo._reducedExpr) {
+            if (expr->_reductionFirst.find(symbol) != expr->_reductionFirst.end()) {
+                return expr;
+            }
+        }
+        if (transInfo._nextState == -1) {
+            return GetMaxReductionPriorityExpr(transInfo._reducedExpr);
+        } else {
+            return nullptr;
+        }
+    }
+}
+
+bool CfEngine::StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
+    StateTransInfo transInfo = this->StateTrans[infoStack.top()._state][symbol->_number];
+    CfExpr* expr = GetReduceExpr(transInfo, symbol);
+    if (expr == nullptr) {
+        if (transInfo._nextState != -1) {
+            MoveOn(infoStack, transInfo._nextState, symbol->_key, value);
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        Reduce(infoStack, expr);
+        return true;
+    }
 }

@@ -34,11 +34,11 @@ struct CfState {
     }
 };
 
-struct StateTrans {
+struct StateTransInfo {
     int _nextState = -1;
     std::set<CfExpr*> _reducedExpr;
 
-    StateTrans() = default;
+    StateTransInfo() = default;
 };
 
 struct StackInfo {
@@ -60,7 +60,7 @@ private:
     CfUtil* _cfUtil = nullptr;
     std::set<CfState*, PointerObjectCmp<CfState>> _stateSet;
     std::vector<CfState*> _stateVec;
-    std::vector<std::vector<StateTrans>> _stateTransTable;
+    std::vector<std::vector<StateTransInfo>> _StateTransInfoTable;
     LexicalParser* _lexicalParser = nullptr;
     
     std::set<CfExprPos> CalcCfExprPosSetClosure(const std::set<CfExprPos>& basicState);
@@ -74,6 +74,10 @@ private:
     void Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr);
 
     CfExpr* GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs);
+
+    CfExpr* GetReduceExpr(const StateTransInfo& info, CfSymbol* symbol);
+
+    bool StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
 
     // hook function
     bool HandleComment(const std::string& key, Buffer& buffer);
