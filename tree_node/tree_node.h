@@ -30,6 +30,16 @@ struct CfTreeNode {
         }
         delete root;
     }
+
+    static void TraverseTree(CfTreeNode* root, void(*func)(CfTreeNode*)) {
+        if (root == nullptr) {
+            return;
+        }
+        for (int i = 0; i < root->_cnodes.size(); i++) {
+            TraverseTree(root->_cnodes[i], func);
+            func(root->_cnodes[i]);
+        }
+    }
 };
 
 struct RegExprNode {

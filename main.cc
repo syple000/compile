@@ -11,6 +11,12 @@
 #include "./context_free/cf_engine.h"
 #include "./io/format_conversion.h"
 
+void TraverseCfTreeNode(CfTreeNode* node) {
+    if (node->_cnodes.size() == 0) {
+        std::cout << node->_value << " ";
+    }
+}
+
 int main() {
     // matrix io test
     std::vector<std::vector<int>> matrix(10, std::vector<int>(8));
@@ -82,7 +88,11 @@ int main() {
     CfEngine cfEngine("/home/syple/code/expr_lexical_file.txt", "/home/syple/code/expr_file.txt", "/home/syple/code/lexical_file.txt");
     assert(cfEngine.InitSuccess());
 
-    CfTreeNode::DestroyTree(cfEngine.GenCfAnalysisTree("/home/syple/code/code_file.txt"));
+    CfTreeNode* root = cfEngine.GenCfAnalysisTree("/home/syple/code/code_file.txt");
+    assert(root != nullptr);
+    CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
+
+    CfTreeNode::DestroyTree(root);
 
     std::cout << "test over!" << std::endl;
     return 0;
