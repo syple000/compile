@@ -121,15 +121,84 @@ CfEngine::~CfEngine() {
     }
 }
 
+// hook function
+// if there is a comment return true, else return false;
+bool CfEngine::HandleComment(const std::string& key, Buffer& buffer) {
+    return false;
+}
+
+void CfEngine::HandleLexicalError(Buffer& buffer) {
+    buffer._curPos = buffer._contentSize;
+}
+
+void CfEngine::HandleGrammarError(Buffer& buffer) {
+    buffer._curPos = buffer._contentSize;
+}
+
 CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     Buffer codeBuf(100);
     IO<std::string> io(String2String, String2String);
     io.ReadFile(codeBuf, codeFile);
-    // init: empty; final: a elememt with initSymbol as root
     std::stack<StackInfo> infoStack;
+    infoStack.push(StackInfo(0, "_START_SYMBOL_", "_START_SYMBOL_"));
+    CfSymbol* nullSymbol = this->_cfUtil->GetNullSymbol();
     while (codeBuf.CurrentCharAvailable()) {
         int oldPos = codeBuf._curPos;
-        std::string str = this->_lexicalParser->GetNextWord(codeBuf);
+        std::string key = this->_lexicalParser->GetNextWord(codeBuf);
         std::string value = codeBuf.GetString(oldPos, codeBuf._curPos);
+        if (HandleComment(key, codeBuf)) {
+            continue;
+        }
+        CfSymbol* symbol = this->_cfUtil->GetCfSymbol(key);
+        if (symbol == nullptr) {
+            HandleLexicalError(codeBuf);
+            continue;
+        }
+
+        StateTrans info = this->_stateTransTable[infoStack.top()._state][symbol->_number];
+        if (info._nextState == -1 && info._reducedExpr.size() == 0) {
+            if (nullSymbol != nullptr) {
+                // skip null symbol
+                info = this->_stateTransTable[infoStack.top()._state][nullSymbol->_number];
+                if (info._nextState == -1 && info._reducedExpr.size() == 0) {
+                    HandleGrammarError(codeBuf);
+                    continue;
+                } else {
+                    if (info._nextState != -1) {
+                        infoStack.push(StackInfo(info._nextState, nullSymbol->_key, ""));
+                    } else {
+
+                    }
+                }
+            } else {
+                HandleGrammarError(codeBuf);
+                continue;
+            }
+        }
+
+
+        if (info._nextState != -1) {
+            if (info._reducedExpr.size() == 0) {
+                infoStack.
+            }
+        }
     }
+}
+
+void CfEngine::MoveOn(std::stack<StackInfo>& infoStack, int nextState, const std::string& key, const std::string& value) {
+    infoStack.push(StackInfo(nextState, key, value));
+}
+
+void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
+    
+}
+
+CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
+    CfExpr* expr = *exprs.begin();
+    for (auto exprItr : exprs) {
+        if (expr->_reductionPriority < exprItr->_reductionPriority) {
+            expr = exprItr;
+        }
+    }
+    return expr;
 }

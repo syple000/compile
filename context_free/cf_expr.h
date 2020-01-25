@@ -53,6 +53,7 @@ struct CfExpr {
     int _nullable = 2;
     // reduced first symbols
     std::set<CfSymbol*> _reductionFirst;
+    int _reductionPriority = 0;
 };
 
 struct SiblingExprs {
@@ -100,6 +101,8 @@ public:
     SiblingExprs* GetSiblingExprs(CfSymbol* symbol);
 
     CfSymbol* GetInitSymbol();
+
+    CfSymbol* GetNullSymbol();
 
     CfSymbol* GetSymbolByIndex(int index);
 

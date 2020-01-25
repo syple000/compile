@@ -69,6 +69,19 @@ private:
 
     CfState* AddState(CfState* state);
 
+    void MoveOn(std::stack<StackInfo>& infoStack, int nextState, const std::string& key, const std::string& value);
+
+    void Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr);
+
+    CfExpr* GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs);
+
+    // hook function
+    bool HandleComment(const std::string& key, Buffer& buffer);
+
+    void HandleLexicalError(Buffer& buffer);
+
+    void HandleGrammarError(Buffer& buffer);
+
 public:
 
     // lexical file is explanation of lexical parsing

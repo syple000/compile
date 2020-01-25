@@ -275,24 +275,26 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         bool isMainBody = true;
         while (exprBuffer.CurrentCharAvailable()) {
             std::string key = lexicalParser.GetNextWord(exprBuffer);
-            if (key == "#") {
-                isMainBody = false;
-            } else {
-                auto symbolItr = this->_symbolMap.find(key);
-                if (symbolItr == this->_symbolMap.end()) {
+            auto symbolItr = this->_symbolMap.find(key);
+            if (symbolItr == this->_symbolMap.end()) {
+                if (key == "#") {
+                    isMainBody = false;
+                } else if (!isMainBody) {
+                    expr->_reductionPriority = std::stoi(key);
+                } else {
                     delete expr;
                     expr = nullptr;
                     break;
-                } else {
-                    if (isMainBody) {
-                        if (expr->_sourceSymbol == nullptr) {
-                            expr->_sourceSymbol = symbolItr->second;
-                        } else {
-                            expr->_production.push_back(symbolItr->second);
-                        }
+                }
+            } else {
+                if (isMainBody) {
+                    if (expr->_sourceSymbol == nullptr) {
+                        expr->_sourceSymbol = symbolItr->second;
                     } else {
-                        expr->_reductionFirst.insert(symbolItr->second);
+                        expr->_production.push_back(symbolItr->second);
                     }
+                } else {
+                    expr->_reductionFirst.insert(symbolItr->second);
                 }
             }
             while (exprBuffer.GetCurrentChar() == ' ' && exprBuffer.CurrentCharAvailable()) {
@@ -345,6 +347,10 @@ SiblingExprs* CfUtil::GetSiblingExprs(CfSymbol* symbol) {
 
 CfSymbol* CfUtil::GetInitSymbol() {
     return this->_initSymbol;
+}
+
+CfSymbol* CfUtil::GetNullSymbol() {
+    return this->_nullSymbol;
 }
 
 CfSymbol* CfUtil::GetSymbolByIndex(int index) {
