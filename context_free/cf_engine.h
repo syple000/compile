@@ -77,7 +77,9 @@ private:
 
     CfExpr* GetReduceExpr(const StateTransInfo& info, CfSymbol* symbol);
 
-    bool StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
+    int StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
+
+    bool ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
 
     // hook function
     bool HandleComment(const std::string& key, Buffer& buffer);

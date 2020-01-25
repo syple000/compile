@@ -244,6 +244,7 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         }
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], std::pair<std::string, int>(strVec[1], priority)));
     }
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("", std::pair<std::string, int>("(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("#", std::pair<std::string, int>("#", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_START_SYMBOL_", std::pair<std::string, int>("_START_SYMBOL_", 1)));
@@ -274,13 +275,14 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         CfExpr* expr = new CfExpr();
         bool isMainBody = true;
         while (exprBuffer.CurrentCharAvailable()) {
+            int oldPos = exprBuffer._curPos;
             std::string key = lexicalParser.GetNextWord(exprBuffer);
             auto symbolItr = this->_symbolMap.find(key);
             if (symbolItr == this->_symbolMap.end()) {
                 if (key == "#") {
                     isMainBody = false;
                 } else if (!isMainBody) {
-                    expr->_reductionPriority = std::stoi(key);
+                    expr->_reductionPriority = std::stoi(exprBuffer.GetString(oldPos, exprBuffer._curPos));
                 } else {
                     delete expr;
                     expr = nullptr;

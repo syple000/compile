@@ -48,7 +48,7 @@ int main() {
     std::string repat1 = "((a)(b|cd*|e))f*";
     std::string repat2 = "e(a|bb|c)**d";
     std::string repat3 = "a*";
-    std::string repat4 = "";
+    std::string repat4 = "(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*";
     RegExprEngine regExprEngine1(repat1, true);
     RegExprEngine regExprEngine2(repat2, true);
     RegExprEngine regExprEngine3(repat3, true);
@@ -56,7 +56,7 @@ int main() {
     assert(regExprEngine1.InitSuccess());
     assert(regExprEngine2.InitSuccess());
     assert(regExprEngine3.InitSuccess());
-    assert(!regExprEngine4.InitSuccess());
+    assert(regExprEngine4.InitSuccess());
     
     assert(regExprEngine1.IsMatched("ab"));
     assert(regExprEngine1.IsMatched("ae"));
@@ -74,11 +74,15 @@ int main() {
 
     assert(!regExprEngine3.IsMatched("b"));
 
+    assert(regExprEngine4.IsMatched("123"));
+    assert(regExprEngine4.IsMatched("0111"));
+
 
     // context free test
     CfEngine cfEngine("/home/syple/code/expr_lexical_file.txt", "/home/syple/code/expr_file.txt", "/home/syple/code/lexical_file.txt");
     assert(cfEngine.InitSuccess());
 
+    CfTreeNode::DestroyTree(cfEngine.GenCfAnalysisTree("/home/syple/code/code_file.txt"));
 
     std::cout << "test over!" << std::endl;
     return 0;

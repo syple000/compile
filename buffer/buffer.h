@@ -133,12 +133,12 @@ struct Buffer {
         int startIndex = 0;
         int endIndex = str.size();
         for (; startIndex < str.size(); startIndex++) {
-            if (str[startIndex] != ' ' || str[startIndex] != '\n') {
+            if (str[startIndex] != ' ' && str[startIndex] != '\n') {
                 break;
             }
         }
         for (; endIndex > 0; endIndex--) {
-            if (str[endIndex - 1] != ' ' || str[endIndex - 1] != '\n') {
+            if (str[endIndex - 1] != ' ' && str[endIndex - 1] != '\n') {
                 break;
             }
         }

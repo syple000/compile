@@ -94,7 +94,7 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
         curState = this->_transTable[curState][(int)ch];
         if (curState == -1) {
             break;
-        } else if (this->_stateVec[curState]->_priority > priority) {
+        } else if (this->_stateVec[curState]->_priority >= priority) {
             priority = this->_stateVec[curState]->_priority;
             word = this->_stateVec[curState]->_matchingValue;
             qualifiedPos = buffer._curPos;

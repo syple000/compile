@@ -138,7 +138,9 @@ void CfEngine::HandleGrammarError(Buffer& buffer) {
 CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     Buffer codeBuf(100);
     IO<std::string> io(String2String, String2String);
-    io.ReadFile(codeBuf, codeFile);
+    if (io.ReadFile(codeBuf, codeFile) != 0) {
+        return nullptr;
+    }
     std::stack<StackInfo> infoStack;
     infoStack.push(StackInfo(0, "_START_SYMBOL_", "_START_SYMBOL_"));
     CfSymbol* nullSymbol = this->_cfUtil->GetNullSymbol();
@@ -157,34 +159,16 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
             continue;
         }
 
-        while (true) {
-            // 非空符号优先
-            if (StateTrans(infoStack, symbol, value)) {
-                break;
-            } else {
-                if (!StateTrans(infoStack, this->_cfUtil->GetNullSymbol(), "")) {
-                    HandleGrammarError(codeBuf);
-                    matched = false;
-                    break;
-                }
-            }
+        matched = ParsingSymbol(infoStack, symbol, value);
+        if (!matched) {
+            HandleGrammarError(codeBuf);
+            continue;
         }
     }
 
     if (matched) {
         CfSymbol* symbol = this->_cfUtil->GetCfSymbol("_END_SYMBOL_");
-        while (true) {
-            // 非空符号优先
-            if (StateTrans(infoStack, symbol, "_END_SYMBOL_")) {
-                break;
-            } else {
-                if (!StateTrans(infoStack, this->_cfUtil->GetNullSymbol(), "")) {
-                    HandleGrammarError(codeBuf);
-                    matched = false;
-                    break;
-                }
-            }
-        }
+        matched = ParsingSymbol(infoStack, symbol, symbol->_key);
     }
 
     CfTreeNode* root = nullptr;
@@ -246,18 +230,33 @@ CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbo
     }
 }
 
-bool CfEngine::StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
-    StateTransInfo transInfo = this->StateTrans[infoStack.top()._state][symbol->_number];
+int CfEngine::StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
+    StateTransInfo transInfo = this->_StateTransInfoTable[infoStack.top()._state][symbol->_number];
     CfExpr* expr = GetReduceExpr(transInfo, symbol);
     if (expr == nullptr) {
         if (transInfo._nextState != -1) {
             MoveOn(infoStack, transInfo._nextState, symbol->_key, value);
-            return true;
+            return 0;
         } else {
-            return false;
+            return -1;
         }
     } else {
         Reduce(infoStack, expr);
-        return true;
+        return 1;
+    }
+}
+
+bool CfEngine::ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
+    while (true) {
+        // 非空符号优先
+        int stateTransRes = StateTrans(infoStack, symbol, value);
+        if (stateTransRes == -1) {
+            stateTransRes = StateTrans(infoStack, this->_cfUtil->GetNullSymbol(), "");
+            if (stateTransRes == -1) {
+                return false;
+            }
+        } else if (stateTransRes == 0) {
+            return true;
+        }
     }
 }
