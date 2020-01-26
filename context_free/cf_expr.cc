@@ -136,6 +136,9 @@ int CfUtil::IsExprNullable(CfExpr* expr, std::set<CfSymbol*>* dependings) {
             nullable = 2;
         }
     }
+    if (nullable != 2) {
+        expr->_nullable = nullable;
+    }
     return nullable;
 }
 
