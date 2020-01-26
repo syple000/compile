@@ -1,5 +1,6 @@
 #include "./cf_expr.h"
 #include "./lexical_parser.h"
+#include <cassert>
 
 bool SymbolSubject::NullableInfoObserverUpdate(CfSymbol* const &subjectSymbol, SiblingExprs* &observerExprs) {
     if (observerExprs->_sourceSymbol->_nullable != 2) {
@@ -59,11 +60,9 @@ void CfUtil::GenNullable() {
     for (auto itr : this->_exprMap) {
         CfUtil::IsSymbolNullable(itr.first, itr.second);
     }
-    // circular dependence exists. the nullable is 0 by constradiction
+
     for (auto itr : this->_exprMap) {
-        if (itr.first->_nullable == 2) {
-            itr.first->_nullable = 0;
-        }
+        assert(itr.first->_nullable != 2);
     }
 }
 

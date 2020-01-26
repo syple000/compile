@@ -77,6 +77,49 @@ bool RegExprEngine::IsTerminalState(int state) {
 
 // hook function
 std::string RegExprEngine::StandardizeExpr(const std::string& expr) {
-    return expr;
+    std::stack<std::string> strStack;
+    strStack.push("");
+    int index = 0;
+    while (index < expr.size() && strStack.size() > 0) {
+        if (expr[index] == '[') {
+            strStack.push("");
+        } else if (expr[index] == ']') {
+            std::string str = strStack.top();
+            strStack.pop();
+            strStack.top() += str;
+        } else if (expr[index] == '\\') {
+            index++;
+            // [括号转义需要还原
+            if (expr[index] == '[' || expr[index] == ']') {
+                strStack.top() += expr[index];
+            } else {
+                strStack.top() += '\\';
+                strStack.top() += expr[index];
+            }
+        } else if (expr[index] == '-') {
+            // []外的-表示原义, []内-两侧不允许转义
+            if (strStack.size() == 1) {
+                strStack.top() += expr[index];    
+            } else {
+                unsigned char endCh = expr[++index];
+                unsigned char startCh = strStack.top()[strStack.top().size() - 1];
+                strStack.top()[strStack.top().size() - 1] = '(';
+                for (; startCh < endCh; startCh++) {
+                    strStack.top() += startCh;
+                    strStack.top() += '|';
+                }
+                strStack.top() += startCh;
+                strStack.top() += ')';
+            }
+        } else {
+            strStack.top() += expr[index];
+        }
+        index++;
+    }
+    if (strStack.size() == 1) {
+        return strStack.top();
+    } else {
+        return "";
+    }
 }
 

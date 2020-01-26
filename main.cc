@@ -54,7 +54,7 @@ int main() {
     std::string repat1 = "((a)(b|cd*|e))f*";
     std::string repat2 = "e(a|bb|c)**d";
     std::string repat3 = "a*";
-    std::string repat4 = "(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*";
+    std::string repat4 = "[0-9][0-9]*";
     RegExprEngine regExprEngine1(repat1, true);
     RegExprEngine regExprEngine2(repat2, true);
     RegExprEngine regExprEngine3(repat3, true);
