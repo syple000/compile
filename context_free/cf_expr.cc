@@ -61,9 +61,14 @@ void CfUtil::GenNullable() {
         CfUtil::IsSymbolNullable(itr.first, itr.second);
     }
 
-    for (auto itr : this->_exprMap) {
-        assert(itr.first->_nullable != 2);
+#ifdef DEBUG_CODE
+    for (auto symbol : this->_symbolVec) {
+        if (symbol->_nullable == 2) {
+            std::cout << "symbol: " << symbol->_key << " nullable info error!" << std::endl;
+        }  
     }
+#endif
+
 }
 
 void CfUtil::GenFirst() {

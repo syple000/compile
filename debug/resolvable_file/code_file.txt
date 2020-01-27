@@ -1,5 +1,5 @@
 public class Test {
-    private static final int CONST = 12;
+    static final public int CONST = 12;
 
     public void main() {
         TestClass testClass(22);

@@ -10,11 +10,13 @@ struct Buffer {
     int _curPos;
     int _contentSize;
     int _bufSize;
+    int _curLine;
 
     Buffer(int bufSize) {
         _buf = new char[bufSize];
         _curPos = 0;
         _contentSize = 0;
+        _curLine = 0;
         _bufSize = bufSize;
     }
 
@@ -158,6 +160,9 @@ struct Buffer {
     }
 
     void MoveOnByChar() {
+        if (this->_buf[this->_curPos] == '\n') {
+            this->_curLine++;
+        }
         this->_curPos++;
     }
 

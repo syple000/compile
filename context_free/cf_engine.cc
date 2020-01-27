@@ -156,12 +156,22 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
         CfSymbol* symbol = this->_cfUtil->GetCfSymbol(key);
         if (symbol == nullptr) {
             HandleLexicalError(codeBuf);
+
+#ifdef DEBUG_CODE
+            std::cout << "lexical error! line: " << codeBuf._curLine << std::endl;
+#endif
+
             continue;
         }
 
         matched = ParsingSymbol(infoStack, symbol, value);
         if (!matched) {
             HandleGrammarError(codeBuf);
+
+#ifdef DEBUG_CODE
+            std::cout << "grammar error! line: " << codeBuf._curLine << std::endl;
+#endif
+
             continue;
         }
     }

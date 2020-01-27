@@ -53,6 +53,8 @@ public:
 
     // 空格/换行是默认分割符
     std::string GetNextWord(Buffer& buffer);
+
+    bool InitSuccess();
 };
 
 #endif

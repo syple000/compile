@@ -1,84 +1,71 @@
 # key, key_reg_expr, ptiority(数字大，优先级高), is_terminator(1表示是), is_nullable(0,1,2 含义与之前定义一致)
 
 # 限定符
-public public 0 1 0
-private private 0 1 0
-protected protected 0 1 0
-static static 0 1 0
-final final 0 1 0
+public public 1 1 0
+private private 1 1 0
+protected protected 1 1 0
+static static 1 1 0
+final final 1 1 0
 
 #类
-class class 0 1 0
+class class 1 1 0
 
 #基本类型
-int int 0 1 0
-float float 0 1 0
-double double 0 1 0
-boolean boolean 0 1 0
-char char 0 1 0
-void void 0 1 0
+int int 1 1 0
+float float 1 1 0
+double double 1 1 0
+boolean boolean 1 1 0
+char char 1 1 0
+void void 1 1 0
 
 #自定义类型
-CLASS_NAME CLASS_NAME 0 1 0
-FUNC_NAME FUNC_NAME 0 1 0
-ID ID 0 1 0
-NUM NUM 0 1 0
+ID ID 1 1 0
+NUM NUM 1 1 0
 
 #指代
-PROG PROG 0 0 2
-CLASS CLASS 0 0 2
-BLOCK BLOCK 0 0 2
-FUNC FUNC 0 0 2
-PARAMS PARAMS 0 0 2
-PARAM PARAM 0 0 2
-ARGS ARGS 0 0 2
-ARG ARG 0 0 2
-DECL DECL 0 0 2
-ASSIGN ASSIGN 0 0 2
-EXPR EXPR 0 0 2
-BOP BOP 0 0 2
-RMOP RMOP 0 0 2
-LMOP LMOP 0 0 2
-EXPRS EXPRS 0 0 2
+PROG PROG 1 0 2
+CLASS CLASS 1 0 2
+BLOCK BLOCK 1 0 2
+FUNC FUNC 1 0 2
+PARAMS PARAMS 1 0 2
+PARAM PARAM 1 0 2
+ARGS ARGS 1 0 2
+ARG ARG 1 0 2
+DECL DECL 1 0 2
+EXPR EXPR 1 0 2
+BOP BOP 1 0 2
+RMOP RMOP 1 0 2
+LMOP LMOP 1 0 2
+EXPRS EXPRS 1 0 2
 
-QUAL_1 QUAL_1 0 0 2
-QUAL_2 QUAL_2 0 0 2
-QUAL_3 QUAL_3 0 0 2
+QUAL_1 QUAL_1 1 0 2
+QUAL_2 QUAL_2 1 0 2
+QUAL_3 QUAL_3 1 0 2
 
-TYPE TYPE 0 0 2
+TYPE TYPE 1 0 2
 
 #空
-NULL NULL 0 1 1
+NULL NULL 1 1 1
 
 #基本操作
-= = 0 1 0
-== == 0 1 0
-+ + 0 1 0
-- - 0 1 0
-++ ++ 0 1 0
--- -- 0 1 0
-× \× 0 1 0
-/ / 0 1 0
-return return 0 1 0
-new new 0 1 0
+= = 1 1 0
+== == 1 1 0
++ + 1 1 0
+- - 1 1 0
+++ ++ 1 1 0
+-- -- 1 1 0
+× \× 1 1 0
+/ / 1 1 0
+return return 1 1 0
+new new 1 1 0
 
 #基本运算规律
-{ { 0 1 0
-} } 0 1 0
-[ [ 0 1 0
-] ] 0 1 0
-( \( 0 1 0
-) \) 0 1 0
-; ; 0 1 0
-. . 0 1 0
-
-
-
-
-
-
-
-
-
-
+{ { 1 1 0
+} } 1 1 0
+[ \[ 1 1 0
+] \] 1 1 0
+( \( 1 1 0
+) \) 1 1 0
+; ; 1 1 0
+\. \. 1 1 0
 

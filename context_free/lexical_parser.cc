@@ -4,6 +4,15 @@ LexicalParser::LexicalParser(const std::map<std::string, std::pair<std::string, 
     LexicalParserState* parserState = new LexicalParserState();
     for (auto itr : keyRegExpMap) {
         RegExprEngine* regExprEngine = new RegExprEngine(itr.second.first, true);
+
+#ifdef DEBUG_CODE
+        if (!regExprEngine->InitSuccess()) {
+            delete regExprEngine;
+            std::cout << "generate reg expr engine error! " << itr.second.first << std::endl;
+            return;
+        }
+#endif
+
         if (regExprEngine->IsTerminalState(0) && itr.second.second > parserState->_priority) {
             parserState->_matchingValue = itr.first;
             parserState->_priority = itr.second.second;
@@ -75,7 +84,6 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
     std::string word;
     int qualifiedPos = -1;
     int curState = 0;
-    int priority = this->_stateVec[0]->_priority;
     while (buffer.CurrentCharAvailable()) {
         char ch = buffer.GetCurrentChar();
         if (ch == ' ' || ch == '\n') {
@@ -94,13 +102,9 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
         curState = this->_transTable[curState][(int)ch];
         if (curState == -1) {
             break;
-        } else if (this->_stateVec[curState]->_priority >= priority) {
-            priority = this->_stateVec[curState]->_priority;
+        } else {
             word = this->_stateVec[curState]->_matchingValue;
             qualifiedPos = buffer._curPos;
-            if (priority == this->_maxPriority) {
-                break;
-            }
         }
         buffer.MoveOnByChar();
     }
@@ -108,4 +112,8 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
         buffer._curPos = qualifiedPos + 1;
     }
     return word;
+}
+
+bool LexicalParser::InitSuccess() {
+    return this->_transTable.size() != 0;
 }
