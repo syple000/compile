@@ -4,6 +4,7 @@
 #include <vector>
 #include <cassert>
 #include <set>
+#include <unistd.h>
 
 #include "./regular_expr/regexpr_engine.h"
 #include "./io/io.h"
@@ -18,6 +19,11 @@ void TraverseCfTreeNode(CfTreeNode* node) {
 }
 
 int main() {
+
+    char pwd[256];
+    getcwd(pwd, sizeof(pwd));
+    std::cout << "pwd: " << pwd << std::endl;
+
     // matrix io test
     std::vector<std::vector<int>> matrix(10, std::vector<int>(8));
     std::vector<int> vec(10);
@@ -32,8 +38,8 @@ int main() {
     io.AppendVecToBuf(buf, vec);
     io.AppendMatrixToBuf(buf, matrix);
     io.AppendVecToBuf(buf, vec);
-    assert(0 == io.WriteFile(buf, "/home/syple/code/test.txt", std::ios::out));
-    io.ReadFile(buf, "/home/syple/code/test.txt");
+    assert(0 == io.WriteFile(buf, "./debug/resolvable_file/test.txt", std::ios::out));
+    io.ReadFile(buf, "./debug/resolvable_file/test.txt");
     std::vector<int> rvec = io.GetVecFromBuf(buf);
     std::vector<std::vector<int>> rmatrix = io.GetMatrixFromBuf(buf);
     assert(rvec.size() == 10);
@@ -52,7 +58,7 @@ int main() {
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";
     std::string repat1 = "((a)(b|cd*|e))f*";
-    std::string repat2 = "e(a|bb|c)**d";
+    std::string repat2 = "e(a|bb|c)**d\\[\\]";
     std::string repat3 = "a*";
     std::string repat4 = "[0-9][0-9]*";
     RegExprEngine regExprEngine1(repat1, true);
@@ -70,10 +76,10 @@ int main() {
     assert(regExprEngine1.IsMatched("acdddff"));
     assert(regExprEngine1.IsMatched("abfffff"));
 
-    assert(regExprEngine2.IsMatched("ed"));
-    assert(regExprEngine2.IsMatched("eaaad"));
-    assert(regExprEngine2.IsMatched("ebbbbd"));
-    assert(regExprEngine2.IsMatched("ecd"));
+    assert(regExprEngine2.IsMatched("ed[]"));
+    assert(regExprEngine2.IsMatched("eaaad[]"));
+    assert(regExprEngine2.IsMatched("ebbbbd[]"));
+    assert(regExprEngine2.IsMatched("ecd[]"));
 
     assert(regExprEngine3.IsMatched(""));
     assert(regExprEngine3.IsMatched("aa"));
@@ -85,10 +91,10 @@ int main() {
 
 
     // context free test
-    CfEngine cfEngine("/home/syple/code/expr_lexical_file.txt", "/home/syple/code/expr_file.txt", "/home/syple/code/lexical_file.txt");
+    CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
     assert(cfEngine.InitSuccess());
 
-    CfTreeNode* root = cfEngine.GenCfAnalysisTree("/home/syple/code/code_file.txt");
+    CfTreeNode* root = cfEngine.GenCfAnalysisTree("./debug/resolvable_file/code_file.txt");
     assert(root != nullptr);
     CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
 

@@ -1,0 +1,48 @@
+# 限定符
+public public 0
+private private 0
+protected protected 0
+static static 0
+final final 0
+
+#类
+class class 0
+
+#基本类型
+int int 0
+float float 0
+double double 0
+boolean boolean 0
+char char 0
+void void 0
+
+#自定义类型
+CLASS_NAME ([a-z]|[A-Z]|_)([0-9]|[a-z]|[A-Z]|_)* 0
+FUNC_NAME ([a-z]|[A-Z]|_)([0-9]|[a-z]|[A-Z]|_)* 0
+ID ([a-z]|[A-Z]|_)([0-9]|[a-z]|[A-Z]|_)* 0
+NUM [0-9]* 0
+
+#空
+NULL NULL 0
+
+#基本操作
+= = 0
+== == 0
++ + 0
+- - 0
+++ ++ 0
+-- -- 0
+× \× 0
+/ / 0
+return return 0 1 0
+new new 0 1 0
+
+#基本运算规律
+{ { 0
+} } 0
+[ [ 0
+] ] 0
+( \( 0
+) \) 0
+; ; 0
+. . 0
