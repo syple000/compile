@@ -220,6 +220,20 @@ CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
             expr = exprItr;
         }
     }
+
+#ifdef DEBUG_CODE
+    if (exprs.size() > 1) {
+        for (auto exprItr : exprs) {
+            std::cout << exprItr->_sourceSymbol->_key << ": ";
+            for (auto symbol : exprItr->_production) {
+                std::cout << symbol->_key << " ";
+            }
+            std::cout << ";   ";
+        }
+        std::cout << std::endl;
+    }
+#endif
+
     return expr;
 }
 
