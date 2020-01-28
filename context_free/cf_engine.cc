@@ -36,7 +36,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
     for (auto& exprPos : exprPosSet) {
         if (exprPos._index == exprPos._expr->_production.size()) {
             for (auto reducedSymbol : exprPos._expr->_sourceSymbol->_next) {
-                this->_StateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr.insert(exprPos._expr);
+                this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr.insert(exprPos._expr);
             }
             continue;
         }
@@ -55,7 +55,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
             delete itr.second;
             nextState = *stateItr;
         }
-        this->_StateTransInfoTable[state->_number][itr.first]._nextState = nextState->_number;
+        this->_stateTransInfoTable[state->_number][itr.first]._nextState = nextState->_number;
     }
 }
 
@@ -63,12 +63,12 @@ CfState* CfEngine::AddState(CfState* state) {
     state->_number = this->_stateVec.size();
     this->_stateSet.insert(state);
     this->_stateVec.push_back(state);
-    this->_StateTransInfoTable.push_back(std::vector<StateTransInfo>(this->_cfUtil->GetSymbolCount(), StateTransInfo()));
+    this->_stateTransInfoTable.push_back(std::vector<StateTransInfo>(this->_cfUtil->GetSymbolCount(), StateTransInfo()));
     return state;
 }
 
 bool CfEngine::InitSuccess() {
-    return this->_StateTransInfoTable.size() != 0;
+    return this->_stateTransInfoTable.size() != 0;
 }
 
 // lexical file is explanation of lexical parsing
@@ -209,7 +209,7 @@ void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
         cnodes[symbolCount - i - 1] = infoStack.top()._cfNode;
         infoStack.pop();
     }
-    int nextState = this->_StateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
+    int nextState = this->_stateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
     infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes));
 }
 
@@ -255,7 +255,7 @@ CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbo
 }
 
 int CfEngine::StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
-    StateTransInfo transInfo = this->_StateTransInfoTable[infoStack.top()._state][symbol->_number];
+    StateTransInfo transInfo = this->_stateTransInfoTable[infoStack.top()._state][symbol->_number];
     CfExpr* expr = GetReduceExpr(transInfo, symbol);
     if (expr == nullptr) {
         if (transInfo._nextState != -1) {

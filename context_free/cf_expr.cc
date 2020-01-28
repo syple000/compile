@@ -251,7 +251,7 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         }
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], std::pair<std::string, int>(strVec[1], priority)));
     }
-    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("", std::pair<std::string, int>("(0|1|2|3|4|5|6|7|8|9)(0|1|2|3|4|5|6|7|8|9)*", 0)));
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("", std::pair<std::string, int>("[0-9][0-9]*", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("#", std::pair<std::string, int>("#", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_START_SYMBOL_", std::pair<std::string, int>("_START_SYMBOL_", 1)));
@@ -269,6 +269,7 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         expr->_sourceSymbol = startSymbol;
         expr->_production.push_back(initSymbolItr->second);
         expr->_production.push_back(endSymbol);
+        expr->_number = -1;
         SiblingExprs* exprs = new SiblingExprs();
         exprs->_sourceSymbol = startSymbol;
         exprs->_exprs.insert(expr);
@@ -288,12 +289,17 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
             if (symbolItr == this->_symbolMap.end()) {
                 if (key == "#") {
                     isMainBody = false;
-                } else if (!isMainBody) {
-                    expr->_reductionPriority = std::stoi(exprBuffer.GetString(oldPos, exprBuffer._curPos));
                 } else {
-                    delete expr;
-                    expr = nullptr;
-                    break;
+                    std::string value = exprBuffer.GetString(oldPos, exprBuffer._curPos);
+                    if (value == "") {
+                        delete expr;
+                        expr = nullptr;
+                        break;
+                    } else if (!isMainBody) {
+                        expr->_reductionPriority = std::stoi(value);
+                    } else {
+                        expr->_number = std::stoi(value);
+                    }
                 }
             } else {
                 if (isMainBody) {
@@ -314,9 +320,8 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
             }
         }
         if (expr == nullptr) {
-            // 跳过该行
             exprBuffer.GetNextLine();
-            continue;
+            break;
         }
         auto exprItr = this->_exprMap.find(expr->_sourceSymbol);
         if (exprItr != this->_exprMap.end()) {

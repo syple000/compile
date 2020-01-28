@@ -60,7 +60,7 @@ private:
     CfUtil* _cfUtil = nullptr;
     std::set<CfState*, PointerObjectCmp<CfState>> _stateSet;
     std::vector<CfState*> _stateVec;
-    std::vector<std::vector<StateTransInfo>> _StateTransInfoTable;
+    std::vector<std::vector<StateTransInfo>> _stateTransInfoTable;
     LexicalParser* _lexicalParser = nullptr;
     
     std::set<CfExprPos> CalcCfExprPosSetClosure(const std::set<CfExprPos>& basicState);

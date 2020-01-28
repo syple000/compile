@@ -77,6 +77,7 @@ bool RegExprEngine::IsTerminalState(int state) {
 
 // hook function
 std::string RegExprEngine::StandardizeExpr(const std::string& expr) {
+    // support [a-z] operator
     std::stack<std::string> strStack;
     strStack.push("");
     int index = 0;

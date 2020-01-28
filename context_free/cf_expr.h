@@ -54,6 +54,8 @@ struct CfExpr {
     // reduced first symbols
     std::set<CfSymbol*> _reductionFirst;
     int _reductionPriority = 0;
+    // expression identifier
+    int _number;
 };
 
 struct SiblingExprs {

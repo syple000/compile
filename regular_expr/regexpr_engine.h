@@ -21,6 +21,8 @@ private:
     void CreateTableByExpr(const std::string& expr);
     void AddState(std::map<std::set<RegExprNode*>*, int, SetCmp<RegExprNode*>> &statesMap, 
         std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState);
+    // hook function
+    std::string StandardizeExpr(const std::string& expr);
 
 public:
 
@@ -29,7 +31,6 @@ public:
     int TransferState(int, unsigned char) const;  // 引擎在匹配当前字符后的状态
     bool IsTerminalState(int);
     bool InitSuccess();
-    std::string StandardizeExpr(const std::string& expr);
     virtual ~RegExprEngine() = default;
 };
 
