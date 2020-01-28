@@ -149,6 +149,9 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     while (codeBuf.CurrentCharAvailable()) {
         int oldPos = codeBuf._curPos;
         std::string key = this->_lexicalParser->GetNextWord(codeBuf);
+        if (key == "" && !codeBuf.CurrentCharAvailable()) {
+            break;
+        }
         std::string value = codeBuf.GetString(oldPos, codeBuf._curPos);
         if (HandleComment(key, codeBuf)) {
             continue;
@@ -178,7 +181,7 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
 
     if (matched) {
         CfSymbol* symbol = this->_cfUtil->GetCfSymbol("_END_SYMBOL_");
-        matched = ParsingSymbol(infoStack, symbol, symbol->_key);
+        matched = ParsingSymbol(infoStack, symbol, "_END_SYMBOL_");
     }
 
     CfTreeNode* root = nullptr;
@@ -210,7 +213,8 @@ void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
         infoStack.pop();
     }
     int nextState = this->_stateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
-    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes));
+    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, HandleChilNodes(cnodes, cfExpr)));
+    GenCode(infoStack.top()._cfNode);
 }
 
 CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
@@ -283,4 +287,14 @@ bool CfEngine::ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol,
             return true;
         }
     }
+}
+
+// hook function: handle reduced child nodes 
+std::vector<CfTreeNode*> CfEngine::HandleChilNodes(std::vector<CfTreeNode*>& cnodes, CfExpr* expr) {
+    return cnodes;
+}
+
+// hook function: generate code
+std::string CfEngine::GenCode(CfTreeNode* root) {
+    return "";
 }

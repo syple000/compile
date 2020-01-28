@@ -81,12 +81,18 @@ private:
 
     bool ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
 
-    // hook function
+    // error hook function
     bool HandleComment(const std::string& key, Buffer& buffer);
 
     void HandleLexicalError(Buffer& buffer);
 
     void HandleGrammarError(Buffer& buffer);
+
+    // hook function: handle reduced child nodes 
+    std::vector<CfTreeNode*> HandleChilNodes(std::vector<CfTreeNode*>& cnodes, CfExpr* expr);
+
+    // hook function: generate code
+    std::string GenCode(CfTreeNode* root);
 
 public:
 

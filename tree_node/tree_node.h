@@ -15,7 +15,8 @@ struct CfTreeNode {
 
     CfTreeNode(const std::string& key, const std::string& value) : _key(key), _value(value) {}
 
-    CfTreeNode(const std::string& key, const std::vector<CfTreeNode*>& cnodes) : _cnodes(cnodes), _key(key) {
+    CfTreeNode(const std::string& key, const std::vector<CfTreeNode*>& cnodes) 
+        : _cnodes(cnodes), _key(key) {
         for (int i = 0; i < this->_cnodes.size(); i++) {
             this->_cnodes[i]->_pnode = this;
         }
