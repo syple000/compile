@@ -90,7 +90,7 @@ CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFi
     std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
     while (lexicalBuf.CurrentCharAvailable()) {
         std::vector<std::string> strVec = lexicalBuf.GetStringsOfNextLine();
-        if (strVec.size() == 0 || strVec[0][0] == '#' || this->_cfUtil->GetCfSymbol(strVec[0]) == nullptr) {
+        if (strVec.size() == 0) {
             continue;
         }
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], 
@@ -122,11 +122,6 @@ CfEngine::~CfEngine() {
 }
 
 // hook function
-// if there is a comment return true, else return false;
-bool CfEngine::HandleComment(const std::string& key, Buffer& buffer) {
-    return false;
-}
-
 void CfEngine::HandleLexicalError(Buffer& buffer) {
     buffer._curPos = buffer._contentSize;
 }
@@ -149,19 +144,25 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     while (codeBuf.CurrentCharAvailable()) {
         int oldPos = codeBuf._curPos;
         std::string key = this->_lexicalParser->GetNextWord(codeBuf);
-        if (key == "" && !codeBuf.CurrentCharAvailable()) {
-            break;
-        }
-        std::string value = codeBuf.GetString(oldPos, codeBuf._curPos);
-        if (HandleComment(key, codeBuf)) {
-            continue;
-        }
-        CfSymbol* symbol = this->_cfUtil->GetCfSymbol(key);
-        if (symbol == nullptr) {
+        if (key == "") {
+            if (!codeBuf.CurrentCharAvailable()) {
+                break;
+            }
+
             HandleLexicalError(codeBuf);
 
 #ifdef DEBUG_CODE
             std::cout << "lexical error! line: " << codeBuf._curLine << std::endl;
+#endif
+
+            continue;
+        }
+        std::string value = codeBuf.GetString(oldPos, codeBuf._curPos);
+        CfSymbol* symbol = this->_cfUtil->GetCfSymbol(key);
+        if (symbol == nullptr) {
+
+#ifdef DEBUG_CODE
+            std::cout << "key: " << key << " no correspond value found! line: " << codeBuf._curLine << std::endl;
 #endif
 
             continue;

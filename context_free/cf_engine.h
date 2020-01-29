@@ -82,8 +82,6 @@ private:
     bool ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
 
     // error hook function
-    bool HandleComment(const std::string& key, Buffer& buffer);
-
     void HandleLexicalError(Buffer& buffer);
 
     void HandleGrammarError(Buffer& buffer);

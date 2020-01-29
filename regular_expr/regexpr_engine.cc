@@ -77,7 +77,7 @@ bool RegExprEngine::IsTerminalState(int state) {
 
 // hook function
 std::string RegExprEngine::StandardizeExpr(const std::string& expr) {
-    // support [a-z] operator
+    // 支持[]操作;支持\s表示空格
     std::stack<std::string> strStack;
     strStack.push("");
     int index = 0;
@@ -90,9 +90,12 @@ std::string RegExprEngine::StandardizeExpr(const std::string& expr) {
             strStack.top() += str;
         } else if (expr[index] == '\\') {
             index++;
-            // [括号转义需要还原
+            // []括号转义需要还原
             if (expr[index] == '[' || expr[index] == ']') {
                 strStack.top() += expr[index];
+            } else if (expr[index] == 's') {
+                // \s需要转义成 ' '
+                strStack.top() += ' ';
             } else {
                 strStack.top() += '\\';
                 strStack.top() += expr[index];

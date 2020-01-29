@@ -234,7 +234,7 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
 
     while (lexicalBuffer.CurrentCharAvailable()) {
         strVec = lexicalBuffer.GetStringsOfNextLine();
-        if (strVec.size() == 0 || strVec[0][0] == '#' || this->_symbolMap.find(strVec[0]) != this->_symbolMap.end()) {
+        if (strVec.size() == 0 || this->_symbolMap.find(strVec[0]) != this->_symbolMap.end()) {
             continue;
         }
         int priority = std::stoi(strVec[2].c_str());

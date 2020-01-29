@@ -1,0 +1,20 @@
+项目简介：
+正则解析器： regular_expr文件夹下，dfa实现：原生支持连接，或，星号等操作;进一步功能拓展可在StandardizeExpr实现;
+使用举例： (a|bc)* 可以匹配如： aaa, abcbcaa等
+拓展后支持： [] \s等
+
+词法分析器：基于正则解析，context_free下lexical_parser。接受unordered_map作为参数：key: 解析key, value: pair<string, int>(解析用正则， 优先级)
+    优先级决定同时匹配两种规则时，以优先级高的为标准;优先最长匹配
+    应用：表达式词法解析（key, key reg expr, priority, is terminator, nullable，后两者为词法单元组成）
+         代码词法解析（key, key reg expr, priority） 当key不存在对应表达式词法时，会被跳过，可以用于注释
+
+上下文解析器： context_free文件下cf_xpr 与 cf_engine
+    cf_expr中读取表达式词法规则与表达式：
+        表达式词法：（key, key reg expr, priority, is terminator（0：no, 1:yes）, nullable(0: no, 1:yes, 2:unkwon)，前三者生成词法解析器，后两者为词法单元组成基本信息）
+        表达式： 文件起始：非终结字符解析开始位置
+            后续文件：非终结字符 产生式
+    cf_engine读取代码文件：
+        生成分析树，目前词法与文法错误的处理为直接打印错误信息并结束
+
+代码分析： TODO
+

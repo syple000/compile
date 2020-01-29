@@ -1,14 +1,12 @@
-# 限定符
+
 public public 1
 private private 1
 protected protected 1
 static static 1
 final final 1
 
-#类
 class class 1
 
-#基本类型
 int int 1
 float float 1
 double double 1
@@ -16,13 +14,9 @@ boolean boolean 1
 char char 1
 void void 1
 
-#自定义类型
 ID ([a-z]|[A-Z]|_)([0-9]|[a-z]|[A-Z]|_)* 0
 NUM [0-9]* 0
 
-#空
-
-#基本操作
 = = 1
 == == 1
 + + 1
@@ -40,7 +34,6 @@ else else 1
 return return 1
 new new 1
 
-#基本运算规律
 { { 1
 } } 1
 [ \[ 1
@@ -50,3 +43,6 @@ new new 1
 ; ; 1
 . \. 1
 , , 1
+
+/**/ /\*([0-9]|[a-z]|[A-Z]|\s)*\*/ 1
+// //([0-9]|[a-z]|[A-Z]|\s)* 1

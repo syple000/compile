@@ -1,16 +1,11 @@
-# key, key_reg_expr, ptiority(数字大，优先级高), is_terminator(1表示是), is_nullable(0,1,2 含义与之前定义一致)
-
-# 限定符
 public public 1 1 0
 private private 1 1 0
 protected protected 1 1 0
 static static 1 1 0
 final final 1 1 0
 
-#类
 class class 1 1 0
 
-#基本类型
 int int 1 1 0
 float float 1 1 0
 double double 1 1 0
@@ -18,11 +13,9 @@ boolean boolean 1 1 0
 char char 1 1 0
 void void 1 1 0
 
-#自定义类型
 ID ID 1 1 0
 NUM NUM 1 1 0
 
-#指代
 PROG PROG 1 0 2
 CLASS CLASS 1 0 2
 BLOCK BLOCK 1 0 2
@@ -44,10 +37,8 @@ QUAL_3 QUAL_3 1 0 2
 
 TYPE TYPE 1 0 2
 
-#空
 NULL NULL 1 1 1
 
-#基本操作
 = = 1 1 0
 == == 1 1 0
 + + 1 1 0
@@ -65,7 +56,6 @@ else else 1 1 0
 return return 1 1 0
 new new 1 1 0
 
-#基本运算规律
 { { 1 1 0
 } } 1 1 0
 [ \[ 1 1 0

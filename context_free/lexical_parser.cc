@@ -79,7 +79,6 @@ bool LexicalParser::InsertLexicalParserState(LexicalParserState* state) {
     return true;
 }
 
-// 空格/换行是默认分割符
 std::string LexicalParser::GetNextWord(Buffer& buffer) {
     std::string word;
     int qualifiedPos = -1;
@@ -96,9 +95,6 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
 
     while (buffer.CurrentCharAvailable()) {
         unsigned char ch = buffer.GetCurrentChar();
-        if (ch == ' ' || ch == '\n') {
-            break;
-        }
         curState = this->_transTable[curState][(int)ch];
         if (curState == -1) {
             break;
