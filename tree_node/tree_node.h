@@ -1,6 +1,13 @@
 #include <vector>
 #include <string>
 #include <set>
+#include <unordered_map>
+#include <iostream>
+
+#include "../code_generation/variable.h"
+#include "../code_generation/variable_type.h"
+
+#define DEBUG_CODE 1
 
 #ifndef TREE_NODE
 #define TREE_NODE 1
@@ -75,6 +82,109 @@ struct RegExprNode {
         }
         DestroyTree(root->_leftChildNode);
         DestroyTree(root->_rightChildNode);
+        delete root;
+    }
+};
+
+struct ScopeNode {
+    ScopeNode* _pnode;
+    std::unordered_map<std::string, ScopeNode*> _cnodes;
+
+    std::string _scopeName;
+    std::unordered_map<std::string, VariableType*> _variableTypes;
+    // 同一类型下不可以重复命名
+    std::vector<std::unordered_map<std::string, Variable*>> _declVars;
+    // scope的类型
+    int _type;
+    // 子scope可见当前scope中变量的 类型集合
+    std::set<int> _childScopeVisibleTypes;
+    int _anonymousCount = 0;
+
+    ScopeNode(ScopeNode* pnode, const std::string& scopeName, int categoryCount, int type, const std::set<int>& childScopeVisibleTypes) 
+        : _pnode(pnode), _scopeName(scopeName), _declVars(categoryCount), _type(type), _childScopeVisibleTypes(childScopeVisibleTypes) {
+        this->_pnode->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, this));
+    }
+
+    bool AddDeclVariable(Variable* var, int category) {
+        if (this->_declVars[category].find(var->_name) != this->_declVars[category].end()) {
+            return false;
+        }
+        this->_declVars[category].insert(std::pair<std::string, Variable*>(var->_name, var));
+        return true;
+    }
+
+    bool AddVariableType(VariableType* varType) {
+        if (this->_variableTypes.find(varType->_name) != this->_variableTypes.end()) {
+            return false;
+        }
+        this->_variableTypes.insert(std::pair<std::string, VariableType*>(varType->_name, varType));
+        return true;
+    }
+
+    ScopeNode* GetChildScopeNode(const std::string& scopeName) {
+        auto itr = this->_cnodes.find(scopeName);
+        if (itr == this->_cnodes.end()) {
+            return nullptr;
+        } else {
+            return itr->second;
+        }
+    }
+
+    VariableType* GetVariableType(const std::string& typeName) {
+        auto itr = this->_variableTypes.find(typeName);
+        if (itr == this->_variableTypes.end()) {
+            return nullptr;
+        } else {
+            return itr->second;
+        }
+    }
+
+    Variable* GetVariable(const std::string& varName, int varCategory) {
+        auto itr = this->_declVars[varCategory].find(varName);
+        if (itr == this->_declVars[varCategory].end()) {
+            return nullptr;
+        } else {
+            return itr->second;
+        }
+    }
+
+    bool IsScopeNameRepeated(const std::string& scopeName) {
+        if (scopeName == "" || this->_cnodes.find(scopeName) == this->_cnodes.end()) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    ScopeNode* AddChildScope(const std::string& scopeName, int type, const std::set<int>& childScopeVisibleTypes) {
+        if (IsScopeNameRepeated(scopeName)) {
+            return nullptr;
+        }
+        std::string scopeNameToAdd = scopeName;
+        if (scopeName == "") {
+            scopeNameToAdd += std::to_string(this->_anonymousCount++);
+        }
+        return new ScopeNode(this, scopeNameToAdd, this->_declVars.size(), type, childScopeVisibleTypes);
+    }
+
+    virtual ~ScopeNode() {
+        for (auto vars : this->_declVars) {
+            for (auto itr : vars) {
+                delete itr.second;
+            }
+        }
+        for (auto varType : this->_variableTypes) {
+            delete varType.second;
+        }
+    }
+
+    static void DestroyTree(ScopeNode* root) {
+        if (root == nullptr) {
+            return;
+        }
+        for (auto node : root->_cnodes) {
+            DestroyTree(node.second);
+        }
         delete root;
     }
 };

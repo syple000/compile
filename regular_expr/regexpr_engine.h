@@ -7,8 +7,6 @@
 #include "../cmp/cmp.h"
 #include "./regexpr_analysis_tree.h"
 
-#define DEBUG_CODE 1
-
 #ifndef _REGULAR_EXPR_ENGINE
 #define _REGULAR_EXPR_ENGINE 1
 
