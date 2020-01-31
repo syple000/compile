@@ -297,3 +297,7 @@ bool CfEngine::ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol,
 std::string CfEngine::HandleCfTreeNode(CfTreeNode* root) {
     return "";
 }
+
+CfExpr* CfEngine::GetExpr(int exprNumber) {
+    return this->_cfUtil->GetExpr(exprNumber);
+}

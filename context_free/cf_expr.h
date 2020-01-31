@@ -113,6 +113,8 @@ public:
 
     int GetSymbolCount();
 
+    CfExpr* GetExpr(int exprNumber);
+
 };
 
 #endif

@@ -103,6 +103,8 @@ public:
 
     CfTreeNode* GenCfAnalysisTree(const std::string& codeFile);
 
+    CfExpr* GetExpr(int exprNumber);
+
 };
 
 

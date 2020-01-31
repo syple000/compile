@@ -393,3 +393,12 @@ CfSymbol* CfUtil::AddSymbol(const std::string& key, const std::string& keyRegExp
     this->_symbolMap.insert(std::pair<std::string, CfSymbol*>(key, symbol));
     return symbol;
 }
+
+CfExpr* CfUtil::GetExpr(int exprNumber) {
+    auto itr = this->_exprs.find(exprNumber);
+    if (itr == this->_exprs.end()) {
+        return nullptr;
+    } else {
+        return itr->second;
+    }
+}

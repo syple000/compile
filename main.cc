@@ -94,6 +94,7 @@ int main() {
     // context free test
     CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
     assert(cfEngine.InitSuccess());
+    CfExpr* expr = cfEngine.GetExpr(20);
 
     CfTreeNode* root = cfEngine.GenCfAnalysisTree("./debug/resolvable_file/code_file.txt");
     assert(root != nullptr);
