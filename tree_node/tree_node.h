@@ -17,16 +17,34 @@ struct CfTreeNode {
     std::vector<CfTreeNode*> _cnodes;
     std::string _key;
     std::string _value;
-    // generated code
+    int _reducedExprNumber;
+    // 如果节点被上层代码生成依赖，则将代码暂存于该变量
     std::string _code;
 
-    CfTreeNode(const std::string& key, const std::string& value) : _key(key), _value(value) {}
+    CfTreeNode(const std::string& key, const std::string& value) : _key(key), _value(value), _reducedExprNumber(-1) {}
 
-    CfTreeNode(const std::string& key, const std::vector<CfTreeNode*>& cnodes) 
-        : _cnodes(cnodes), _key(key) {
+    // reduced expr number用于确定代码生成分析时确定归约的表达式与归约方法
+    CfTreeNode(const std::string& key, const std::vector<CfTreeNode*>& cnodes, int reducedExprNumber) 
+        : _cnodes(cnodes), _key(key), _reducedExprNumber(reducedExprNumber) {
         for (int i = 0; i < this->_cnodes.size(); i++) {
             this->_cnodes[i]->_pnode = this;
         }
+    }
+
+    int GetPosInChildNodes() {
+        if (this->_pnode == nullptr) {
+            return -1;
+        }
+        for (int i = 0; i < this->_pnode->_cnodes.size(); i++) {
+            if (this->_pnode->_cnodes[i] == this) {
+                return i;
+            }
+        }
+
+#ifdef DEBUG_CODE
+        std::cout << "cf tree node: " << this->_key << " pos error!" << std::endl;
+#endif
+
     }
 
     static void DestroyTree(CfTreeNode* root) {
@@ -45,8 +63,8 @@ struct CfTreeNode {
         }
         for (int i = 0; i < root->_cnodes.size(); i++) {
             TraverseTree(root->_cnodes[i], func);
-            func(root->_cnodes[i]);
         }
+        func(root);
     }
 };
 
@@ -102,11 +120,13 @@ struct ScopeNode {
 
     ScopeNode(ScopeNode* pnode, const std::string& scopeName, int categoryCount, int type, const std::set<int>& childScopeVisibleTypes) 
         : _pnode(pnode), _scopeName(scopeName), _declVars(categoryCount), _type(type), _childScopeVisibleTypes(childScopeVisibleTypes) {
-        auto scopeItr = this->_pnode->_cnodes.find(scopeName);
-        if (scopeItr == this->_pnode->_cnodes.end()) {
-            this->_pnode->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, this));
-        } else {
-            scopeItr->second = this;
+        if (this->_pnode != nullptr) {
+            auto scopeItr = this->_pnode->_cnodes.find(scopeName);
+            if (scopeItr == this->_pnode->_cnodes.end()) {
+                this->_pnode->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, this));
+            } else {
+                scopeItr->second = this;
+            }
         }
     }
 

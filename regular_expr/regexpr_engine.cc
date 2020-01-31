@@ -44,12 +44,8 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
     RegExprNode::DestroyTree(root);
 }
 
-RegExprEngine::RegExprEngine(const std::string& input, bool isExpr) {
-    if (isExpr) {
-        RegExprEngine::CreateTableByExpr(input);
-    } else {
-        // read from file
-    }
+RegExprEngine::RegExprEngine(const std::string& input) {
+    RegExprEngine::CreateTableByExpr(input);
 }
 
 bool RegExprEngine::IsMatched(const std::string& str) const {

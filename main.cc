@@ -62,10 +62,10 @@ int main() {
     std::string repat2 = "e(a|bb|c)**d\\[\\]";
     std::string repat3 = "a*";
     std::string repat4 = "[0-9][0-9]*";
-    RegExprEngine regExprEngine1(repat1, true);
-    RegExprEngine regExprEngine2(repat2, true);
-    RegExprEngine regExprEngine3(repat3, true);
-    RegExprEngine regExprEngine4(repat4, true);
+    RegExprEngine regExprEngine1(repat1);
+    RegExprEngine regExprEngine2(repat2);
+    RegExprEngine regExprEngine3(repat3);
+    RegExprEngine regExprEngine4(repat4);
     assert(regExprEngine1.InitSuccess());
     assert(regExprEngine2.InitSuccess());
     assert(regExprEngine3.InitSuccess());

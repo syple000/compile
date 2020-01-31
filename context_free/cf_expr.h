@@ -55,7 +55,7 @@ struct CfExpr {
     std::set<CfSymbol*> _reductionFirst;
     int _reductionPriority = 0;
     // expression identifier
-    int _number;
+    int _number = -1;
 };
 
 struct SiblingExprs {

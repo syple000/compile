@@ -1,19 +1,9 @@
 
 #include "./variable_scope.h"
 
-Scope::Scope(const std::unordered_map<std::string, int>& keyTypeMap, int varCategory, 
-    int rootType, const std::set<int>& rootVisibleTypes) : _keyTypeMap(keyTypeMap) {
+Scope::Scope(int varCategory, int rootType, const std::set<int>& rootVisibleTypes) {
     this->_scopeTreeRoot = new ScopeNode(nullptr, "", varCategory, rootType, rootVisibleTypes);
     this->_curScope = this->_scopeTreeRoot;
-}
-
-int Scope::GetKeyType(const std::string& key) {
-    auto keyTypeItr = this->_keyTypeMap.find(key);
-    if (keyTypeItr == this->_keyTypeMap.end()) {
-        return -1;
-    } else {
-        return keyTypeItr->second;
-    }
 }
 
 std::string& Scope::GetScopeName(ScopeNode* Scope) {

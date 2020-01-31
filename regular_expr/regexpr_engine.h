@@ -24,7 +24,7 @@ private:
 
 public:
 
-    RegExprEngine(const std::string& input, bool isExpr);
+    RegExprEngine(const std::string& input);
     bool IsMatched(const std::string&) const;  // 当前正则引擎是否匹配该字符串
     int TransferState(int, unsigned char) const;  // 引擎在匹配当前字符后的状态
     bool IsTerminalState(int);

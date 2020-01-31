@@ -10,19 +10,16 @@
 #define CODE_GENERATION_VARIABLE_SCOPE
 
 /*  变量类型，函数名，普通变量名等数据作用域
+
 */
 class Scope {
 private:
-
-    std::unordered_map<std::string, int> _keyTypeMap;
     ScopeNode* _scopeTreeRoot, *_curScope;
 
     ScopeNode* GetScope(ScopeNode* pscope, const std::string& scopeName);
     Variable* GetVarInScope(const std::string& varName, int varCategory, ScopeNode* scope);
 public:
-    Scope(const std::unordered_map<std::string, int>& keyTypeMap, int varCategory, int rootType, const std::set<int>& rootVisibleTypes);
-    
-    int GetKeyType(const std::string& key);
+    Scope(int varCategory, int rootType, const std::set<int>& rootVisibleTypes);
     
     std::string& GetScopeName(ScopeNode* Scope);
     std::string& GetCurrentScopeName();

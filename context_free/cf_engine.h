@@ -49,11 +49,14 @@ struct StackInfo {
         this->_cfNode = new CfTreeNode(key, value);
     }
 
-    StackInfo(int state, const std::string& key, const std::vector<CfTreeNode*>& cnodes) : _state(state) {
-        this->_cfNode = new CfTreeNode(key, cnodes);
+    StackInfo(int state, const std::string& key, const std::vector<CfTreeNode*>& cnodes, int reducedExprNumber) : _state(state) {
+        this->_cfNode = new CfTreeNode(key, cnodes, reducedExprNumber);
     }
 };
 
+/*
+    效率提升： 生成转换表由读取文件代替
+*/
 class CfEngine {
 private:
     // 四个文件： 1. 表达式词法分析文件 2. 表达式分析文件 3. 词法分析文件(仅包含对1中非终结字符的正则表达式说明) 4. 分析文件
@@ -86,7 +89,7 @@ private:
 
     void HandleGrammarError(Buffer& buffer);
 
-    // hook function: 分析中处理context free tree node,参数后续可根据需要更改(当前生成分析树后分析)
+    // hook function: 分析中处理context free tree node, 可生成局部代码等
     std::string HandleCfTreeNode(CfTreeNode* root);
 
 public:

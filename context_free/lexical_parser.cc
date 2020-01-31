@@ -3,7 +3,7 @@
 LexicalParser::LexicalParser(const std::map<std::string, std::pair<std::string, int>>& keyRegExpMap) {
     LexicalParserState* parserState = new LexicalParserState();
     for (auto itr : keyRegExpMap) {
-        RegExprEngine* regExprEngine = new RegExprEngine(itr.second.first, true);
+        RegExprEngine* regExprEngine = new RegExprEngine(itr.second.first);
 
 #ifdef DEBUG_CODE
         if (!regExprEngine->InitSuccess()) {
