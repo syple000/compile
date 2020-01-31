@@ -4,8 +4,8 @@
 #include <unordered_map>
 #include <iostream>
 
-#include "../code_generation/variable.h"
-#include "../code_generation/variable_type.h"
+#include "../code_analysis/variable.h"
+#include "../code_analysis/variable_type.h"
 
 #define DEBUG_CODE 1
 
