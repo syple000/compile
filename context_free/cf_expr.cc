@@ -270,6 +270,7 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         expr->_production.push_back(initSymbolItr->second);
         expr->_production.push_back(endSymbol);
         expr->_number = -1;
+        this->_exprs.insert(std::pair<int, CfExpr*>(expr->_number, expr));
         SiblingExprs* exprs = new SiblingExprs();
         exprs->_sourceSymbol = startSymbol;
         exprs->_exprs.insert(expr);
@@ -323,9 +324,18 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
             exprBuffer.GetNextLine();
             break;
         }
-        auto exprItr = this->_exprMap.find(expr->_sourceSymbol);
-        if (exprItr != this->_exprMap.end()) {
-            exprItr->second->_exprs.insert(expr);
+
+#ifdef DEBUG_CODE
+        auto exprsItr = this->_exprs.find(expr->_number);
+        if (exprsItr != this->_exprs.end()) {
+            std::cout << "expr number: " << expr->_number << " repeated!" << std::endl;
+        }
+#endif
+
+        this->_exprs.insert(std::pair<int, CfExpr*>(expr->_number, expr));
+        auto exprMapItr = this->_exprMap.find(expr->_sourceSymbol);
+        if (exprMapItr != this->_exprMap.end()) {
+            exprMapItr->second->_exprs.insert(expr);
         } else {
             SiblingExprs* exprs = new SiblingExprs();
             exprs->_sourceSymbol = expr->_sourceSymbol;
@@ -333,7 +343,9 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
             this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
         }
     }
+}
 
+void CfUtil::GenInfo() {
     GenNullable();
 
     GenFirst();

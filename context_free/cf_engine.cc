@@ -78,10 +78,13 @@ CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFi
     if (io.ReadFile(exprLexicalBuf, exprLexicalFile) != 0 || io.ReadFile(exprBuf, exprFile) != 0) {
         return;
     }
+    
     this->_cfUtil = new CfUtil(exprLexicalBuf, exprBuf);
     if (this->_cfUtil->GetInitSymbol() == nullptr) {
         return;
     }
+    this->_cfUtil->GenInfo();
+
     // reduce first nonterminal symbol
     // key, key reg expr, priority
     if (io.ReadFile(lexicalBuf, lexicalFile) != 0) {

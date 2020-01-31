@@ -69,6 +69,7 @@ private:
     std::unordered_map<std::string, CfSymbol*> _symbolMap;
     std::unordered_map<CfSymbol*, SiblingExprs*> _exprMap;
     std::vector<CfSymbol*> _symbolVec;
+    std::unordered_map<int, CfExpr*> _exprs;
     CfSymbol* _initSymbol = nullptr;
     CfSymbol* _nullSymbol = nullptr;
 
@@ -97,6 +98,8 @@ public:
     static bool FirstOfSymbol(CfSymbol* symbol, SiblingExprs* exprs);
 
     static bool FirstOfExpr(CfExpr* expr, std::set<CfSymbol*>* dependings);
+
+    void GenInfo();
 
     CfSymbol* GetCfSymbol(const std::string& symbolKey);
 
