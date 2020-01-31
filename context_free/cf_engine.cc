@@ -214,8 +214,8 @@ void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
         infoStack.pop();
     }
     int nextState = this->_stateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
-    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, HandleChilNodes(cnodes, cfExpr)));
-    GenCode(infoStack.top()._cfNode);
+    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes));
+    HandleCfTreeNode(infoStack.top()._cfNode);
 }
 
 CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
@@ -290,12 +290,7 @@ bool CfEngine::ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol,
     }
 }
 
-// hook function: handle reduced child nodes 
-std::vector<CfTreeNode*> CfEngine::HandleChilNodes(std::vector<CfTreeNode*>& cnodes, CfExpr* expr) {
-    return cnodes;
-}
-
-// hook function: generate code
-std::string CfEngine::GenCode(CfTreeNode* root) {
+// hook function: 根据需要生成代码，对存储的优化
+std::string CfEngine::HandleCfTreeNode(CfTreeNode* root) {
     return "";
 }

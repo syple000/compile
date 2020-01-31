@@ -102,7 +102,12 @@ struct ScopeNode {
 
     ScopeNode(ScopeNode* pnode, const std::string& scopeName, int categoryCount, int type, const std::set<int>& childScopeVisibleTypes) 
         : _pnode(pnode), _scopeName(scopeName), _declVars(categoryCount), _type(type), _childScopeVisibleTypes(childScopeVisibleTypes) {
-        this->_pnode->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, this));
+        auto scopeItr = this->_pnode->_cnodes.find(scopeName);
+        if (scopeItr == this->_pnode->_cnodes.end()) {
+            this->_pnode->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, this));
+        } else {
+            scopeItr->second = this;
+        }
     }
 
     bool AddDeclVariable(Variable* var, int category) {
@@ -148,23 +153,38 @@ struct ScopeNode {
         }
     }
 
-    bool IsScopeNameRepeated(const std::string& scopeName) {
-        if (scopeName == "" || this->_cnodes.find(scopeName) == this->_cnodes.end()) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
     ScopeNode* AddChildScope(const std::string& scopeName, int type, const std::set<int>& childScopeVisibleTypes) {
-        if (IsScopeNameRepeated(scopeName)) {
-            return nullptr;
-        }
         std::string scopeNameToAdd = scopeName;
         if (scopeName == "") {
             scopeNameToAdd += std::to_string(this->_anonymousCount++);
         }
-        return new ScopeNode(this, scopeNameToAdd, this->_declVars.size(), type, childScopeVisibleTypes);
+        auto itr = this->_cnodes.find(scopeName);
+        if (itr == this->_cnodes.end() || itr->second == nullptr) {
+            return new ScopeNode(this, scopeNameToAdd, this->_declVars.size(), type, childScopeVisibleTypes);   
+        }
+        return nullptr;
+    }
+
+    // scope name 不为""
+    bool AddPlaceholderChildScope(const std::string& scopeName) {
+        auto itr = this->_cnodes.find(scopeName);
+        if (itr == this->_cnodes.end()) {
+            this->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, nullptr));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    ScopeNode* RemoveChildScope(const std::string& scopeName) {
+        auto itr = this->_cnodes.find(scopeName);
+        if (itr == this->_cnodes.end()) {
+            return nullptr;
+        }
+        ScopeNode* removeScope = itr->second;
+        this->_cnodes.erase(itr);
+        removeScope->_pnode = nullptr;
+        return removeScope;
     }
 
     virtual ~ScopeNode() {

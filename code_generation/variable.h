@@ -8,10 +8,8 @@
 struct Variable {
     VariableType* _type;
     std::string _name;
-    union {
-        int _reference;
-        std::string _immediate;
-    };
+    int _reference;
+    std::string _immediate;
     // openness 0: all, 1: adjent nodes, 2: owner node   
     // life cycle 0: 当前作用域内; 1: 全局 
     int _openness;
@@ -25,6 +23,7 @@ struct Variable {
     Variable(VariableType* type, const std::string& name, const std::string& immediate, int openness, int lifeCycle) 
         : _type(type), _name(name), _openness(openness), _lifeCycle(lifeCycle) {
         this->_immediate = immediate;
+        this->_reference = -1;
     }
 
     virtual ~Variable() {};

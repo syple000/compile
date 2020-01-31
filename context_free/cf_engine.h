@@ -86,11 +86,8 @@ private:
 
     void HandleGrammarError(Buffer& buffer);
 
-    // hook function: handle reduced child nodes 
-    std::vector<CfTreeNode*> HandleChilNodes(std::vector<CfTreeNode*>& cnodes, CfExpr* expr);
-
-    // hook function: generate code
-    std::string GenCode(CfTreeNode* root);
+    // hook function: 分析中处理context free tree node,参数后续可根据需要更改(当前生成分析树后分析)
+    std::string HandleCfTreeNode(CfTreeNode* root);
 
 public:
 
