@@ -1,6 +1,6 @@
 PROG
 
-0 PROG CLASS PROG
+0 PROG CLASS PROG " reduction_first:public,private; reduction_action:AddScope(); reduction_priority: 1; "
 1 PROG NULL
 
 2 CLASS QUAL_1 class ID {BLOCK};

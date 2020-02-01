@@ -1,7 +1,5 @@
-#include <string>
-#include <map>
+
 #include "./regexpr_engine.h"
-#include "./regexpr_analysis_tree.h"
 
 void RegExprEngine::AddState(std::map<std::set<RegExprNode*>*, int, SetCmp<RegExprNode*>> &statesMap, 
     std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState) {
@@ -71,7 +69,7 @@ bool RegExprEngine::IsTerminalState(int state) {
     return this->_terminalStates[state];
 }
 
-// hook function
+// hook function： 当前cf expr 解析需要功能： []支持; \s解析支持
 std::string RegExprEngine::StandardizeExpr(const std::string& expr) {
     // 支持[]操作;支持\s表示空格
     std::stack<std::string> strStack;

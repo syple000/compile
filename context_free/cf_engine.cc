@@ -71,6 +71,20 @@ bool CfEngine::InitSuccess() {
     return this->_stateTransInfoTable.size() != 0;
 }
 
+void CfEngine::ReadCodeLexical(Buffer& codeLexicalBuf) {
+    std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
+    while (codeLexicalBuf.CurrentCharAvailable()) {
+        std::vector<std::string> strVec = codeLexicalBuf.GetStringsOfNextLine();
+        if (strVec.size() == 0) {
+            continue;
+        }
+        keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], 
+            std::pair<std::string, int>(strVec[1], std::stoi(strVec[2]))));
+    }
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
+    this->_lexicalParser = new LexicalParser(keyRegExprMap);
+}
+
 // lexical file is explanation of lexical parsing
 CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFile, const std::string& lexicalFile) {
     IO<std::string> io(String2String, String2String);
@@ -90,17 +104,8 @@ CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFi
     if (io.ReadFile(lexicalBuf, lexicalFile) != 0) {
         return;
     }
-    std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
-    while (lexicalBuf.CurrentCharAvailable()) {
-        std::vector<std::string> strVec = lexicalBuf.GetStringsOfNextLine();
-        if (strVec.size() == 0) {
-            continue;
-        }
-        keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], 
-            std::pair<std::string, int>(strVec[1], std::stoi(strVec[2]))));
-    }
-    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
-    this->_lexicalParser = new LexicalParser(keyRegExprMap);
+
+    ReadCodeLexical(lexicalBuf);
 
     CfState* initState = new CfState();
     for (auto expr : this->_cfUtil->GetSiblingExprs(this->_cfUtil->GetInitSymbol())->_exprs) {
@@ -299,5 +304,5 @@ std::string CfEngine::HandleCfTreeNode(CfTreeNode* root) {
 }
 
 CfExpr* CfEngine::GetExpr(int exprNumber) {
-    return this->_cfUtil->GetExpr(exprNumber);
+    return this->_cfUtil->GetExprByExprNumber(exprNumber);
 }

@@ -13,6 +13,7 @@
 #include "./context_free/cf_expr.h"
 #include "./context_free/cf_engine.h"
 #include "./io/format_conversion.h"
+#include "./string_util/string_util.h"
 
 void TraverseCfTreeNode(CfTreeNode* node) {
     if (node->_cnodes.size() == 0) {
@@ -90,11 +91,15 @@ int main() {
     assert(regExprEngine4.IsMatched("123"));
     assert(regExprEngine4.IsMatched("0111"));
 
+    std::vector<std::string> strs = StringUtil::split(";;123456;1333114353;1", ";*1");
+    for (auto str : strs) {
+        std::cout << str << " ";
+    }
+    std::cout << std::endl;
 
     // context free test
     CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
     assert(cfEngine.InitSuccess());
-    CfExpr* expr = cfEngine.GetExpr(20);
 
     CfTreeNode* root = cfEngine.GenCfAnalysisTree("./debug/resolvable_file/code_file.txt");
     assert(root != nullptr);

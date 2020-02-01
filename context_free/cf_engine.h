@@ -84,6 +84,8 @@ private:
 
     bool ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
 
+    void ReadCodeLexical(Buffer& codeLexicalBuf);
+
     // error hook function
     void HandleLexicalError(Buffer& buffer);
 

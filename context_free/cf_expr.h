@@ -7,6 +7,7 @@
 
 #include "../observer_pattern/observer_pattern.h"
 #include "../buffer/buffer.h"
+#include "./lexical_parser.h"
 
 #ifndef CONTEXT_FREE
 #define CONTEXT_FREE 1
@@ -51,9 +52,10 @@ struct CfExpr {
     CfSymbol* _sourceSymbol = nullptr;
     std::vector<CfSymbol*> _production;
     int _nullable = 2;
-    // reduced first symbols
+    // 归约约定
     std::set<CfSymbol*> _reductionFirst;
     int _reductionPriority = 0;
+    std::string _reductionAction;
     // expression identifier
     int _number = -1;
 };
@@ -82,6 +84,12 @@ private:
     bool GetFirstOfSymbolVec(std::vector<CfSymbol*>& symbols, int index, std::set<CfSymbol*>& firstSet);
 
     void GenNextOfSymbol(CfSymbol* symbol);
+
+    std::map<std::string, std::pair<std::string, int>> ReadSymbol(Buffer& lexicalBuffer);
+
+    void ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser);
+
+    void GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo);
 
     CfSymbol* AddSymbol(const std::string& key, const std::string& keyRegExpr, int number, bool isTerminator, int nullable);
 
@@ -113,7 +121,7 @@ public:
 
     int GetSymbolCount();
 
-    CfExpr* GetExpr(int exprNumber);
+    CfExpr* GetExprByExprNumber(int exprNumber);
 
 };
 

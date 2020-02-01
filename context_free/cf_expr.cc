@@ -1,6 +1,5 @@
 #include "./cf_expr.h"
-#include "./lexical_parser.h"
-#include <cassert>
+#include "../string_util/string_util.h"
 
 bool SymbolSubject::NullableInfoObserverUpdate(CfSymbol* const &subjectSymbol, SiblingExprs* &observerExprs) {
     if (observerExprs->_sourceSymbol->_nullable != 2) {
@@ -225,10 +224,9 @@ CfUtil::~CfUtil() {
     }
 }
 
-// 词法与语法之间有一个空行
-CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
+// 建议非终结符号大写命名;终结符号小写命名
+std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& lexicalBuffer) {
     // key, key_reg_expr, ptiority(数字大，优先级高), is_terminator(1表示是), is_nullable(0,1,2 含义与之前定义一致)
-    // #表示注释行
     std::vector<std::string> strVec;
     std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
 
@@ -242,75 +240,79 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
         int isNullable = std::stoi(strVec[4].c_str());
         CfSymbol* symbol = AddSymbol(strVec[0], strVec[1], this->_symbolVec.size(), isTerminator == 1, isNullable);
         if (symbol->_isTerminator == 1 && symbol->_nullable == 1) {
-            // null terminal symbol is unique
-            if (this->_nullSymbol == nullptr) {
-                this->_nullSymbol = symbol;
-            } else {
-                return;
+
+#ifdef DEBUG_CODE
+            if (this->_nullSymbol != nullptr) {
+                std::cout << "null symbol: " << this->_nullSymbol->_key << ", " << symbol->_key << " repeated!" << std::endl;
             }
+#endif
+
+            this->_nullSymbol = symbol;
         }
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], std::pair<std::string, int>(strVec[1], priority)));
     }
-    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("", std::pair<std::string, int>("[0-9][0-9]*", 0)));
-    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("#", std::pair<std::string, int>("#", 0)));
+    // _***_格式的符号为保留符号，仅作特殊解析符号
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_END_SYMBOL_", std::pair<std::string, int>("_END_SYMBOL_", 1)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_START_SYMBOL_", std::pair<std::string, int>("_START_SYMBOL_", 1)));
     CfSymbol* endSymbol = AddSymbol("_END_SYMBOL_", "_END_SYMBOL_", this->_symbolVec.size(), true, 0);
     CfSymbol* startSymbol = AddSymbol("_START_SYMBOL_", "_START_SYMBOL_", this->_symbolVec.size(), false, 2);
-    LexicalParser lexicalParser = LexicalParser(keyRegExprMap);
-    
+
+    // 文法表达式解析中的特殊符号：（理论上文法表达式不要将, : ;等作为普通符号，该符号可以用相应英文替代, 在代码分析词法中将相应符号对应英文key进行翻译）
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_number_", std::pair<std::string, int>("0|([1-9][0-9]*)", 0)));
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_string_", 
+        std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|:|,)*\"", 0)));
+    return keyRegExprMap;
+}
+
+void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
     // 表达式第一个单词
     std::string initkey = exprBuffer.GetNextStringSplitByBlank();
-    auto initSymbolItr = this->_symbolMap.find(initkey);
-    if (initSymbolItr == this->_symbolMap.end()) {
-        return;
-    } else {
-        CfExpr* expr = new CfExpr();
-        expr->_sourceSymbol = startSymbol;
-        expr->_production.push_back(initSymbolItr->second);
-        expr->_production.push_back(endSymbol);
-        expr->_number = -1;
-        this->_exprs.insert(std::pair<int, CfExpr*>(expr->_number, expr));
-        SiblingExprs* exprs = new SiblingExprs();
-        exprs->_sourceSymbol = startSymbol;
-        exprs->_exprs.insert(expr);
-        this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
+
+#ifdef DEBUG_CODE
+    if (this->_symbolMap.find(initkey) == this->_symbolMap.end()) {
+        std::cout << "init key: " << initkey << " not found!" << std::endl;
     }
+#endif
 
-    this->_initSymbol = startSymbol;
+    // 第一个表达式生成 _START_SYMBOL_ initKey _END_SYMBOL_ 格式
+    this->_initSymbol = this->_symbolMap.find("_START_SYMBOL_")->second;
+    
+    CfExpr* expr = new CfExpr();
+    expr->_sourceSymbol = this->_initSymbol;
+    expr->_production.push_back(this->_symbolMap.find(initkey)->second);
+    expr->_production.push_back(this->_symbolMap.find("_END_SYMBOL_")->second);
+    expr->_number = -1;
+    this->_exprs.insert(std::pair<int, CfExpr*>(expr->_number, expr));
+    
+    SiblingExprs* exprs = new SiblingExprs();
+    exprs->_sourceSymbol = expr->_sourceSymbol;
+    exprs->_exprs.insert(expr);
+    this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
 
+    // 后续表达式解析
     while (exprBuffer.CurrentCharAvailable()) {
         
         CfExpr* expr = new CfExpr();
-        bool isMainBody = true;
         while (exprBuffer.CurrentCharAvailable()) {
             int oldPos = exprBuffer._curPos;
             std::string key = lexicalParser.GetNextWord(exprBuffer);
             auto symbolItr = this->_symbolMap.find(key);
             if (symbolItr == this->_symbolMap.end()) {
-                if (key == "#") {
-                    isMainBody = false;
+                std::string value = exprBuffer.GetString(oldPos, exprBuffer._curPos);
+                if (key == "_number_") {
+                    expr->_number = std::stoi(value);
+                } else if (key == "_string_") {
+                    GetExprAdditionalInfo(expr, value);
                 } else {
-                    std::string value = exprBuffer.GetString(oldPos, exprBuffer._curPos);
-                    if (value == "") {
-                        delete expr;
-                        expr = nullptr;
-                        break;
-                    } else if (!isMainBody) {
-                        expr->_reductionPriority = std::stoi(value);
-                    } else {
-                        expr->_number = std::stoi(value);
-                    }
+                    delete expr;
+                    expr = nullptr;
+                    break;
                 }
             } else {
-                if (isMainBody) {
-                    if (expr->_sourceSymbol == nullptr) {
-                        expr->_sourceSymbol = symbolItr->second;
-                    } else {
-                        expr->_production.push_back(symbolItr->second);
-                    }
+                if (expr->_sourceSymbol == nullptr) {
+                    expr->_sourceSymbol = symbolItr->second;
                 } else {
-                    expr->_reductionFirst.insert(symbolItr->second);
+                    expr->_production.push_back(symbolItr->second);
                 }
             }
             while (exprBuffer.GetCurrentChar() == ' ' && exprBuffer.CurrentCharAvailable()) {
@@ -320,9 +322,15 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
                 break;
             }
         }
+
         if (expr == nullptr) {
             exprBuffer.GetNextLine();
-            break;
+
+#ifdef DEBUG_CODE
+            std::cout << "expr file line: " << exprBuffer._curLine << " error!" << std::endl;
+#endif
+
+            continue;
         }
 
 #ifdef DEBUG_CODE
@@ -343,6 +351,55 @@ CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
             this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
         }
     }
+}
+
+void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo) {
+    std::vector<std::string> infos = StringUtil::split(additionalInfo.substr(1, additionalInfo.size() -2), ";");
+    for (auto info : infos) {
+        std::vector<std::string> basicInfos = StringUtil::split(info, ":");
+
+#ifdef DEBUG_CODE
+        if (basicInfos.size() != 2) {
+            std::cout << "expr info" << info << " error!" << std::endl;
+            continue;
+        }
+#endif
+
+        std::string keyWord = StringUtil::trim(basicInfos[0]);
+        if (keyWord == "reduction_first") {
+            std::vector<std::string> symbols = StringUtil::split(basicInfos[1], ",");
+            for (auto symbolName : symbols) {
+                auto symbolItr = this->_symbolMap.find(StringUtil::trim(symbolName));
+
+#ifdef DEBUG_CODE
+                if (symbolItr == this->_symbolMap.end()) {
+                    std::cout << "reduction first symbol" << symbolName << " not found!" << std::endl;    
+                    continue;
+                }
+#endif
+
+                expr->_reductionFirst.insert(symbolItr->second);
+            }
+        } else if (keyWord == "reduction_priority") {
+            expr->_reductionPriority = std::stoi(StringUtil::trim(basicInfos[1]));
+        } else if (keyWord == "reduction_action") {
+            expr->_reductionAction = StringUtil::trim(basicInfos[1]);
+        } else {
+
+#ifdef DEBUG_CODE
+            std::cout << "expr additional info: " << basicInfos[0] << " error!" << std::endl;
+#endif
+
+        }
+    }
+}
+
+// 词法与语法之间有一个空行
+CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
+
+    LexicalParser lexicalParser = LexicalParser(ReadSymbol(lexicalBuffer));
+    ReadExpr(exprBuffer, lexicalParser);
+    
 }
 
 void CfUtil::GenInfo() {
@@ -394,7 +451,7 @@ CfSymbol* CfUtil::AddSymbol(const std::string& key, const std::string& keyRegExp
     return symbol;
 }
 
-CfExpr* CfUtil::GetExpr(int exprNumber) {
+CfExpr* CfUtil::GetExprByExprNumber(int exprNumber) {
     auto itr = this->_exprs.find(exprNumber);
     if (itr == this->_exprs.end()) {
         return nullptr;
