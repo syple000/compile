@@ -9,39 +9,32 @@
 #ifndef CODE_GENERATION_VARIABLE_SCOPE
 #define CODE_GENERATION_VARIABLE_SCOPE
 
-/*  变量类型，函数名，普通变量名等数据作用域
-
-*/
 class Scope {
 private:
     ScopeNode* _scopeTreeRoot, *_curScope;
 
     ScopeNode* GetScope(ScopeNode* pscope, const std::string& scopeName);
-    Variable* GetVarInScope(const std::string& varName, int varCategory, ScopeNode* scope);
+    Variable* GetVarInScope(const std::string& varName, const std::string& varCategory, ScopeNode* scope);
 public:
-    Scope(int varCategory, int rootType, const std::set<int>& rootVisibleTypes);
+    Scope(int rootType);
     
-    std::string& GetScopeName(ScopeNode* Scope);
-    std::string& GetCurrentScopeName();
-    
-    bool AddImmediateVar(const std::string& varName, const std::string& varType, const std::string& immediate, int category, int openness, int lifeCycle);
-    bool AddReferenceVar(const std::string& varName, const std::string& varType, int reference, int category, int openness, int lifeCycle);
-    
+    const std::string& GetScopeName(ScopeNode* Scope);
+    const std::string& GetCurrentScopeName();
+    ScopeNode* GetScopeByScopeNames(const std::list<std::string>& scopeNames);
+    ScopeNode* GetScopeByScopeName(const std::string& scopeName);
+    Variable* GetVariable(const std::string& varName, const std::string& varCategory, ScopeNode* scope, bool isUpSearched);
+
+    bool AddVariable(const std::string& varName, const std::string& varType, const std::string& value, const std::string& category, int openness, int lifeCycle);
     bool AddVariableType(const std::string& typeName, int openness);
-    
-    ScopeNode* AddScope(const std::string& scopeName, int type, const std::set<int>& childScopeVisibleTypes);
+    ScopeNode* AddScope(const std::string& scopeName, int type);
     bool AddPlaceholderScope(const std::string& scopeName);
+
     // 回收内存使用空间: 大型项目需要
     bool RemoveScope(ScopeNode* scope);
 
-    void BacktrackScope();
+    bool BacktrackScope();
     ScopeNode* TransScope(ScopeNode* scope);
     ScopeNode* TransScopeByName(const std::string& scopeName);
-    
-    ScopeNode* GetScopeByScopeNames(const std::list<std::string>& scopeNames);
-    ScopeNode* GetScopeByScopeName(const std::string& scopeName);
-    
-    Variable* GetVariable(const std::string& varName, int varCategory, ScopeNode* scope, bool fromParentScope);
 };
 
 #endif

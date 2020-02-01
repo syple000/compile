@@ -232,9 +232,16 @@ std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& le
 
     while (lexicalBuffer.CurrentCharAvailable()) {
         strVec = lexicalBuffer.GetStringsOfNextLine();
-        if (strVec.size() == 0 || this->_symbolMap.find(strVec[0]) != this->_symbolMap.end()) {
+
+#ifdef DEBUG_CODE
+        if (strVec.size() != 5 || this->_symbolMap.find(strVec[0]) != this->_symbolMap.end()) {
+            if (strVec.size() != 0) {
+                std::cout << "expr lexical line: " << lexicalBuffer._curLine << " error!" << std::endl;
+            }
             continue;
         }
+#endif
+
         int priority = std::stoi(strVec[2].c_str());
         int isTerminator = std::stoi(strVec[3].c_str());
         int isNullable = std::stoi(strVec[4].c_str());
@@ -310,6 +317,13 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
                 }
             } else {
                 if (expr->_sourceSymbol == nullptr) {
+
+#ifdef DEBUG_CODE
+                    if (symbolItr->second->_isTerminator == 1) {
+                        std::cout << "warning: symbol " << symbolItr->second->_key << "is terminal symbol!" << std::endl;
+                    }
+#endif
+
                     expr->_sourceSymbol = symbolItr->second;
                 } else {
                     expr->_production.push_back(symbolItr->second);

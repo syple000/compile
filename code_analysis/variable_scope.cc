@@ -1,56 +1,34 @@
 
 #include "./variable_scope.h"
 
-Scope::Scope(int varCategory, int rootType, const std::set<int>& rootVisibleTypes) {
-    this->_scopeTreeRoot = new ScopeNode(nullptr, "", varCategory, rootType, rootVisibleTypes);
+Scope::Scope(int rootType) {
+    this->_scopeTreeRoot = new ScopeNode(nullptr, "", rootType);
     this->_curScope = this->_scopeTreeRoot;
 }
 
-std::string& Scope::GetScopeName(ScopeNode* Scope) {
+const std::string& Scope::GetScopeName(ScopeNode* Scope) {
     return Scope->_scopeName;
 }
 
-std::string& Scope::GetCurrentScopeName() {
+const std::string& Scope::GetCurrentScopeName() {
     return GetScopeName(this->_curScope);
 }
 
-bool Scope::AddImmediateVar(const std::string& varName, const std::string& varType, const std::string& immediate, int category, int openness, int lifeCycle) {
+bool Scope::AddVariable(const std::string& varName, const std::string& varType, const std::string& value, const std::string& category, 
+    int openness, int lifeCycle) {
     VariableType* type = this->_curScope->GetVariableType(varType);
     if (type == nullptr) {
         return false;
     }
-    Variable* var = new Variable(type, varName, immediate, openness, lifeCycle);
-    bool success = this->_curScope->AddDeclVariable(var, category);
-    if (!success) {
-        delete var;
-    }
-    return success;
-}
-
-bool Scope::AddReferenceVar(const std::string& varName, const std::string& varType, int reference, int category, int openness, int lifeCycle) {
-    VariableType* type = this->_curScope->GetVariableType(varType);
-    if (type == nullptr) {
-        return false;
-    }
-    Variable* var = new Variable(type, varName, reference, openness, lifeCycle);
-    bool success = this->_curScope->AddDeclVariable(var, category);
-    if (!success) {
-        delete var;
-    }
-    return success;
+    return this->_curScope->AddVariable(type, varName, value, openness, lifeCycle, category);
 }
 
 bool Scope::AddVariableType(const std::string& typeName, int openness) {
-    VariableType* type = new VariableType(typeName, this->_curScope, openness);
-    bool success = this->_curScope->AddVariableType(type);
-    if (!success) {
-        delete type;
-    }
-    return success;
+    return this->_curScope->AddVariableType(typeName, openness);
 }
 
-ScopeNode* Scope::AddScope(const std::string& scopeName, int type, const std::set<int>& childScopeVisibleTypes) {
-    return this->_curScope->AddChildScope(scopeName, type, childScopeVisibleTypes);
+ScopeNode* Scope::AddScope(const std::string& scopeName, int type) {
+    return this->_curScope->AddChildScope(scopeName, type);
 }
 
 bool Scope::AddPlaceholderScope(const std::string& scopeName) {
@@ -71,8 +49,12 @@ bool Scope::RemoveScope(ScopeNode* scope) {
     return true;
 }
 
-void Scope::BacktrackScope() {
+bool Scope::BacktrackScope() {
+    if (this->_curScope->_pnode == nullptr) {
+        return false;
+    }
     this->_curScope = this->_curScope->_pnode;
+    return true;
 }
 
 ScopeNode* Scope::TransScope(ScopeNode* scope) {
@@ -104,13 +86,12 @@ ScopeNode* Scope::GetScopeByScopeName(const std::string& scopeName) {
 }
 
 // 获取后需要进行变量可见性分析
-Variable* Scope::GetVariable(const std::string& varName, int varCategory, ScopeNode* scope, bool fromParentScope) {
+Variable* Scope::GetVariable(const std::string& varName, const std::string& varCategory, ScopeNode* scope, bool isUpSearched) {
     Variable* var = GetVarInScope(varName, varCategory, scope);
-    if (var == nullptr && fromParentScope) {
-        int scopeType = scope->_type;
+    if (var == nullptr && isUpSearched) {
         ScopeNode* curScope = scope->_pnode;
         while (curScope != nullptr) {
-            if (curScope->_childScopeVisibleTypes.find(scopeType) != curScope->_childScopeVisibleTypes.end()) {
+            if (curScope->_type == 0) {
                 var = GetVarInScope(varName, varCategory, scope);
                 if (var != nullptr) {
                     break;
@@ -131,9 +112,13 @@ ScopeNode* Scope::GetScope(ScopeNode* pscope, const std::string& scopeName) {
     }
 }
 
-Variable* Scope::GetVarInScope(const std::string& varName, int varCategory, ScopeNode* scope) {
-    auto varItr = scope->_declVars[varCategory].find(varName);
-    if (varItr == scope->_declVars[varCategory].end()) {
+Variable* Scope::GetVarInScope(const std::string& varName, const std::string& varCategory, ScopeNode* scope) {
+    auto varsItr = scope->_vars.find(varCategory);
+    if (varsItr == scope->_vars.end()) {
+        return nullptr;
+    }
+    auto varItr = varsItr->second.find(varName);
+    if (varItr != varsItr->second.end()) {
         return varItr->second;
     } else {
         return nullptr;

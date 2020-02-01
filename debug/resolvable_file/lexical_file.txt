@@ -1,48 +1,18 @@
-
-public public 1
-private private 1
-protected protected 1
-static static 1
-final final 1
-
-class class 1
-
 int int 1
-float float 1
-double double 1
-boolean boolean 1
-char char 1
-void void 1
-
-ID ([a-z]|[A-Z]|_)([0-9]|[a-z]|[A-Z]|_)* 0
-NUM [0-9]* 0
-
-= = 1
-== == 1
-+ + 1
-- - 1
-++ ++ 1
--- -- 1
-× \× 1
-/ / 1
-< < 1
-> > 1
-<= <= 1
->= >= 1
+eq = 1
+add + 1
+com , 1
 if if 1
 else else 1
+lp \( 1
+rp \) 1
+id ([a-z]|[A-Z])([a-z]|[A-Z]|[0-9])* 0
+num [0-9]* 0
+lc { 1
+rc } 1
+struct struct 1
+sem ; 1
 return return 1
-new new 1
-
-{ { 1
-} } 1
-[ \[ 1
-] \] 1
-( \( 1
-) \) 1
-; ; 1
-. \. 1
-, , 1
 
 /**/ /\*([0-9]|[a-z]|[A-Z]|\s)*\*/ 1
 // //([0-9]|[a-z]|[A-Z]|\s)* 1

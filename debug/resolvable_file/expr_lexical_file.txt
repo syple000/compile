@@ -1,68 +1,33 @@
-public public 1 1 0
-private private 1 1 0
-protected protected 1 1 0
-static static 1 1 0
-final final 1 1 0
-
-class class 1 1 0
-
 int int 1 1 0
-float float 1 1 0
-double double 1 1 0
-boolean boolean 1 1 0
-char char 1 1 0
-void void 1 1 0
-
-ID ID 1 1 0
-NUM NUM 1 1 0
-
-PROG PROG 1 0 2
-CLASS CLASS 1 0 2
-BLOCK BLOCK 1 0 2
-FUNC FUNC 1 0 2
-PARAMS PARAMS 1 0 2
-PARAM PARAM 1 0 2
-ARGS ARGS 1 0 2
-ARG ARG 1 0 2
-DECL DECL 1 0 2
-EXPR EXPR 1 0 2
-BOP BOP 1 0 2
-RMOP RMOP 1 0 2
-LMOP LMOP 1 0 2
-EXPRS EXPRS 1 0 2
-
-QUAL_1 QUAL_1 1 0 2
-QUAL_2 QUAL_2 1 0 2
-QUAL_3 QUAL_3 1 0 2
-
-TYPE TYPE 1 0 2
-
-NULL NULL 1 1 1
-
-= = 1 1 0
-== == 1 1 0
-+ + 1 1 0
-- - 1 1 0
-++ ++ 1 1 0
--- -- 1 1 0
-* \* 1 1 0
-/ / 1 1 0
-< < 1 1 0
-> > 1 1 0
-<= <= 1 1 0
->= >= 1 1 0
+eq eq 1 1 0
+add add 1 1 0
+com com 1 1 0
 if if 1 1 0
 else else 1 1 0
+lp lp 1 1 0
+rp rp 1 1 0
+id id 1 1 0
+num num 1 1 0
+lc lc 1 1 0
+rc rc 1 1 0
+struct struct 1 1 0
+sem sem 1 1 0 
 return return 1 1 0
-new new 1 1 0
+null null 1 1 1
 
-{ { 1 1 0
-} } 1 1 0
-[ \[ 1 1 0
-] \] 1 1 0
-( \( 1 1 0
-) \) 1 1 0
-; ; 1 1 0
-\. \. 1 1 0
-, , 1 1 0
+PROG PROG 1 0 2
+BLOCK BLOCK 1 0 2
+STRUCT STRUCT 1 0 2
+FUNC FUNC 1 0 2
+DECL DECL 1 0 2
+EXPRS EXPRS 1 0 2
+EXPR EXPR 1 0 2
+DECLS DECLS 1 0 2
+PARAMS PARAMS 1 0 2
+PARAM PARAM 1 0 2
+CALL CALL 1 0 2
+ARGS ARGS 1 0 2
+ARG ARG 1 0 2
+OP OP 1 0 2
+TYPE TYPE 1 0 2
 

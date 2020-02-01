@@ -1,31 +1,25 @@
-public class Test {
-    static final public int CONST = 12;
-
-    public void main() {
-        TestClass testClass(22);
-        int a = 1;
-        int b = 2;
-        a = a++ + b--;
-        return testFunc(a, 12);
-    }
-    /* test func */
-    public int testFunc(int a, float b) {
-        if (a < b) {
-            return CONST + 1;
-        } else {
-            if (a == b) {
-                return CONST;
-            }
-            return CONST - 1;
-        }
-    } 
+struct type1 {
+    int id1 = 1;
+    int id2;
 };
 
-// test class
-class TestClass {
-    private int num;
-
-    TestClass(int a) {
-        num = a;
-    }
+struct type2 {
+    type1 id3;
+    int id4;
 };
+
+int func1(int id5, type2 id6) {
+    if (id5 + id6) {
+        if (id6) {
+            return 10;
+        };
+    } else {
+        return 100;
+    };
+    return 111;
+}
+
+int func2() {
+    id7 = 12;
+    return 12;
+}

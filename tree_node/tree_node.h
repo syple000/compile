@@ -107,46 +107,76 @@ struct RegExprNode {
 struct ScopeNode {
     ScopeNode* _pnode;
     std::unordered_map<std::string, ScopeNode*> _cnodes;
-
     std::string _scopeName;
     std::unordered_map<std::string, VariableType*> _variableTypes;
     // 同一类型下不可以重复命名
-    std::vector<std::unordered_map<std::string, Variable*>> _declVars;
-    // scope的类型
+    std::unordered_map<std::string, std::unordered_map<std::string, Variable*>> _vars;
+    // 0 子作用域可以直接查询变量; >0 需要引用作用域查询
     int _type;
-    // 子scope可见当前scope中变量的 类型集合
-    std::set<int> _childScopeVisibleTypes;
     int _anonymousCount = 0;
 
-    ScopeNode(ScopeNode* pnode, const std::string& scopeName, int categoryCount, int type, const std::set<int>& childScopeVisibleTypes) 
-        : _pnode(pnode), _scopeName(scopeName), _declVars(categoryCount), _type(type), _childScopeVisibleTypes(childScopeVisibleTypes) {
+    ScopeNode(ScopeNode* pnode, const std::string& scopeName, int type) 
+        : _pnode(pnode), _scopeName(scopeName), _type(type) {
         if (this->_pnode != nullptr) {
             auto scopeItr = this->_pnode->_cnodes.find(scopeName);
             if (scopeItr == this->_pnode->_cnodes.end()) {
                 this->_pnode->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, this));
-            } else {
+            } else if (scopeItr->second == nullptr) {
                 scopeItr->second = this;
+            } else {
+
+#ifdef DEBUG_CODE
+                std::cout << "pnode: " << pnode->_scopeName << ", cnode: " << scopeName << " repeated!" << std::endl;
+#endif
+
             }
         }
     }
 
-    bool AddDeclVariable(Variable* var, int category) {
-        if (this->_declVars[category].find(var->_name) != this->_declVars[category].end()) {
+    bool AddVariable(VariableType* type, const std::string& varName, const std::string& value, int openness, int lifeCycle, const std::string& varCategory) {
+        if (this->_vars.find(varCategory) == this->_vars.end()) {
+            this->_vars.insert(std::pair<std::string, std::unordered_map<std::string, Variable*>>(varCategory, std::unordered_map<std::string, Variable*>()));
+        }
+        auto vars = this->_vars.find(varCategory);
+        if (vars->second.find(varName) != vars->second.end()) {
             return false;
         }
-        this->_declVars[category].insert(std::pair<std::string, Variable*>(var->_name, var));
+        vars->second.insert(std::pair<std::string, Variable*>(varName, new Variable(type, varName, value, openness, lifeCycle)));
         return true;
     }
 
-    bool AddVariableType(VariableType* varType) {
-        if (this->_variableTypes.find(varType->_name) != this->_variableTypes.end()) {
+    bool AddVariableType(const std::string& typeName, int openness) {
+        if (this->_variableTypes.find(typeName) != this->_variableTypes.end()) {
             return false;
         }
-        this->_variableTypes.insert(std::pair<std::string, VariableType*>(varType->_name, varType));
+        this->_variableTypes.insert(std::pair<std::string, VariableType*>(typeName, new VariableType(typeName, this, openness)));
         return true;
     }
 
-    ScopeNode* GetChildScopeNode(const std::string& scopeName) {
+    ScopeNode* AddChildScope(const std::string& scopeName, int type) {
+        std::string scopeNameToAdd = scopeName;
+        if (scopeName == "") {
+            scopeNameToAdd += std::to_string(this->_anonymousCount++);
+        }
+        auto itr = this->_cnodes.find(scopeName);
+        if (itr == this->_cnodes.end() || itr->second == nullptr) {
+            return new ScopeNode(this, scopeNameToAdd, type);   
+        }
+        return nullptr;
+    }
+
+    // scope name 不为""
+    bool AddPlaceholderChildScope(const std::string& scopeName) {
+        auto itr = this->_cnodes.find(scopeName);
+        if (itr == this->_cnodes.end()) {
+            this->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, nullptr));
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    ScopeNode* GetChildScope(const std::string& scopeName) {
         auto itr = this->_cnodes.find(scopeName);
         if (itr == this->_cnodes.end()) {
             return nullptr;
@@ -164,35 +194,13 @@ struct ScopeNode {
         }
     }
 
-    Variable* GetVariable(const std::string& varName, int varCategory) {
-        auto itr = this->_declVars[varCategory].find(varName);
-        if (itr == this->_declVars[varCategory].end()) {
+    Variable* GetVariable(const std::string& varName, const std::string& varCategory) {
+        auto varsItr = this->_vars.find(varCategory);
+        auto itr = varsItr->second.find(varName);
+        if (itr == varsItr->second.end()) {
             return nullptr;
         } else {
             return itr->second;
-        }
-    }
-
-    ScopeNode* AddChildScope(const std::string& scopeName, int type, const std::set<int>& childScopeVisibleTypes) {
-        std::string scopeNameToAdd = scopeName;
-        if (scopeName == "") {
-            scopeNameToAdd += std::to_string(this->_anonymousCount++);
-        }
-        auto itr = this->_cnodes.find(scopeName);
-        if (itr == this->_cnodes.end() || itr->second == nullptr) {
-            return new ScopeNode(this, scopeNameToAdd, this->_declVars.size(), type, childScopeVisibleTypes);   
-        }
-        return nullptr;
-    }
-
-    // scope name 不为""
-    bool AddPlaceholderChildScope(const std::string& scopeName) {
-        auto itr = this->_cnodes.find(scopeName);
-        if (itr == this->_cnodes.end()) {
-            this->_cnodes.insert(std::pair<std::string, ScopeNode*>(scopeName, nullptr));
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -208,8 +216,8 @@ struct ScopeNode {
     }
 
     virtual ~ScopeNode() {
-        for (auto vars : this->_declVars) {
-            for (auto itr : vars) {
+        for (auto vars : this->_vars) {
+            for (auto itr : vars.second) {
                 delete itr.second;
             }
         }

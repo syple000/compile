@@ -75,9 +75,16 @@ void CfEngine::ReadCodeLexical(Buffer& codeLexicalBuf) {
     std::map<std::string, std::pair<std::string, int>> keyRegExprMap;
     while (codeLexicalBuf.CurrentCharAvailable()) {
         std::vector<std::string> strVec = codeLexicalBuf.GetStringsOfNextLine();
-        if (strVec.size() == 0) {
+
+#ifdef DEBUG_CODE
+        if (strVec.size() != 3) {
+            if (strVec.size() != 0) {
+                std::cout << "code lexical line: " << codeLexicalBuf._curLine << " error!" << std::endl;
+            }
             continue;
         }
+#endif
+
         keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>(strVec[0], 
             std::pair<std::string, int>(strVec[1], std::stoi(strVec[2]))));
     }
