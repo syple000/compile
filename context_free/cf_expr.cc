@@ -267,7 +267,7 @@ std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& le
     // 文法表达式解析中的特殊符号：（理论上文法表达式不要将, : ;等作为普通符号，该符号可以用相应英文替代, 在代码分析词法中将相应符号对应英文key进行翻译）
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_number_", std::pair<std::string, int>("0|([1-9][0-9]*)", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_string_", 
-        std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|:|,|\n)*\"", 0)));
+        std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&)*\"", 0)));
     return keyRegExprMap;
 }
 
@@ -368,9 +368,9 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 }
 
 void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo) {
-    std::vector<std::string> infos = StringUtil::split(additionalInfo.substr(1, additionalInfo.size() -2), ";");
+    std::vector<std::string> infos = StringUtil::split(additionalInfo.substr(1, additionalInfo.size() -2), "&");
     for (auto info : infos) {
-        std::vector<std::string> basicInfos = StringUtil::split(info, ":");
+        std::vector<std::string> basicInfos = StringUtil::split(info, "=");
 
 #ifdef DEBUG_CODE
         if (basicInfos.size() != 2) {
