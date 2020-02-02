@@ -24,7 +24,8 @@ public:
     ScopeNode* GetScopeByScopeName(const std::string& scopeName);
     Variable* GetVariable(const std::string& varName, const std::string& varCategory, ScopeNode* scope, bool isUpSearched);
 
-    bool AddVariable(const std::string& varName, const std::string& varType, const std::string& value, const std::string& category, int openness, int lifeCycle);
+    bool AddVariable(const std::string& varName, const std::string& varType, const std::string& value, const std::string& category,
+         int openness, int lifeCycle, bool isPointer);
     bool AddVariableType(const std::string& typeName, int openness);
     ScopeNode* AddScope(const std::string& scopeName, int type);
     bool AddPlaceholderScope(const std::string& scopeName);

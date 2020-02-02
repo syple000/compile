@@ -1,18 +1,39 @@
-int int 1
-eq = 1
-add + 1
-com , 1
-if if 1
-else else 1
-lp \( 1
-rp \) 1
-id ([a-z]|[A-Z])([a-z]|[A-Z]|[0-9])* 0
-num [0-9]* 0
-lc { 1
-rc } 1
-struct struct 1
-sem ; 1
-return return 1
-
 /**/ /\*([0-9]|[a-z]|[A-Z]|\s)*\*/ 1
 // //([0-9]|[a-z]|[A-Z]|\s)* 1
+
+int int 1
+char char 1
+float float 1
+bool bool 1
+
+assign = 1
+sub - 1
+add + 1
+mul \* 1
+div / 1 
+eq == 1 
+greater > 1 
+less < 1
+and && 1
+or \|\| 1
+return return 1
+new new 1
+arrow -> 1
+
+com , 1
+sem ; 1 
+lp \( 1
+rp \) 1
+lc { 1
+rc } 1
+dot \. 1
+
+id ([a-z]|[A-Z])([a-z]|[A-Z]|[0-9])* 0
+num [0-9]* 0
+
+for for 1
+while while 1
+break break 1
+if if 1 
+else else 1
+struct struct 1

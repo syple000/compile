@@ -133,7 +133,8 @@ struct ScopeNode {
         }
     }
 
-    bool AddVariable(VariableType* type, const std::string& varName, const std::string& value, int openness, int lifeCycle, const std::string& varCategory) {
+    bool AddVariable(VariableType* type, const std::string& varName, const std::string& value, int openness, int lifeCycle, 
+        const std::string& varCategory, bool isPointer) {
         if (this->_vars.find(varCategory) == this->_vars.end()) {
             this->_vars.insert(std::pair<std::string, std::unordered_map<std::string, Variable*>>(varCategory, std::unordered_map<std::string, Variable*>()));
         }
@@ -141,7 +142,7 @@ struct ScopeNode {
         if (vars->second.find(varName) != vars->second.end()) {
             return false;
         }
-        vars->second.insert(std::pair<std::string, Variable*>(varName, new Variable(type, varName, value, openness, lifeCycle)));
+        vars->second.insert(std::pair<std::string, Variable*>(varName, new Variable(type, varName, value, openness, lifeCycle, isPointer)));
         return true;
     }
 

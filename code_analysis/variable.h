@@ -14,9 +14,10 @@ struct Variable {
     int _openness;
     // life cycle： 0 仅当前作用域内; 1 全局 
     int _lifeCycle;
+    bool _isPointer;
 
-    Variable(VariableType* type, const std::string& name, const std::string& value, int openness, int lifeCycle) 
-        : _type(type), _name(name), _value(value), _openness(openness), _lifeCycle(lifeCycle) {}
+    Variable(VariableType* type, const std::string& name, const std::string& value, int openness, int lifeCycle, bool isPointer) 
+        : _type(type), _name(name), _value(value), _openness(openness), _lifeCycle(lifeCycle), _isPointer(isPointer) {}
 
     virtual ~Variable() {};
 };

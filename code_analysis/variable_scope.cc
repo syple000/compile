@@ -15,12 +15,12 @@ const std::string& Scope::GetCurrentScopeName() {
 }
 
 bool Scope::AddVariable(const std::string& varName, const std::string& varType, const std::string& value, const std::string& category, 
-    int openness, int lifeCycle) {
+    int openness, int lifeCycle, bool isPointer) {
     VariableType* type = this->_curScope->GetVariableType(varType);
     if (type == nullptr) {
         return false;
     }
-    return this->_curScope->AddVariable(type, varName, value, openness, lifeCycle, category);
+    return this->_curScope->AddVariable(type, varName, value, openness, lifeCycle, category, isPointer);
 }
 
 bool Scope::AddVariableType(const std::string& typeName, int openness) {
