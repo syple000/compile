@@ -267,7 +267,7 @@ std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& le
     // 文法表达式解析中的特殊符号：（理论上文法表达式不要将, : ;等作为普通符号，该符号可以用相应英文替代, 在代码分析词法中将相应符号对应英文key进行翻译）
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_number_", std::pair<std::string, int>("0|([1-9][0-9]*)", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_string_", 
-        std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$)*\"", 0)));
+        std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|{|}|\\\\)*\"", 0)));
     return keyRegExprMap;
 }
 
@@ -341,7 +341,9 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
             exprBuffer.GetNextLine();
 
 #ifdef DEBUG_CODE
-            std::cout << "expr file line: " << exprBuffer._curLine << " error!" << std::endl;
+            if (exprBuffer.CurrentCharAvailable()) {
+                std::cout << "expr file line: " << exprBuffer._curLine << " error!" << std::endl;
+            }
 #endif
 
             continue;
@@ -368,9 +370,9 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 }
 
 void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo) {
-    std::vector<std::string> infos = StringUtil::split(additionalInfo.substr(1, additionalInfo.size() -2), "&");
+    std::vector<std::string> infos = StringUtil::Split(additionalInfo.substr(1, additionalInfo.size() -2), "&");
     for (auto info : infos) {
-        std::vector<std::string> basicInfos = StringUtil::split(info, "=");
+        std::vector<std::string> basicInfos = StringUtil::Split(info, "=");
 
 #ifdef DEBUG_CODE
         if (basicInfos.size() != 2) {
@@ -379,11 +381,11 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
         }
 #endif
 
-        std::string keyWord = StringUtil::trim(basicInfos[0]);
+        std::string keyWord = StringUtil::Trim(basicInfos[0]);
         if (keyWord == "reduction_first") {
-            std::vector<std::string> symbols = StringUtil::split(basicInfos[1], ",");
+            std::vector<std::string> symbols = StringUtil::Split(basicInfos[1], ",");
             for (auto symbolName : symbols) {
-                auto symbolItr = this->_symbolMap.find(StringUtil::trim(symbolName));
+                auto symbolItr = this->_symbolMap.find(StringUtil::Trim(symbolName));
 
 #ifdef DEBUG_CODE
                 if (symbolItr == this->_symbolMap.end()) {
@@ -395,9 +397,9 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
                 expr->_reductionFirst.insert(symbolItr->second);
             }
         } else if (keyWord == "reduction_priority") {
-            expr->_reductionPriority = std::stoi(StringUtil::trim(basicInfos[1]));
+            expr->_reductionPriority = std::stoi(StringUtil::Trim(basicInfos[1]));
         } else if (keyWord == "reduction_action") {
-            expr->_reductionAction = StringUtil::trim(basicInfos[1]);
+            expr->_reductionAction = StringUtil::Trim(basicInfos[1]);
         } else {
 
 #ifdef DEBUG_CODE

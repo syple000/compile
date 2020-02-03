@@ -22,6 +22,10 @@ void TraverseCfTreeNode(CfTreeNode* node) {
     }
 }
 
+std::string ProcessValue(const std::string& value) {
+    return value;
+}
+
 int main() {
     char pwd[256];
     getcwd(pwd, sizeof(pwd));
@@ -92,11 +96,13 @@ int main() {
     assert(regExprEngine4.IsMatched("123"));
     assert(regExprEngine4.IsMatched("0111"));
 
-    std::vector<std::string> strs = StringUtil::split(";;123456;1333114353;1", ";*1");
+    std::vector<std::string> strs = StringUtil::Split(";;123456;1333114353;1", ";*1");
     for (auto str : strs) {
         std::cout << str << " ";
     }
     std::cout << std::endl;
+    
+    std::cout << StringUtil::Replace(";;123456;1333114353;1", ";*1", "aaa") << std::endl;
 
     // context free test
     CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
@@ -106,7 +112,7 @@ int main() {
     assert(root != nullptr);
     CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
     std::cout << std::endl << "-------------------" << std::endl;
-    std::cout << ExprActAnalysis::GenCode(root) << std::endl;
+    std::cout << ExprActAnalysis::GenCode(root, ProcessValue) << std::endl;
 
     CfTreeNode::DestroyTree(root);
 

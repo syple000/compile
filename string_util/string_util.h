@@ -7,9 +7,12 @@
 #define STRING_UTIL 1
 
 class StringUtil {
+private:
+    static std::pair<int, int> RegMatch(RegExprEngine& engine, const std::string& str, int startPos);
 public:
-    static std::vector<std::string> split(const std::string& str, const std::string& regExpr);
-    static std::string trim(const std::string& str);
+    static std::vector<std::string> Split(const std::string& str, const std::string& regExpr);
+    static std::string Trim(const std::string& str);
+    static std::string Replace(const std::string& str, const std::string& regExpr, const std::string& replaceStr);
 };
 
 #endif

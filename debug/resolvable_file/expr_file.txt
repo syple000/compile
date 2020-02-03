@@ -5,8 +5,8 @@ PROG
 0 PROG BLOCK PROG "reduction_action=genCode($1, $2)"
 1 PROG null "reduction_action=genCode($1)"
 
-2 BLOCK FUNC "reduction_action=genCode($1)"
-3 BLOCK STRUCT "reduction_action=genCode($1)"
+2 BLOCK FUNC "reduction_action=genCode({\s, $1, \s})"
+3 BLOCK STRUCT "reduction_action=genCode({\s, $1, \s})"
 
 5 FUNC TYPE id lp PARAMS rp EXPRS_BLOCK "reduction_action=genCode($1, $2, $3, $4, $5, $6)"
 6 STRUCT struct id lc DECLS rc sem "reduction_action=genCode($1, $2, $3, $4, $5, $6)"

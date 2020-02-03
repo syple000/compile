@@ -11,9 +11,9 @@ class ExprActAnalysis {
 public:
     static std::unordered_map<std::string, std::vector<std::vector<std::string>>> GetActsFromStr(const std::string& actStr) {
         std::unordered_map<std::string, std::vector<std::vector<std::string>>> actCmds;
-        auto acts = StringUtil::split(actStr, ";");
+        auto acts = StringUtil::Split(actStr, ";");
         for (auto act : acts) {
-            std::string trimAct = StringUtil::trim(act);
+            std::string trimAct = StringUtil::Trim(act);
 
 #ifdef DEBUG_CODE
             if (trimAct.size() == 0) {
@@ -22,7 +22,7 @@ public:
             }
 #endif
 
-            auto actCmdElems = StringUtil::split(trimAct, "\\(|\\)");
+            auto actCmdElems = StringUtil::Split(trimAct, "\\(|\\)");
 
 #ifdef DEBUG_CODE
             if (actCmdElems.size() > 2) {
@@ -32,14 +32,14 @@ public:
 #endif
 
             std::vector<std::string> actCmd;
-            actCmd.push_back(StringUtil::trim(actCmdElems[0]));
+            actCmd.push_back(StringUtil::Trim(actCmdElems[0]));
 
             if (actCmdElems.size() == 2) {
-                auto argsVec = StringUtil::split(actCmdElems[1], ",");
+                auto argsVec = StringUtil::Split(actCmdElems[1], ",");
                 for (auto arg : argsVec) {
-                    std::string trimArg = StringUtil::trim(arg);
+                    std::string trimArg = StringUtil::Trim(arg);
                     if (trimArg.size() != 0) {
-                        actCmd.push_back(trimArg);
+                        actCmd.push_back(StringUtil::Replace(trimArg, "\\\\s", " "));
                     }
                 }
             }
@@ -53,7 +53,7 @@ public:
 
 
     // 目标函数名： genCode() 当字节点无value时，递归生成
-    static std::string GenCode(CfTreeNode* root) {
+    static std::string GenCode(CfTreeNode* root, std::string(*process)(const std::string&)) {
         if (root->_reductionAction.size() == 0) {
             return "";
         }
@@ -74,10 +74,9 @@ public:
                     if (arg[0] == '$') {
                         int index = std::stoi(arg.substr(1, arg.size() - 1));
                         if (root->_cnodes[index - 1]->_value.size() != 0) {
-                            code += root->_cnodes[index - 1]->_value;
-                            code += ' ';
+                            code += process(root->_cnodes[index - 1]->_value);
                         } else {
-                            code += GenCode(root->_cnodes[index - 1]);
+                            code += GenCode(root->_cnodes[index - 1], process);
                         }
                     } else {
                         auto itr = root->_attributes.find(arg);
