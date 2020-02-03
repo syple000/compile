@@ -5,7 +5,6 @@ float float 1 1 0
 assign assign 1 1 0
 sub sub 1 1 0
 add add 1 1 0
-mul mul 1 1 0
 div div 1 1 0
 eq eq 1 1 0
 greater greater 1 1 0
@@ -77,7 +76,8 @@ RVALUE RVALUE 1 0 2
 LVALUE LVALUE 1 0 2
 VALUE VALUE 1 0 2
 
-CALL CALL 1 0 2
-
 EXPRS_BLOCK EXPRS_BLOCK 1 0 2
 
+PTR PTR 1 0 2
+
+ARR ARR 1 0 2

@@ -2,8 +2,6 @@
 #include <string>
 #include <vector>
 
-#include "../tree_node/tree_node.h"
-#include "./variable_scope.h"
 #include "../string_util/string_util.h"
 
 #ifndef CODE_ANALYSIS_EXPR_ACT_ANALYSIS
@@ -11,8 +9,8 @@
 
 class ExprActAnalysis {
 public:
-    static std::vector<std::vector<std::string>> ActAnalysis(const std::string& actStr) {
-        std::vector<std::vector<std::string>> actCmds;
+    static std::unordered_map<std::string, std::vector<std::vector<std::string>>> GetActsFromStr(const std::string& actStr) {
+        std::unordered_map<std::string, std::vector<std::vector<std::string>>> actCmds;
         auto acts = StringUtil::split(actStr, ";");
         for (auto act : acts) {
             std::string trimAct = StringUtil::trim(act);
@@ -45,26 +43,59 @@ public:
                     }
                 }
             }
-
-            actCmds.push_back(actCmd);
+            if (actCmds.find(actCmd[0]) == actCmds.end()) {
+                actCmds.insert(std::pair<std::string, std::vector<std::vector<std::string>>>(actCmd[0], std::vector<std::vector<std::string>>()));
+            }
+            actCmds.find(actCmd[0])->second.push_back(actCmd);
         }
         return actCmds;
-    } 
+    }
 
-    static std::string GetTranslatedCode(CfTreeNode* root, const std::string& act);
 
-    static void AddChildScope(Scope* scope, CfTreeNode* root, const std::string& act);
+    // 目标函数名： genCode() 当字节点无value时，递归生成
+    static std::string GenCode(CfTreeNode* root) {
+        if (root->_reductionAction.size() == 0) {
+            return "";
+        }
+        auto actCmds = GetActsFromStr(root->_reductionAction);
+        std::string code;
+        for (auto actCmd : actCmds) {
+            if (actCmd.first == "genCode") {
 
-    static void AddVariable(Scope* scope, CfTreeNode* root, const std::string& act);
+#ifdef DEBUG_CODE
+                if (actCmd.second.size() != 1) {
+                    std::cout << "key: " << root->_key << " generate code function count error!" << std::endl;
+                    continue;
+                }
+#endif
 
-    static void AddVariableType(Scope* scope, CfTreeNode* root, const std::string& act);
+                for (int i = 1; i < actCmd.second[0].size(); i++) {
+                    auto& arg = actCmd.second[0][i];
+                    if (arg[0] == '$') {
+                        int index = std::stoi(arg.substr(1, arg.size() - 1));
+                        if (root->_cnodes[index - 1]->_value.size() != 0) {
+                            code += root->_cnodes[index - 1]->_value;
+                            code += ' ';
+                        } else {
+                            code += GenCode(root->_cnodes[index - 1]);
+                        }
+                    } else {
+                        auto itr = root->_attributes.find(arg);
+                        if (itr == root->_attributes.end()) {
+                            code += arg;
+                        } else {
+                            code += itr->second->GetAttributeAsString();
+                        }
+                        code += ' ';
+                    }
+                }
+            } else {
+                // TODO
+            }
+        }
 
-    static void RemoveChildScope(Scope* scope, CfTreeNode* root, const std::string& act);
-
-    static void TransScope(Scope* scope, CfTreeNode* root, const std::string& act);
-
-    static void BacktrackScope(Scope* scope, CfTreeNode* root, const std::string& act);
-
+        return code;
+    }
 };
 
 #endif

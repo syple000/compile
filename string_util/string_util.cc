@@ -43,12 +43,12 @@ std::vector<std::string> StringUtil::split(const std::string& str, const std::st
 std::string StringUtil::trim(const std::string& str) {
     int startIndex = 0, endIndex = str.size();
     for (; startIndex < str.size(); startIndex++) {
-        if (str[startIndex] != ' ') {
+        if (str[startIndex] != ' ' && str[startIndex] != '\n') {
             break;
         }
     }
     for (; endIndex > 0; endIndex--) {
-        if (str[endIndex - 1] != ' ') {
+        if (str[endIndex - 1] != ' ' && str[endIndex - 1] != '\n') {
             break;
         }
     }

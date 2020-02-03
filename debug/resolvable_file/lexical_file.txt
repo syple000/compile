@@ -9,7 +9,7 @@ bool bool 1
 assign = 1
 sub - 1
 add + 1
-mul \* 1
+ast \* 1
 div / 1 
 eq == 1 
 greater > 1 
@@ -27,6 +27,8 @@ rp \) 1
 lc { 1
 rc } 1
 dot \. 1
+ls \[ 1
+rs \] 1
 
 id ([a-z]|[A-Z])([a-z]|[A-Z]|[0-9])* 0
 num [0-9]* 0

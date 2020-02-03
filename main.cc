@@ -14,6 +14,7 @@
 #include "./context_free/cf_engine.h"
 #include "./io/format_conversion.h"
 #include "./string_util/string_util.h"
+#include "./code_analysis/expr_act_analysis.h"
 
 void TraverseCfTreeNode(CfTreeNode* node) {
     if (node->_cnodes.size() == 0) {
@@ -104,8 +105,12 @@ int main() {
     CfTreeNode* root = cfEngine.GenCfAnalysisTree("./debug/resolvable_file/code_file.txt");
     assert(root != nullptr);
     CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
+    std::cout << std::endl << "-------------------" << std::endl;
+    std::cout << ExprActAnalysis::GenCode(root) << std::endl;
 
     CfTreeNode::DestroyTree(root);
+
+    std::cout << std::endl;
 
     std::cout << "test over!" << std::endl;
     return 0;

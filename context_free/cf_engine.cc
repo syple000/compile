@@ -229,7 +229,7 @@ void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
         infoStack.pop();
     }
     int nextState = this->_stateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
-    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number));
+    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, cfExpr->_reductionAction));
     HandleCfTreeNode(infoStack.top()._cfNode);
 }
 

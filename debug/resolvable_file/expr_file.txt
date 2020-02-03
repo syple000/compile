@@ -1,102 +1,106 @@
 PROG
 
-35 LV_EXPR LVALUE "reduction_priority=1;
-                  "
+35 LV_EXPR LVALUE "reduction_priority=1 & reduction_action=genCode($1)"
 
-0 PROG BLOCK PROG
-1 PROG null
+0 PROG BLOCK PROG "reduction_action=genCode($1, $2)"
+1 PROG null "reduction_action=genCode($1)"
 
-2 BLOCK FUNC
-3 BLOCK STRUCT
+2 BLOCK FUNC "reduction_action=genCode($1)"
+3 BLOCK STRUCT "reduction_action=genCode($1)"
 
-5 FUNC TYPE id lp PARAMS rp EXPRS_BLOCK
-6 STRUCT struct id lc DECLS rc sem
+5 FUNC TYPE id lp PARAMS rp EXPRS_BLOCK "reduction_action=genCode($1, $2, $3, $4, $5, $6)"
+6 STRUCT struct id lc DECLS rc sem "reduction_action=genCode($1, $2, $3, $4, $5, $6)"
 
-7 TYPE int
-8 TYPE float
-9 TYPE char
-10 TYPE struct id
-11 TYPE TYPE ls rs
-12 TYPE TYPE ast
+7 TYPE int "reduction_action=genCode($1)"
+8 TYPE float "reduction_action=genCode($1)"
+9 TYPE char "reduction_action=genCode($1)"
+10 TYPE struct id "reduction_action=genCode($1, $2)"
 
-13 PARAMS TYPE id PARAM
-14 PARAMS null
-15 PARAM com TYPE id PARAM
-16 PARAM null
+13 PARAMS TYPE id PARAM "reduction_action=genCode($1, $2)"
+14 PARAMS null "reduction_action=genCode($1)"
+15 PARAM com TYPE id PARAM "reduction_action=genCode($1, $2, $3, $4)"
+16 PARAM null "reduction_action=genCode($1)"
 
-17 EXPRS COND_EXPR EXPRS
-18 EXPRS CYCLE_EXPR EXPRS
-19 EXPRS EXPRS_BLOCK EXPRS
-20 EXPRS null
+17 EXPRS COND_EXPR EXPRS "reduction_action=genCode($1, $2)"
+18 EXPRS CYCLE_EXPR EXPRS "reduction_action=genCode($1, $2)"
+19 EXPRS EXPRS_BLOCK EXPRS "reduction_action=genCode($1, $2)"
+20 EXPRS null "reduction_action=genCode($1)"
 
-21 EXPR RV_EXPR
-22 EXPR LV_EXPR
-23 EXPR NV_EXPR
-24 EXPR BOOL_EXPR
-25 EXPR DECL
-26 EXPR break
-27 EXPR null
+21 EXPR RV_EXPR "reduction_action=genCode($1)"
+22 EXPR LV_EXPR "reduction_action=genCode($1)"
+23 EXPR NV_EXPR "reduction_action=genCode($1)"
+24 EXPR BOOL_EXPR "reduction_action=genCode($1)"
+25 EXPR DECL "reduction_action=genCode($1)"
+26 EXPR break "reduction_action=genCode($1)"
+27 EXPR null "reduction_action=genCode($1)"
 
-28 RV_EXPR LVALUE RROP RV_EXPR
-29 RV_EXPR LVALUE RROP LV_EXPR
-30 RV_EXPR LVALUE
-31 RV_EXPR RVALUE RROP RV_EXPR
-32 RV_EXPR RVALUE RROP LV_EXPR
-33 RV_EXPR RVALUE
+28 RV_EXPR LVALUE RROP RV_EXPR "reduction_action=genCode($1, $2, $3)"
+29 RV_EXPR LVALUE RROP LV_EXPR "reduction_action=genCode($1, $2, $3)"
+30 RV_EXPR LVALUE "reduction_action=genCode($1)"
+31 RV_EXPR RVALUE RROP RV_EXPR "reduction_action=genCode($1, $2, $3)"
+32 RV_EXPR RVALUE RROP LV_EXPR "reduction_action=genCode($1, $2, $3)"
+33 RV_EXPR RVALUE "reduction_action=genCode($1)"
 
-34 LV_EXPR LVALUE LROP RV_EXPR
+34 LV_EXPR LVALUE LROP RV_EXPR "reduction_action=genCode($1, $2, $3)"
 
-36 NV_EXPR NROP RV_EXPR
-37 BOOL_EXPR RV_EXPR BOP BOOL_EXPR
-38 BOOL_EXPR RV_EXPR
+36 NV_EXPR NROP RV_EXPR "reduction_action=genCode($1, $2)"
+37 BOOL_EXPR RV_EXPR BOP BOOL_EXPR "reduction_action=genCode($1, $2, $3)"
+38 BOOL_EXPR RV_EXPR "reduction_action=genCode($1)"
 
-39 VALUE RVALUE
-40 VALUE LVALUE
+39 VALUE RVALUE "reduction_action=genCode($1)"
+40 VALUE LVALUE "reduction_action=genCode($1)"
 
-41 RVALUE num
-42 RVALUE CALL
-43 RVALUE new TYPE
-44 LVALUE id
-45 LVALUE id dot VALUE
-46 LVALUE id ast VALUE
+41 RVALUE num "reduction_action=genCode($1)"
+42 RVALUE CALL "reduction_action=genCode($1)"
+43 RVALUE new TYPE "reduction_action=genCode($1, $2)"
+44 LVALUE id ARR "reduction_action=genCode($1, $2)"
+45 LVALUE id dot VALUE "reduction_action=genCode($1, $2, $3)"
+46 LVALUE id ast VALUE "reduction_action=genCode($1, $2, $3)"
 
-47 CALL id lp ARGS rp
+47 CALL id lp ARGS rp "reduction_action=genCode($1, $2, $3, $4)"
 
-48 ARGS VALUE ARG
-49 ARGS null
-50 ARG com VALUE ARG
-51 ARG null
+48 ARGS VALUE ARG "reduction_action=genCode($1, $2)"
+49 ARGS null "reduction_action=genCode($1)"
+50 ARG com VALUE ARG "reduction_action=genCode($1, $2, $3)"
+51 ARG null "reduction_action=genCode($1)"
 
-52 RROP add
-53 RROP sub
-54 RROP mul
-55 RROP div
-56 RROP BOP
+52 RROP add "reduction_action=genCode($1)"
+53 RROP sub "reduction_action=genCode($1)"
+54 RROP ast "reduction_action=genCode($1)"
+55 RROP div "reduction_action=genCode($1)"
+56 RROP BOP "reduction_action=genCode($1)"
 
-57 LROP assign
+57 LROP assign "reduction_action=genCode($1)"
 
-58 BOP and
-59 BOP or
-60 BOP eq
-61 BOP greater
-62 BOP less
+58 BOP and "reduction_action=genCode($1)"
+59 BOP or "reduction_action=genCode($1)"
+60 BOP eq "reduction_action=genCode($1)"
+61 BOP greater "reduction_action=genCode($1)"
+62 BOP less "reduction_action=genCode($1)"
 
-63 NROP return
+63 NROP return "reduction_action=genCode($1)"
 
-64 COND_EXPR if lp BOOL_EXPR rp EXPRS_BLOCK
-65 COND_EXPR if lp BOOL_EXPR rp EXPRS_BLOCK else EXPRS_BLOCK
+64 COND_EXPR if lp BOOL_EXPR rp EXPRS_BLOCK "reduction_action=genCode($1, $2, $3, $4, $5)"
+65 COND_EXPR if lp BOOL_EXPR rp EXPRS_BLOCK else EXPRS_BLOCK "reduction_action=genCode($1, $2, $3, $4, $5, $6, $7)"
 
-66 EXPRS_BLOCK lc EXPRS rc
-67 EXPRS_BLOCK EXPR sem
-68 EXPRS_BLOCK COND_EXPR
-69 EXPRS_BLOCK CYCLE_EXPR
+66 EXPRS_BLOCK lc EXPRS rc "reduction_action=genCode($1, $2, $3)"
+67 EXPRS_BLOCK EXPR sem "reduction_action=genCode($1, $2)"
+68 EXPRS_BLOCK COND_EXPR "reduction_action=genCode($1)"
+69 EXPRS_BLOCK CYCLE_EXPR "reduction_action=genCode($1)"
 
-70 CYCLE_EXPR for lp EXPR sem BOOL_EXPR sem EXPR rp EXPRS_BLOCK
-71 CYCLE_EXPR while lp BOOL_EXPR rp EXPRS_BLOCK
+70 CYCLE_EXPR for lp EXPR sem BOOL_EXPR sem EXPR rp EXPRS_BLOCK "reduction_action=genCode($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+71 CYCLE_EXPR while lp BOOL_EXPR rp EXPRS_BLOCK "reduction_action=genCode($1, $2, $3, $4, $5)"
 
-72 DECLS DECL sem DECLS
-73 DECLS null
+72 DECLS DECL sem DECLS "reduction_action=genCode($1, $2, $3)"
+73 DECLS null "reduction_action=genCode($1)"
 
-74 DECL TYPE id
-75 DECL TYPE id LROP RV_EXPR
+74 DECL TYPE PTR id ARR "reduction_action=genCode($1, $2, $3, $4)"
+75 DECL TYPE PTR id ARR LROP RV_EXPR "reduction_action=genCode($1, $2, $3, $4, $5, $6)"
 
+78 ARR ls num rs ARR "reduction_action=genCode($1, $2, $3, $4)"
+79 ARR null "reduction_action=genCode($1)"
+
+80 PTR ast PTR "reduction_action=genCode($1, $2)"
+81 PTR null "reduction_action=genCode($1)"
+
+82 LVALUE PTR id "reduction_action=genCode($1, $2)"

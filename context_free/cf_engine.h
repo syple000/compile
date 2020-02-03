@@ -49,8 +49,9 @@ struct StackInfo {
         this->_cfNode = new CfTreeNode(key, value);
     }
 
-    StackInfo(int state, const std::string& key, const std::vector<CfTreeNode*>& cnodes, int reducedExprNumber) : _state(state) {
-        this->_cfNode = new CfTreeNode(key, cnodes, reducedExprNumber);
+    StackInfo(int state, const std::string& key, const std::vector<CfTreeNode*>& cnodes, int reducedExprNumber, const std::string& reductionAction) 
+        : _state(state) {
+        this->_cfNode = new CfTreeNode(key, cnodes, reducedExprNumber, reductionAction);
     }
 };
 
