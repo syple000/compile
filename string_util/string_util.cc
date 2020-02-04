@@ -25,11 +25,15 @@ std::pair<int, int> StringUtil::RegMatch(RegExprEngine& regExprEngine, const std
 }
 
 std::vector<std::string> StringUtil::Split(const std::string& str, const std::string& regExpr) {
-    std::vector<std::string> splitedStrs;
     RegExprEngine regExprEngine(regExpr);
     if (!regExprEngine.InitSuccess()) {
-        return splitedStrs;
+        return std::vector<std::string>();
     }
+    return Split(str, regExprEngine);
+}
+
+std::vector<std::string> StringUtil::Split(const std::string& str, RegExprEngine& regExprEngine) {
+    std::vector<std::string> splitedStrs;
     int startPos = 0;
     while (startPos < str.size()) {
         std::pair<int, int> matchInfo = RegMatch(regExprEngine, str, startPos);
@@ -49,11 +53,15 @@ std::vector<std::string> StringUtil::Split(const std::string& str, const std::st
 }
 
 std::string StringUtil::Replace(const std::string& str, const std::string& regExpr, const std::string& replaceStr) {
-    std::string resStr;
     RegExprEngine regExprEngine(regExpr);
     if (!regExprEngine.InitSuccess()) {
-        return resStr;
+        return "";
     }
+    return Replace(str, regExprEngine, replaceStr);
+}
+
+std::string StringUtil::Replace(const std::string& str, RegExprEngine& regExprEngine, const std::string& replaceStr) {
+    std::string resStr;
     int startPos = 0;
     while (startPos < str.size()) {
         std::pair<int, int> matchInfo = RegMatch(regExprEngine, str, startPos);
@@ -69,6 +77,34 @@ std::string StringUtil::Replace(const std::string& str, const std::string& regEx
     }
     if (str.size() > startPos) {
         resStr += str.substr(startPos, str.size() - startPos);
+    }
+    return resStr;
+}
+
+std::string StringUtil::Replace(const std::string& str, LexicalParser& lexicalParser) {
+    Buffer buffer(str.size());
+    buffer.AppendToBuffer(str.c_str(), str.size());
+    buffer._curPos = 0;
+    int startMatchPos = 0;
+    int startPos = 0;
+
+    std::string resStr;
+    while (buffer.CurrentCharAvailable()) {
+        std::string key = lexicalParser.GetNextKey(buffer);
+        if (key == "") {
+            startMatchPos++;
+            buffer._curPos = startMatchPos;
+        } else {
+            if (startMatchPos > startPos) {
+                resStr += buffer.GetString(startPos, startMatchPos);
+            }
+            resStr += key;
+            startPos = buffer._curPos;
+            startMatchPos = buffer._curPos;
+        }
+    }
+    if (startMatchPos > startPos) {
+        resStr += buffer.GetString(startPos, startMatchPos);
     }
     return resStr;
 }

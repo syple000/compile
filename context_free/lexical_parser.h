@@ -45,13 +45,18 @@ private:
 
     bool InsertLexicalParserState(LexicalParserState* state);
 
+    void SkipEmptyElem(Buffer& buffer);
+
 public:
     LexicalParser(const std::map<std::string, std::pair<std::string, int>>& keyRegExpMap);
 
     virtual ~LexicalParser();
 
-    // 空格/换行是默认分割符
+    // 跳过首空元素
     std::string GetNextWord(Buffer& buffer);
+
+    // 匹配下一个key
+    std::string GetNextKey(Buffer& buffer);
 
     bool InitSuccess();
 };

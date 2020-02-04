@@ -79,20 +79,22 @@ bool LexicalParser::InsertLexicalParserState(LexicalParserState* state) {
     return true;
 }
 
-std::string LexicalParser::GetNextWord(Buffer& buffer) {
-    std::string word;
-    int qualifiedPos = -1;
-    int curState = 0;
+void LexicalParser::SkipEmptyElem(Buffer& buffer) {
     while (buffer.CurrentCharAvailable()) {
         char ch = buffer.GetCurrentChar();
         if (ch == ' ' || ch == '\n') {
             buffer.MoveOnByChar();
             continue;
         } else {
-            break;
+            return;
         }
     }
+}
 
+std::string LexicalParser::GetNextKey(Buffer& buffer) {
+    std::string word;
+    int qualifiedPos = -1;
+    int curState = 0;
     while (buffer.CurrentCharAvailable()) {
         unsigned char ch = buffer.GetCurrentChar();
         curState = this->_transTable[curState][(int)ch];
@@ -108,6 +110,11 @@ std::string LexicalParser::GetNextWord(Buffer& buffer) {
         buffer._curPos = qualifiedPos + 1;
     }
     return word;
+}
+
+std::string LexicalParser::GetNextWord(Buffer& buffer) {
+    SkipEmptyElem(buffer);
+    return GetNextKey(buffer);
 }
 
 bool LexicalParser::InitSuccess() {

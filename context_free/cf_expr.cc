@@ -370,9 +370,9 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 }
 
 void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo) {
-    std::vector<std::string> infos = StringUtil::Split(additionalInfo.substr(1, additionalInfo.size() -2), "&");
+    std::vector<std::string> infos = StringUtil::Split(additionalInfo.substr(1, additionalInfo.size() -2), this->_segRegExprEngine);
     for (auto info : infos) {
-        std::vector<std::string> basicInfos = StringUtil::Split(info, "=");
+        std::vector<std::string> basicInfos = StringUtil::Split(info, this->_equalRegExprEngine);
 
 #ifdef DEBUG_CODE
         if (basicInfos.size() != 2) {
@@ -383,7 +383,7 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
 
         std::string keyWord = StringUtil::Trim(basicInfos[0]);
         if (keyWord == "reduction_first") {
-            std::vector<std::string> symbols = StringUtil::Split(basicInfos[1], ",");
+            std::vector<std::string> symbols = StringUtil::Split(basicInfos[1], this->_commaRegExprEngine);
             for (auto symbolName : symbols) {
                 auto symbolItr = this->_symbolMap.find(StringUtil::Trim(symbolName));
 
@@ -411,7 +411,7 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
 }
 
 // 词法与语法之间有一个空行
-CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) {
+CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) : _commaRegExprEngine(","), _equalRegExprEngine("="), _segRegExprEngine("&") {
 
     LexicalParser lexicalParser = LexicalParser(ReadSymbol(lexicalBuffer));
     ReadExpr(exprBuffer, lexicalParser);

@@ -9,16 +9,15 @@
 #ifndef TREE_NODE
 #define TREE_NODE 1
 
-struct Attribute {
-    void* _attribute;
-    Attribute(const std::vector<std::string>& args);
-    virtual std::string GetAttributeAsString() = 0;
-    // 当args为空时，生成与原属性一致的属性返回
-    virtual Attribute* UpdateAttribute(const std::vector<std::string>& args) = 0;
-    virtual ~Attribute() = 0;
-};
-
 struct CfTreeNode {
+    struct Attribute {
+        void* _attribute;
+        Attribute(const std::vector<std::string>& args);
+        virtual std::string GetAsString() = 0;
+        virtual Attribute* Update(const std::vector<std::string>& cmd) = 0;
+        virtual ~Attribute() = 0;
+    };
+
     CfTreeNode* _pnode = nullptr;
     std::vector<CfTreeNode*> _cnodes;
     std::string _key;

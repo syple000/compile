@@ -75,6 +75,11 @@ private:
     CfSymbol* _initSymbol = nullptr;
     CfSymbol* _nullSymbol = nullptr;
 
+    // 正则解析器
+    RegExprEngine _commaRegExprEngine;
+    RegExprEngine _equalRegExprEngine;
+    RegExprEngine _segRegExprEngine;
+
     void GenNullable();
 
     void GenFirst();
