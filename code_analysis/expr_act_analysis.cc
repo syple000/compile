@@ -59,16 +59,14 @@ std::unordered_map<std::string, std::vector<std::vector<std::string>>> ExprActAn
     return actCmds;
 }
 
-
-// 目标函数名： genCode() 当字节点无value时，递归生成
-std::string ExprActAnalysis::GenCode(CfTreeNode* root, Process* process) {
+std::string ExprActAnalysis::Execute(CfTreeNode* root, Process* process) {
     if (root->_reductionAction.size() == 0) {
         return "";
     }
     auto actCmds = GetActsFromStr(root->_reductionAction);
     std::string code;
     for (auto actCmd : actCmds) {
-        if (actCmd.first == "genCode") {
+        if (actCmd.first == this->GENERATE_CODE_FUNC) {
 
 #ifdef DEBUG_CODE
             if (actCmd.second.size() != 1) {
@@ -77,28 +75,36 @@ std::string ExprActAnalysis::GenCode(CfTreeNode* root, Process* process) {
             }
 #endif
 
-            for (int i = 1; i < actCmd.second[0].size(); i++) {
-                auto& arg = actCmd.second[0][i];
-                if (arg[0] == '$') {
-                    int index = std::stoi(arg.substr(1, arg.size() - 1));
-                    if (root->_cnodes[index - 1]->_value.size() != 0) {
-                        code += process->process(root->_cnodes[index - 1]->_value);
-                    } else {
-                        code += GenCode(root->_cnodes[index - 1], process);
-                    }
-                } else {
-                    auto itr = root->_attributes.find(arg);
-                    if (itr == root->_attributes.end()) {
-                        code += process->process(arg);
-                    } else {
-                        code += process->process(itr->second->GetAsString());
-                    }
-                }
-            }
+            code = GenCode(root, process, actCmd.second[0]);
         } else {
             // TODO
         }
     }
 
+    return code;
+}
+
+// 目标函数名： genCode() 当字节点无value时，递归生成
+std::string ExprActAnalysis::GenCode(CfTreeNode* root, Process* process, const std::vector<std::string>& act) {
+    std::string code;
+    // 跳过函数名
+    for (int i = 1; i < act.size(); i++) {
+        auto& arg = act[i];
+        if (arg[0] == '$') {
+            int index = std::stoi(arg.substr(1, arg.size() - 1));
+            if (root->_cnodes[index - 1]->_value.size() != 0) {
+                code += process->process(root->_cnodes[index - 1]->_value);
+            } else {
+                code += Execute(root->_cnodes[index - 1], process);
+            }
+        } else {
+            auto itr = root->_attributes.find(arg);
+            if (itr == root->_attributes.end()) {
+                code += process->process(arg);
+            } else {
+                code += process->process(itr->second->GetAsString());
+            }
+        }
+    }
     return code;
 }

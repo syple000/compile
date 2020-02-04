@@ -24,7 +24,7 @@ void TraverseCfTreeNode(CfTreeNode* node) {
 
 struct ProcessValue : public ExprActAnalysis::Process {
     virtual std::string process(const std::string& value) {
-        return value;
+        return value + ' ';
     }
 };
 
@@ -116,7 +116,7 @@ int main() {
     std::cout << std::endl << "-------------------" << std::endl;
     ExprActAnalysis actAnalysis;
     ProcessValue* process = new ProcessValue();
-    std::cout << actAnalysis.GenCode(root, process) << std::endl;
+    std::cout << actAnalysis.Execute(root, process) << std::endl;
     delete process;
 
     CfTreeNode::DestroyTree(root);

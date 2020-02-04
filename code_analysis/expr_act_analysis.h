@@ -9,6 +9,8 @@
 
 class ExprActAnalysis {
 private:
+    const std::string GENERATE_CODE_FUNC = "genCode";
+
     RegExprEngine _semicolonRegExprEngine;
     RegExprEngine _parenthesesRegExprEngine;
     RegExprEngine _commaRegExprEngine;
@@ -20,12 +22,14 @@ public:
     struct Process {
         virtual std::string process(const std::string&) = 0;
     };
-    
+
     ExprActAnalysis();
     virtual ~ExprActAnalysis();
     std::unordered_map<std::string, std::vector<std::vector<std::string>>> GetActsFromStr(const std::string& actStr);
+    std::string Execute(CfTreeNode* root, Process* process);
     // 目标函数名： genCode() 当字节点无value时，递归生成
-    std::string GenCode(CfTreeNode* root, Process* process);
+    std::string GenCode(CfTreeNode* root, Process* process, const std::vector<std::string>& act);
+
 };
 
 #endif
