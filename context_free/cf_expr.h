@@ -8,6 +8,8 @@
 #include "../observer_pattern/observer_pattern.h"
 #include "../buffer/buffer.h"
 #include "./lexical_parser.h"
+#include "../io/io.h"
+#include "../io/format_conversion.h"
 
 #ifndef CONTEXT_FREE
 #define CONTEXT_FREE 1
@@ -92,7 +94,11 @@ private:
 
     void ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser);
 
-    void GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo);
+    void GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo, Buffer& auxiliaryCodeBuffer, std::vector<std::string>& funcNames);
+
+    void AddInitExpr(const std::string& initKey);
+
+    void AddExprs(Buffer& exprBuffer, LexicalParser& lexicalParser, Buffer& auxiliaryCodeBuffer, std::vector<std::string>& funcNames);
 
     CfSymbol* AddSymbol(const std::string& key, const std::string& keyRegExpr, int number, bool isTerminator, int nullable);
 

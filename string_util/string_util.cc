@@ -129,8 +129,23 @@ std::string StringUtil::Trim(const std::string& str) {
 }
 
 bool StringUtil::StartWith(const std::string& str, const std::string& prefix) {
+    if (str.size() < prefix.size()) {
+        return false;
+    }
     for (int i = 0; i < prefix.size(); i++) {
         if (str[i] != prefix[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool StringUtil::EndWith(const std::string& str, const std::string& suffix) {
+    if (str.size() < suffix.size()) {
+        return false;
+    }
+    for (int i = str.size(), j = suffix.size(); j > 0; i--, j--) {
+        if (str[i - 1] != suffix[j - 1]) {
             return false;
         }
     }

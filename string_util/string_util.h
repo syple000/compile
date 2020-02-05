@@ -18,6 +18,7 @@ public:
     static std::string Replace(const std::string& str, RegExprEngine& regExprEngine, const std::string& replaceStr);
     static std::string Replace(const std::string& str, LexicalParser& lexicalParser);
     static bool StartWith(const std::string& str, const std::string& prefix);
+    static bool EndWith(const std::string& str, const std::string& suffix);
 };
 
 #endif

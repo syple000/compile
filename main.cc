@@ -14,19 +14,12 @@
 #include "./context_free/cf_engine.h"
 #include "./io/format_conversion.h"
 #include "./string_util/string_util.h"
-#include "./code_analysis/expr_act_analysis.h"
 
 void TraverseCfTreeNode(CfTreeNode* node) {
     if (node->_cnodes.size() == 0) {
         std::cout << node->_value << " ";
     }
 }
-
-struct ProcessValue : public ExprActAnalysis::Process {
-    virtual std::string process(const std::string& value) {
-        return value + ' ';
-    }
-};
 
 int main() {
     char pwd[256];
@@ -114,10 +107,6 @@ int main() {
     assert(root != nullptr);
     CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
     std::cout << std::endl << "-------------------" << std::endl;
-    ExprActAnalysis actAnalysis;
-    ProcessValue* process = new ProcessValue();
-    std::cout << actAnalysis.Execute(root, process) << std::endl;
-    delete process;
 
     CfTreeNode::DestroyTree(root);
 

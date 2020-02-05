@@ -1,5 +1,7 @@
 PROG
 
+%% %%
+
 35 LV_EXPR LVALUE "reduction_priority=1"
  "reduction_action=genCode($1)";
 

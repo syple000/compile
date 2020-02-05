@@ -268,26 +268,19 @@ std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& le
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_number_", std::pair<std::string, int>("0|([1-9][0-9]*)", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_string_", 
         std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|{|}|\\\\)*\"", 0)));
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_code_block_",
+        std::pair<std::string, int>("%%([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|{|}|\\\\)*%%", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_semicolon_", std::pair<std::string, int>(";", 0)));
     return keyRegExprMap;
 }
 
-void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
-    // 表达式第一个单词
-    std::string initkey = exprBuffer.GetNextStringSplitByBlank();
-
-#ifdef DEBUG_CODE
-    if (this->_symbolMap.find(initkey) == this->_symbolMap.end()) {
-        std::cout << "init key: " << initkey << " not found!" << std::endl;
-    }
-#endif
-
+void CfUtil::AddInitExpr(const std::string& initKey) {
     // 第一个表达式生成 _START_SYMBOL_ initKey _END_SYMBOL_ 格式
     this->_initSymbol = this->_symbolMap.find("_START_SYMBOL_")->second;
     
     CfExpr* expr = new CfExpr();
     expr->_sourceSymbol = this->_initSymbol;
-    expr->_production.push_back(this->_symbolMap.find(initkey)->second);
+    expr->_production.push_back(this->_symbolMap.find(initKey)->second);
     expr->_production.push_back(this->_symbolMap.find("_END_SYMBOL_")->second);
     expr->_number = -1;
     this->_exprs.insert(std::pair<int, CfExpr*>(expr->_number, expr));
@@ -297,7 +290,10 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
     exprs->_exprs.insert(expr);
     this->_exprMap.insert(std::pair<CfSymbol*, SiblingExprs*>(expr->_sourceSymbol, exprs));
 
-    // 后续表达式解析
+}
+
+void CfUtil::AddExprs(Buffer& exprBuffer, LexicalParser& lexicalParser, Buffer& auxiliaryCodeBuffer, std::vector<std::string>& funcNames) {
+    // 表达式解析
     while (exprBuffer.CurrentCharAvailable()) {
         
         CfExpr* expr = new CfExpr();
@@ -310,7 +306,7 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
                 if (key == "_number_") {
                     expr->_number = std::stoi(value);
                 } else if (key == "_string_") {
-                    GetExprAdditionalInfo(expr, value);
+                    GetExprAdditionalInfo(expr, value, auxiliaryCodeBuffer, funcNames);
                 } else if (key == "_semicolon_") {
                     // 单独分号匹配作为表达式结束标志
                     while (exprBuffer.CurrentCharAvailable() && (exprBuffer.GetCurrentChar() == ' ' || exprBuffer.GetCurrentChar() == '\n')) {
@@ -366,7 +362,51 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
     }
 }
 
-void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo) {
+void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
+    Buffer auxiliaryCodeBuf(100);
+
+    // 表达式第一个单词
+    std::string initkey = exprBuffer.GetNextStringSplitByBlank();
+
+#ifdef DEBUG_CODE
+    if (this->_symbolMap.find(initkey) == this->_symbolMap.end()) {
+        std::cout << "init key: " << initkey << " not found!" << std::endl;
+        return;
+    }
+#endif
+    
+    AddInitExpr(initkey);
+
+    std::string auxiliaryCode = lexicalParser.GetNextWord(exprBuffer);
+
+#ifdef DEBUG_CODE
+    if (!StringUtil::StartWith(auxiliaryCode, "%%") || !StringUtil::EndWith(auxiliaryCode, "%%")) {
+        std::cout << "auxiliary code format error!" << std::endl;
+    }
+#endif
+    auxiliaryCodeBuf.AppendToBuffer("#include \"../../tree_node/tree_node.h\"\n", 39);
+    auxiliaryCodeBuf.AppendToBuffer(auxiliaryCode.substr(2, auxiliaryCode.size() - 4).c_str(), auxiliaryCode.size() - 4);
+    auxiliaryCodeBuf.AppendToBuffer("\nstd::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)> funcRegistry;\n", 95);
+
+    std::vector<std::string> funcNames;
+
+    AddExprs(exprBuffer, lexicalParser, auxiliaryCodeBuf, funcNames);
+
+    auxiliaryCodeBuf.AppendToBuffer("\nvoid registFuncs() {\n", 22);
+    for (auto func : funcNames) {
+        auxiliaryCodeBuf.AppendToBuffer("    funcRegistry.insert(std::pair<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)>(\"", 96);
+        auxiliaryCodeBuf.AppendToBuffer(func.c_str(), func.size());
+        auxiliaryCodeBuf.AppendToBuffer("\", ", 3);
+        auxiliaryCodeBuf.AppendToBuffer(func.c_str(), func.size());
+        auxiliaryCodeBuf.AppendToBuffer(";\n", 2);
+    }
+    auxiliaryCodeBuf.AppendToBuffer("}\n", 2);
+
+    IO<std::string> io(String2String, String2String);
+    io.WriteFile(auxiliaryCodeBuf, "./debug/resolvable_file/aux_code.h", std::ios::binary);
+}
+
+void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo, Buffer& auxiliaryCodeBuffer, std::vector<std::string>& funcNames) {
     std::string info = additionalInfo.substr(1, additionalInfo.size() -2);
     if (StringUtil::StartWith(info, "reduction_first=")) {
         std::vector<std::string> symbols = StringUtil::Split(info.substr(16, info.size() - 16), this->_commaRegExprEngine);
@@ -385,7 +425,16 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
     } else if (StringUtil::StartWith(info, "reduction_priority=")) {
         expr->_reductionPriority = std::stoi(StringUtil::Trim(info.substr(19, info.size() - 19)));
     } else if (StringUtil::StartWith(info, "reduction_action=")) {
-        expr->_reductionAction = StringUtil::Trim(info.substr(17, info.size() - 17));
+        std::string reductionAction = StringUtil::Trim(info.substr(17, info.size() - 17));
+        //expr->_reductionAction = reductionAction; 目前采取的策略模式不需要该变量赋值
+        std::string funcName = "_func_" + std::to_string(expr->_number) + "_";
+        funcNames.push_back(funcName);
+
+        auxiliaryCodeBuffer.AppendToBuffer("void ", 5);
+        auxiliaryCodeBuffer.AppendToBuffer(funcName.c_str(), funcName.size());
+        auxiliaryCodeBuffer.AppendToBuffer("(CfTreeNode* pnode, std::vector<CfTreeNode*> cnode) {\n", 54);
+        auxiliaryCodeBuffer.AppendToBuffer(reductionAction.c_str(), reductionAction.size());
+        auxiliaryCodeBuffer.AppendToBuffer("\n}\n", 3);
     } else {
 
 #ifdef DEBUG_CODE
