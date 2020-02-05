@@ -268,6 +268,7 @@ std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& le
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_number_", std::pair<std::string, int>("0|([1-9][0-9]*)", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_string_", 
         std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|{|}|\\\\)*\"", 0)));
+    keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_semicolon_", std::pair<std::string, int>(";", 0)));
     return keyRegExprMap;
 }
 
@@ -310,10 +311,21 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
                     expr->_number = std::stoi(value);
                 } else if (key == "_string_") {
                     GetExprAdditionalInfo(expr, value);
+                } else if (key == "_semicolon_") {
+                    // 单独分号匹配作为表达式结束标志
+                    while (exprBuffer.CurrentCharAvailable() && (exprBuffer.GetCurrentChar() == ' ' || exprBuffer.GetCurrentChar() == '\n')) {
+                        exprBuffer.MoveOnByChar();
+                    }
+                    break;
                 } else {
+
+#ifdef DEBUG_CODE
                     delete expr;
                     expr = nullptr;
+                    std::cout << "expr file line: " << exprBuffer._curLine << " error!" << std::endl;
                     break;
+#endif
+
                 }
             } else {
                 if (expr->_sourceSymbol == nullptr) {
@@ -329,27 +341,12 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
                     expr->_production.push_back(symbolItr->second);
                 }
             }
-            while (exprBuffer.GetCurrentChar() == ' ' && exprBuffer.CurrentCharAvailable()) {
-                exprBuffer.MoveOnByChar();
-            }
-            if (!exprBuffer.CurrentCharAvailable() || exprBuffer.GetCurrentChar() == '\n') {
-                break;
-            }
         }
 
-        if (expr == nullptr) {
-            exprBuffer.GetNextLine();
-
 #ifdef DEBUG_CODE
-            if (exprBuffer.CurrentCharAvailable()) {
-                std::cout << "expr file line: " << exprBuffer._curLine << " error!" << std::endl;
-            }
-#endif
-
+        if (expr == nullptr) {
             continue;
         }
-
-#ifdef DEBUG_CODE
         auto exprsItr = this->_exprs.find(expr->_number);
         if (exprsItr != this->_exprs.end()) {
             std::cout << "expr number: " << expr->_number << " repeated!" << std::endl;
@@ -370,48 +367,36 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 }
 
 void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo) {
-    std::vector<std::string> infos = StringUtil::Split(additionalInfo.substr(1, additionalInfo.size() -2), this->_segRegExprEngine);
-    for (auto info : infos) {
-        std::vector<std::string> basicInfos = StringUtil::Split(info, this->_equalRegExprEngine);
+    std::string info = additionalInfo.substr(1, additionalInfo.size() -2);
+    if (StringUtil::StartWith(info, "reduction_first=")) {
+        std::vector<std::string> symbols = StringUtil::Split(info.substr(16, info.size() - 16), this->_commaRegExprEngine);
+        for (auto symbolName : symbols) {
+            auto symbolItr = this->_symbolMap.find(StringUtil::Trim(symbolName));
 
 #ifdef DEBUG_CODE
-        if (basicInfos.size() != 2) {
-            std::cout << "expr info" << info << " error!" << std::endl;
-            continue;
-        }
-#endif
-
-        std::string keyWord = StringUtil::Trim(basicInfos[0]);
-        if (keyWord == "reduction_first") {
-            std::vector<std::string> symbols = StringUtil::Split(basicInfos[1], this->_commaRegExprEngine);
-            for (auto symbolName : symbols) {
-                auto symbolItr = this->_symbolMap.find(StringUtil::Trim(symbolName));
-
-#ifdef DEBUG_CODE
-                if (symbolItr == this->_symbolMap.end()) {
-                    std::cout << "reduction first symbol" << symbolName << " not found!" << std::endl;    
-                    continue;
-                }
-#endif
-
-                expr->_reductionFirst.insert(symbolItr->second);
+            if (symbolItr == this->_symbolMap.end()) {
+                std::cout << "reduction first symbol" << symbolName << " not found!" << std::endl;    
+                continue;
             }
-        } else if (keyWord == "reduction_priority") {
-            expr->_reductionPriority = std::stoi(StringUtil::Trim(basicInfos[1]));
-        } else if (keyWord == "reduction_action") {
-            expr->_reductionAction = StringUtil::Trim(basicInfos[1]);
-        } else {
-
-#ifdef DEBUG_CODE
-            std::cout << "expr additional info: " << basicInfos[0] << " error!" << std::endl;
 #endif
 
+            expr->_reductionFirst.insert(symbolItr->second);
         }
+    } else if (StringUtil::StartWith(info, "reduction_priority=")) {
+        expr->_reductionPriority = std::stoi(StringUtil::Trim(info.substr(19, info.size() - 19)));
+    } else if (StringUtil::StartWith(info, "reduction_action=")) {
+        expr->_reductionAction = StringUtil::Trim(info.substr(17, info.size() - 17));
+    } else {
+
+#ifdef DEBUG_CODE
+        std::cout << "expr additional info: " << additionalInfo << " error!" << std::endl;
+#endif
+
     }
 }
 
 // 词法与语法之间有一个空行
-CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) : _commaRegExprEngine(","), _equalRegExprEngine("="), _segRegExprEngine("&") {
+CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) : _commaRegExprEngine(",") {
 
     LexicalParser lexicalParser = LexicalParser(ReadSymbol(lexicalBuffer));
     ReadExpr(exprBuffer, lexicalParser);
