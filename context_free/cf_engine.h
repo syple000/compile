@@ -4,6 +4,7 @@
 #include "../cmp/cmp.h"
 #include "./lexical_parser.h"
 #include "../tree_node/tree_node.h"
+#include "../debug/resolvable_file/aux_code.h"
 
 #ifndef CONTEXT_FREE_ENGINE 
 #define CONTEXT_FREE_ENGINE 1
@@ -64,6 +65,7 @@ private:
     std::vector<CfState*> _stateVec;
     std::vector<std::vector<StateTransInfo>> _stateTransInfoTable;
     LexicalParser* _lexicalParser = nullptr;
+    AuxCode _auxCode;
     
     std::set<CfExprPos> CalcCfExprPosSetClosure(const std::set<CfExprPos>& basicState);
 
@@ -85,6 +87,10 @@ private:
 
     void ReadCodeLexical(Buffer& codeLexicalBuf);
 
+    void ExecuteReductionAction(CfTreeNode* root);
+
+    void ExecuteRecursively(CfTreeNode* root);
+
     // error hook function
     void HandleLexicalError(Buffer& buffer);
 
@@ -105,6 +111,9 @@ public:
     CfTreeNode* GenCfAnalysisTree(const std::string& codeFile);
 
     CfExpr* GetExpr(int exprNumber);
+
+    // 可根据需要改变分析的流程，目前采用后续递归分析方法
+    void StartAnalysis(CfTreeNode* root);
 
 };
 

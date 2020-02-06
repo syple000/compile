@@ -127,6 +127,10 @@ struct Buffer {
         }
     }
 
+    void AppendToBuffer(const std::string& str) {
+        this->AppendToBuffer(str.c_str(), str.size());
+    }
+
     std::string GetString(int start, int end) {
         std::string str;
         for (; start < end; start++) {

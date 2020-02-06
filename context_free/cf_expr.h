@@ -79,6 +79,8 @@ private:
 
     // 正则解析器
     RegExprEngine _commaRegExprEngine;
+    // 归约动作符号替换(目前支持0-9号变量替换，可根据需要扩展)
+    LexicalParser* _paramParser;
 
     void GenNullable();
 
@@ -131,6 +133,8 @@ public:
     int GetSymbolCount();
 
     CfExpr* GetExprByExprNumber(int exprNumber);
+
+    static std::string GetReductionFuncName(int exprNumber);
 
 };
 

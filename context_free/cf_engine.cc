@@ -313,3 +313,29 @@ std::string CfEngine::HandleCfTreeNode(CfTreeNode* root) {
 CfExpr* CfEngine::GetExpr(int exprNumber) {
     return this->_cfUtil->GetExprByExprNumber(exprNumber);
 }
+
+void CfEngine::ExecuteReductionAction(CfTreeNode* root) {
+    auto itr = this->_auxCode.funcRegistry.find(CfUtil::GetReductionFuncName(root->_reducedExprNumber));
+    if (itr != this->_auxCode.funcRegistry.end()) {
+        itr->second(root, root->_cnodes);
+    }
+}
+
+void CfEngine::ExecuteRecursively(CfTreeNode* root) {
+    if (root == nullptr) {
+        return;
+    }
+    for (auto cnode : root->_cnodes) {
+        ExecuteRecursively(cnode);
+    }
+    ExecuteReductionAction(root);
+}
+
+void CfEngine::StartAnalysis(CfTreeNode* root) {
+
+#ifdef GEN_AUX_CODE_FILE
+    this->_auxCode.registFuncs();
+#endif
+
+    ExecuteRecursively(root);
+}

@@ -1,3 +1,15 @@
-// 占位文件，会被生成代码覆盖
+#include "../../tree_node/tree_node.h"
 
-void registFuncs();
+#define GEN_AUX_CODE_FILE 1
+#ifndef AUX_CODE
+#define AUX_CODE 1
+
+class AuxCode {
+public:
+ 
+    std::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)> funcRegistry;
+
+    void registFuncs() {};
+};
+
+#endif
