@@ -10,13 +10,6 @@
 #define TREE_NODE 1
 
 struct CfTreeNode {
-    struct Attribute {
-        void* _attribute;
-        Attribute(const std::vector<std::string>& args);
-        virtual std::string GetAsString() = 0;
-        virtual Attribute* Update(const std::vector<std::string>& cmd) = 0;
-        virtual ~Attribute() = 0;
-    };
 
     CfTreeNode* _pnode = nullptr;
     std::vector<CfTreeNode*> _cnodes;
@@ -25,8 +18,6 @@ struct CfTreeNode {
 
     int _reducedExprNumber;
     std::string _reductionAction;
-
-    std::unordered_map<std::string, Attribute*> _attributes;
 
     CfTreeNode(const std::string& key, const std::string& value) 
         : _key(key), _value(value), _reducedExprNumber(-1) {}
