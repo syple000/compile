@@ -10,6 +10,7 @@
 #include "./lexical_parser.h"
 #include "../io/io.h"
 #include "../io/format_conversion.h"
+#include "../string_util/string_util.h"
 
 #ifndef CONTEXT_FREE
 #define CONTEXT_FREE 1

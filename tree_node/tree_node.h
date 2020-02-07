@@ -17,7 +17,9 @@ struct CfTreeNode {
     std::string _value;
 
     int _reducedExprNumber;
+    // 该属性暂时未被使用，做保留使用
     std::string _reductionAction;
+    std::unordered_map<std::string, void*> _attributes;
 
     CfTreeNode(const std::string& key, const std::string& value) 
         : _key(key), _value(value), _reducedExprNumber(-1) {}

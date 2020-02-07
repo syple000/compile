@@ -95,6 +95,7 @@ std::string LexicalParser::GetNextKey(Buffer& buffer) {
     std::string word;
     int qualifiedPos = -1;
     int curState = 0;
+    int curLine = buffer._curLine;
     while (buffer.CurrentCharAvailable()) {
         unsigned char ch = buffer.GetCurrentChar();
         curState = this->_transTable[curState][(int)ch];
@@ -103,12 +104,14 @@ std::string LexicalParser::GetNextKey(Buffer& buffer) {
         } else {
             word = this->_stateVec[curState]->_matchingValue;
             qualifiedPos = buffer._curPos;
+            curLine = buffer._curLine;
         }
         buffer.MoveOnByChar();
     }
     if (qualifiedPos != -1) {
         buffer._curPos = qualifiedPos + 1;
     }
+    buffer._curLine = curLine;
     return word;
 }
 

@@ -304,7 +304,7 @@ void CfUtil::AddExprs(Buffer& exprBuffer, LexicalParser& lexicalParser, Buffer& 
             std::string key = lexicalParser.GetNextWord(exprBuffer);
             auto symbolItr = this->_symbolMap.find(key);
             if (symbolItr == this->_symbolMap.end()) {
-                std::string value = exprBuffer.GetString(oldPos, exprBuffer._curPos);
+                std::string value = StringUtil::Trim(exprBuffer.GetString(oldPos, exprBuffer._curPos));
                 if (key == "_number_") {
                     expr->_number = std::stoi(value);
                 } else if (key == "_string_") {
@@ -382,7 +382,7 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
     // 读取辅助代码块
     int oldPos = exprBuffer._curPos;
     std::string auxiliaryCodeKey = lexicalParser.GetNextWord(exprBuffer);
-    std::string auxiliaryCode = exprBuffer.GetString(oldPos, exprBuffer._curPos);
+    std::string auxiliaryCode = StringUtil::Trim(exprBuffer.GetString(oldPos, exprBuffer._curPos));
 
 #ifdef DEBUG_CODE
     if (auxiliaryCodeKey != "_code_block_") {
@@ -435,7 +435,7 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
     } else if (StringUtil::StartWith(info, "reduction_priority=")) {
         expr->_reductionPriority = std::stoi(StringUtil::Trim(info.substr(19, info.size() - 19)));
     } else if (StringUtil::StartWith(info, "reduction_action=")) {
-        std::string reductionAction = StringUtil::Trim(info.substr(17, info.size() - 17));
+        std::string reductionAction = info.substr(17, info.size() - 17);
         // expr->_reductionAction = reductionAction; 目前采取的策略模式不需要该变量赋值
         // 将归约动作生成为相应的代码
         std::string funcName = GetReductionFuncName(expr->_number);

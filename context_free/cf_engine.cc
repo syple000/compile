@@ -172,7 +172,7 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
 
             continue;
         }
-        std::string value = codeBuf.GetString(oldPos, codeBuf._curPos);
+        std::string value = StringUtil::Trim(codeBuf.GetString(oldPos, codeBuf._curPos));
         CfSymbol* symbol = this->_cfUtil->GetCfSymbol(key);
         if (symbol == nullptr) {
 

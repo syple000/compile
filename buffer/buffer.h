@@ -136,23 +136,7 @@ struct Buffer {
         for (; start < end; start++) {
             str += this->_buf[start];
         }
-        int startIndex = 0;
-        int endIndex = str.size();
-        for (; startIndex < str.size(); startIndex++) {
-            if (str[startIndex] != ' ' && str[startIndex] != '\n') {
-                break;
-            }
-        }
-        for (; endIndex > 0; endIndex--) {
-            if (str[endIndex - 1] != ' ' && str[endIndex - 1] != '\n') {
-                break;
-            }
-        }
-        if (startIndex >= endIndex) {
-            return "";
-        } else {
-            return str.substr(startIndex, endIndex - startIndex);
-        }
+        return str;
     }
 
     char GetCurrentChar() {
