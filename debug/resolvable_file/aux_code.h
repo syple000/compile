@@ -21,10 +21,12 @@ public:
     pnode->_value = std::to_string(res);
     }
     static void _func_2_(CfTreeNode* pnode, std::vector<CfTreeNode*> cnodes) {
-pnode->_value = cnodes[0]->_value;
+
+    pnode->_value = cnodes[0]->_value;
     }
     static void _func_5_(CfTreeNode* pnode, std::vector<CfTreeNode*> cnodes) {
-pnode->_value = cnodes[0]->_value;
+
+    pnode->_value = cnodes[0]->_value;
     }
 
     void registFuncs() {

@@ -10,10 +10,12 @@ static int res;
 1 EXPR EXPR SUB NUM "reduction_action=
     res = std::stoi($1->_value) - std::stoi($3->_value);
     $0->_value = std::to_string(res);";
-2 EXPR NUM "reduction_action=$0->_value = $1->_value;";
+2 EXPR NUM "reduction_action=
+    $0->_value = $1->_value;";
 
 
 3 ADD add;
 4 SUB sub;
-5 NUM num "reduction_action=$0->_value = $1->_value;";
+5 NUM num "reduction_action=
+    $0->_value = $1->_value;";
 
