@@ -26,37 +26,6 @@ int main() {
     getcwd(pwd, sizeof(pwd));
     std::cout << "pwd: " << pwd << std::endl;
 
-    // matrix io test
-    std::vector<std::vector<int>> matrix(10, std::vector<int>(8));
-    std::vector<int> vec(10);
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 8; j++) {
-            matrix[i][j] = rand() % 100;
-        }
-        vec[i] = rand() % 100;
-    }
-    IO<int> io(String2Int, Int2String);
-    Buffer buf(100);
-    io.AppendVecToBuf(buf, vec);
-    io.AppendMatrixToBuf(buf, matrix);
-    io.AppendVecToBuf(buf, vec);
-    assert(0 == io.WriteFile(buf, "./debug/resolvable_file/test.txt", std::ios::out));
-    io.ReadFile(buf, "./debug/resolvable_file/test.txt");
-    std::vector<int> rvec = io.GetVecFromBuf(buf);
-    std::vector<std::vector<int>> rmatrix = io.GetMatrixFromBuf(buf);
-    assert(rvec.size() == 10);
-    assert(rmatrix.size() == 10);
-    assert(rmatrix[0].size() == 8);
-    for (int i = 0; i < 10; i++) {
-        for (int j = 0; j < 8; j++) {
-            assert(matrix[i][j] == rmatrix[i][j]);
-        }
-        assert(rvec[i] == vec[i]);
-    }
-    assert(buf.GetNextStringSplitByBlank() == "10");
-    std::cout << buf.GetNextLine() << std::endl;
-    std::cout << buf.GetNextLine() << std::endl;
-
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";
     std::string repat1 = "((a)(b|cd*|e))f*";
