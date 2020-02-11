@@ -17,6 +17,7 @@ def type1 func1 (int a, type1 b) {
 }
 
 def void func2 () {
-    type1 a;
+    type1 a, b = 1, c[2][3];
     int b = 1 + (func1(1, a).b + 12);
+    a.a = b;
 }
