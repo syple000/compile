@@ -78,7 +78,7 @@ int main() {
     CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
     std::cout << std::endl << "-------------------" << std::endl;
 
-    cfEngine.StartAnalysis(root);
+    cfEngine.Analyze(root);
 
     CfTreeNode::DestroyTree(root);
 

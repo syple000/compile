@@ -104,16 +104,21 @@ CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFi
     if (this->_cfUtil->GetInitSymbol() == nullptr) {
         return;
     }
-    this->_cfUtil->GenInfo();
+
+#ifdef GEN_AUX_CODE_FILE
+    // 注册辅助函数
+    this->_auxCode.registFuncs();
+#endif
 
     // reduce first nonterminal symbol
     // key, key reg expr, priority
     if (io.ReadFile(lexicalBuf, lexicalFile) != 0) {
         return;
     }
-
     ReadCodeLexical(lexicalBuf);
 
+    // 生成状态转换表，可以读取文件加速该过程
+    this->_cfUtil->GenInfo();
     CfState* initState = new CfState();
     for (auto expr : this->_cfUtil->GetSiblingExprs(this->_cfUtil->GetInitSymbol())->_exprs) {
         initState->_exprPosSet.insert(CfExprPos(expr, 0));
@@ -227,14 +232,19 @@ void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& inf
     int symbolCount = cfExpr->_production.size();
     std::vector<CfTreeNode*> cnodes(symbolCount, nullptr);
     for (int i = 0; i < symbolCount; i++) {
-        cnodes[symbolCount - i - 1] = infoVec[infoVec.size() - 1];
-        infoVec.pop_back();
+        cnodes[symbolCount - i - 1] = infoVec[infoVec.size() - i - 1];
         stateStack.pop();
     }
     int nextState = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._nextState;
     stateStack.push(nextState);
-    infoVec.push_back(new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, cfExpr->_reductionAction));
-    HandleCfTreeNode(infoVec[infoVec.size() - 1]);
+
+    auto reducedNode = new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, cfExpr->_reductionAction);
+    HandleCfTreeNode(reducedNode, infoVec);
+
+    for (int i = 0; i < symbolCount; i++) {
+        infoVec.pop_back();
+    }
+    infoVec.push_back(reducedNode);
 }
 
 CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
@@ -310,8 +320,11 @@ bool CfEngine::ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode
 }
 
 // hook function: 根据需要生成代码，对存储的优化
-std::string CfEngine::HandleCfTreeNode(CfTreeNode* root) {
-    return "";
+void CfEngine::HandleCfTreeNode(CfTreeNode* root, std::vector<CfTreeNode*>& infoVec) {
+    auto itr = this->_auxCode.funcRegistry.find(CfUtil::GetReductionFuncName(root->_reducedExprNumber));
+    if (itr != this->_auxCode.funcRegistry.end()) {
+        itr->second(root, infoVec);
+    }
 }
 
 CfExpr* CfEngine::GetExpr(int exprNumber) {
@@ -319,6 +332,7 @@ CfExpr* CfEngine::GetExpr(int exprNumber) {
 }
 
 void CfEngine::ExecuteReductionAction(CfTreeNode* root) {
+    // 继承属性支持仅到父节点与前兄弟节点
     auto itr = this->_auxCode.funcRegistry.find(CfUtil::GetReductionFuncName(root->_reducedExprNumber));
     if (itr != this->_auxCode.funcRegistry.end()) {
         CfTreeNode* curNode = root;
@@ -338,21 +352,12 @@ void CfEngine::ExecuteReductionAction(CfTreeNode* root) {
     }
 }
 
-void CfEngine::ExecuteRecursively(CfTreeNode* root) {
+void CfEngine::Analyze(CfTreeNode* root) {
     if (root == nullptr) {
         return;
     }
     for (auto cnode : root->_cnodes) {
-        ExecuteRecursively(cnode);
+        Analyze(cnode);
     }
     ExecuteReductionAction(root);
-}
-
-void CfEngine::StartAnalysis(CfTreeNode* root) {
-
-#ifdef GEN_AUX_CODE_FILE
-    this->_auxCode.registFuncs();
-#endif
-
-    ExecuteRecursively(root);
 }

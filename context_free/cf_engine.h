@@ -75,15 +75,13 @@ private:
 
     void ExecuteReductionAction(CfTreeNode* root);
 
-    void ExecuteRecursively(CfTreeNode* root);
-
     // error hook function
     void HandleLexicalError(Buffer& buffer);
 
     void HandleGrammarError(Buffer& buffer);
 
     // hook function: 分析中处理context free tree node, 可生成局部代码等
-    std::string HandleCfTreeNode(CfTreeNode* root);
+    void HandleCfTreeNode(CfTreeNode* root, std::vector<CfTreeNode*>& infoVec);
 
 public:
 
@@ -99,8 +97,7 @@ public:
     CfExpr* GetExpr(int exprNumber);
 
     // 可根据需要改变分析的流程，目前采用后续递归分析方法
-    void StartAnalysis(CfTreeNode* root);
-
+    void Analyze(CfTreeNode* root);
 };
 
 
