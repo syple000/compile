@@ -391,11 +391,9 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 #endif
 
     // 读取表达式并处理归约动作的代码生成
-    auxiliaryCodeBuf.AppendToBuffer("#define GEN_AUX_CODE_FILE 1\n#ifndef AUX_CODE\n#define AUX_CODE 1\n\n");
-    auxiliaryCodeBuf.AppendToBuffer("#include \"../../tree_node/tree_node.h\"\n");
-    auxiliaryCodeBuf.AppendToBuffer(auxiliaryCode.substr(2, auxiliaryCode.size() - 4));
-    auxiliaryCodeBuf.AppendToBuffer("\nclass AuxCode {\npublic:\n");
-    auxiliaryCodeBuf.AppendToBuffer("\n    std::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)> funcRegistry;\n");
+    auxiliaryCodeBuf.AppendToBuffer(5, "#define GEN_AUX_CODE_FILE 1\n#ifndef AUX_CODE\n#define AUX_CODE 1\n\n",
+        "#include \"../../tree_node/tree_node.h\"\n", auxiliaryCode.substr(2, auxiliaryCode.size() - 4).c_str(),
+        "\nclass AuxCode {\npublic:\n", "\n    std::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)> funcRegistry;\n");
 
     std::vector<std::string> funcNames;
     // 读取表达式
@@ -403,14 +401,10 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 
     auxiliaryCodeBuf.AppendToBuffer("\n    void registFuncs() {\n");
     for (auto func : funcNames) {
-        auxiliaryCodeBuf.AppendToBuffer("        funcRegistry.insert(std::pair<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)>(\"");
-        auxiliaryCodeBuf.AppendToBuffer(func);
-        auxiliaryCodeBuf.AppendToBuffer("\", ");
-        auxiliaryCodeBuf.AppendToBuffer(func.c_str());
-        auxiliaryCodeBuf.AppendToBuffer("));\n");
+        auxiliaryCodeBuf.AppendToBuffer(5, "        funcRegistry.insert(std::pair<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)>(\"",
+            func.c_str() ,"\", ", func.c_str(), "));\n");
     }
-    auxiliaryCodeBuf.AppendToBuffer("    }\n};\n");
-    auxiliaryCodeBuf.AppendToBuffer("#endif\n");
+    auxiliaryCodeBuf.AppendToBuffer(2, "    }\n};\n", "#endif\n");
 
     IO<std::string> io(String2String, String2String);
     io.WriteFile(auxiliaryCodeBuf, "./debug/resolvable_file/aux_code.h", std::ios::binary);
@@ -441,12 +435,8 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
         std::string funcName = GetReductionFuncName(expr->_number);
         funcNames.push_back(funcName);
 
-        auxiliaryCodeBuffer.AppendToBuffer("    static void ");
-        auxiliaryCodeBuffer.AppendToBuffer(funcName);
-        auxiliaryCodeBuffer.AppendToBuffer("(CfTreeNode* pnode, std::vector<CfTreeNode*> cnodes) {\n");
-        std::string replacedAction = StringUtil::Replace(reductionAction, *this->_paramParser);
-        auxiliaryCodeBuffer.AppendToBuffer(replacedAction);
-        auxiliaryCodeBuffer.AppendToBuffer("\n    }\n");
+        auxiliaryCodeBuffer.AppendToBuffer(5, "    static void ", funcName.c_str(), "(CfTreeNode* pnode, std::vector<CfTreeNode*> cnodes) {\n", 
+            StringUtil::Replace(reductionAction, *this->_paramParser).c_str(), "\n    }\n");
     } else {
 
 #ifdef DEBUG_CODE

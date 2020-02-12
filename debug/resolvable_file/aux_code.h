@@ -3,7 +3,7 @@
 #define AUX_CODE 1
 
 #include "../../tree_node/tree_node.h"
-
+ 
 #include "../../doc/symbol_table.h"
 
 static SymbolTableManager *tableManager = new SymbolTableManager(10000);  

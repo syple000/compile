@@ -1,6 +1,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <cstdarg>
 
 #ifndef RE_BUFFER
 #define RE_BUFFER 1
@@ -129,6 +130,16 @@ struct Buffer {
 
     void AppendToBuffer(const std::string& str) {
         this->AppendToBuffer(str.c_str(), str.size());
+    }
+
+    void AppendToBuffer(int argCount, ...) {
+        va_list args;
+        va_start(args, argCount);
+        for (int i = 0; i < argCount; i++) {
+            char* str = va_arg(args, char*);
+            AppendToBuffer(str); 
+        }
+        va_end(args);
     }
 
     std::string GetString(int start, int end) {
