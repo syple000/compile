@@ -11,6 +11,11 @@
 
 struct CfTreeNode {
 
+    struct Attribute {
+        // 属性都必须继承该类
+        virtual ~Attribute() {}
+    };
+
     CfTreeNode* _pnode = nullptr;
     std::vector<CfTreeNode*> _cnodes;
     std::string _key;
@@ -19,7 +24,7 @@ struct CfTreeNode {
     int _reducedExprNumber;
     // 该属性暂时未被使用，做保留使用
     std::string _reductionAction;
-    std::unordered_map<std::string, void*> _attributes;
+    std::unordered_map<std::string, Attribute*> _attributes;
 
     CfTreeNode(const std::string& key, const std::string& value) 
         : _key(key), _value(value), _reducedExprNumber(-1) {}
@@ -38,6 +43,9 @@ struct CfTreeNode {
         }
         for (int i = 0; i < root->_cnodes.size(); i++) {
             DestroyTree(root->_cnodes[i]);
+        }
+        for (auto itr : root->_attributes) {
+            delete itr.second;
         }
         delete root;
     }

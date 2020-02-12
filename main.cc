@@ -69,6 +69,7 @@ int main() {
     std::cout << StringUtil::Replace(";;123456;1333114353;1", ";*1", "aaa") << std::endl;
 
     // context free test
+    // 该过程会写入aux_code文件; 后续过程需要的正常进行需要再次编译
     CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
     assert(cfEngine.InitSuccess());
 

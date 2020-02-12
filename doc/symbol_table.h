@@ -2,12 +2,9 @@
 #include <unordered_map>
 #include <vector>
 
-// 不参与编译，代码供expr_file使用
+// 不直接参与编译，代码供expr_file使用
 // 文法约束不能完全，需要分析辅助查找代码错误
 // 一般地，文法约束越严格， 分析辅助复杂度越低
-
-#ifndef SYMBOL_TABLE
-#define SYMBOL_TABLE 1
 
 // 函数名与函数类型均以 $ 开始
 
@@ -124,12 +121,12 @@ struct SymbolTable {
     SymbolTable* _ptable;
     std::unordered_map<std::string, SymbolTable*> _ctables;
 
-    SymbolTable(const std::string& name, int type, SymbolTable* ptable) 
+    SymbolTable(const std::string& name, int type, SymbolTable* ptable, int initSize) 
         : _name(name), _type(type), _ptable(ptable) {
         if (this->_ptable != nullptr) {
             this->_ptable->_ctables.insert(std::pair<std::string, SymbolTable*>(this->_name, this));
         }
-        this->_size = 0;
+        this->_size = initSize;
     }
 
     // offset 在该函数更新
@@ -154,13 +151,9 @@ struct SymbolTable {
     }
 
     Var* GetVar(const std::string& name) {
-        auto table = this;
-        while (table != nullptr) {
-            auto itr = table->_vars.find(name);
-            if (itr != table->_vars.end()) {
-                return itr->second;
-            }
-            table = table->_ptable;
+        auto itr = this->_vars.find(name);
+        if (itr != this->_vars.end()) {
+            return itr->second;
         }
         return nullptr;
     }
@@ -179,45 +172,118 @@ struct SymbolTableManager {
     SymbolTable* _curTable;
 
     SymbolTableManager(int initStaticOff) : _staticOff(initStaticOff) {
-        this->_rootTable = new SymbolTable("root", 0, nullptr);
+        this->_rootTable = new SymbolTable("", 0, nullptr, 0);
         this->_curTable = this->_rootTable;
+        AddTable("float", 1, 4);
+        AddTable("int", 1, 4);
+        AddTable("char", 1, 1);
     }
 
-    bool AddTable(const std::string& name, int type) {
+    bool AddTable(const std::string& name, int type, int initSize) {
         if (this->_curTable->_ctables.find(name) != this->_curTable->_ctables.end()) {
             return false;
         } else {
-            auto table = new SymbolTable(name, type, this->_curTable);
+            auto table = new SymbolTable(name, type, this->_curTable, initSize);
             this->_curTable->_ctables.insert(std::pair<std::string, SymbolTable*>(name, table));
-            this->_curTable = table;
             return true;
         }
     }
 
-    void Back() {
-        this->_curTable = this->_curTable->_ptable;
+    SymbolTable* GoBack(SymbolTable* table) {
+        return table->_ptable;
     }
 
-    bool AddVar(VarType* type, std::string& name, bool isStatic) {
-        if (type->_baseType == "$func") {
-            // 函数offset暂时用符号标识
-            return this->_curTable->AddStaticVar(name, type, 0);
+    bool RollBackCurTable() {
+        auto ptable = GoBack(this->_curTable);
+        if (ptable == nullptr) {
+            return false;
         } else {
-            if (isStatic) {
-                if (this->_curTable->AddStaticVar(name, type, this->_staticOff)) {
-                    this->_staticOff += type->GetSize();
-                    return true;
-                } else {
-                    return false;
-                }
-            } else {
-                return this->_curTable->AddOrdinaryVar(name, type);
-            }
+            this->_curTable = ptable;
+            return true;
         }
     }
 
+    SymbolTable* GoAhead(SymbolTable* table, const std::string& nextTableName) {
+        auto itr = table->_ctables.find(nextTableName);
+        if (itr == table->_ctables.end()) {
+            return nullptr;
+        } else {
+            return itr->second;
+        }
+    }
+
+    bool ForwardCurTable(const std::string& nextTableName) {
+        auto nextTable = GoAhead(this->_curTable, nextTableName);
+        if (nextTable == nullptr) {
+            return false;
+        } else {
+            this->_curTable = nextTable;
+            return true;
+        }
+    }
+
+    bool AddVar(VarType* type, std::string& name, bool isStatic) {
+        if (isStatic) {
+            if (this->_curTable->AddStaticVar(name, type, this->_staticOff)) {
+                this->_staticOff += type->GetSize();
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return this->_curTable->AddOrdinaryVar(name, type);
+        }
+    }
+
+    bool AddFunc(VarType* type, std::string& name) {
+        return this->_curTable->AddStaticVar(name, type, 0);
+    }
+
+    Var* GetVarFromTable(SymbolTable* table, const std::string& name) {
+        while (table != nullptr) {
+            auto var = table->GetVar(name);
+            if (var != nullptr) {
+                return var;
+            }
+            table = table->_ptable;
+        }
+        return nullptr;
+    }
+
     Var* GetVar(const std::string& name) {
-        return this->_curTable->GetVar(name);
+        return GetVarFromTable(this->_curTable, name);
+    }
+
+    SymbolTable* GetChidTable(SymbolTable* ptable, const std::string& tableName) {
+        auto itr = ptable->_ctables.find(tableName);
+        if (itr == ptable->_ctables.end()) {
+            return nullptr;
+        } else {
+            return itr->second;
+        }
+    }
+
+    SymbolTable* GetTable(const std::string& tableName) {
+        auto curTable = this->_curTable;
+        while (curTable != nullptr) {
+            auto table = GetChidTable(curTable, tableName);
+            if (table != nullptr) {
+                return table;
+            }
+            curTable = curTable->_ptable;
+        }
+        return nullptr;
+    }
+
+    SymbolTable* GetTable(const std::vector<std::string>& tableNames) {
+        SymbolTable* root = this->_rootTable;
+        for (auto tableName : tableNames) {
+            root = GetChidTable(root, tableName);
+            if (root == nullptr) {
+                break;
+            }
+        }
+        return root;
     }
 
     static void DestroyManager(SymbolTable* root) {
@@ -234,5 +300,3 @@ struct SymbolTableManager {
         DestroyManager(this->_rootTable);
     }
 };
-
-#endif

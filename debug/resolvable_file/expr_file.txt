@@ -1,6 +1,10 @@
 PROG
 
-%% %%
+%% 
+#include "../../doc/symbol_table.h"
+
+static SymbolTableManager *tableManager = new SymbolTableManager(10000);  
+%%
 
 0 PROG TDEF PROG;
 1 PROG FDEF PROG;
