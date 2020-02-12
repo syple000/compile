@@ -1,105 +1,20 @@
-PROG
+EXPR
 
 %% 
-#include "../../doc/symbol_table.h"
-
-static SymbolTableManager *tableManager = new SymbolTableManager(10000);  
+static int res;
 %%
 
-0 PROG TDEF PROG;
-1 PROG FDEF PROG;
-2 PROG DECL sg PROG;
-3 PROG null;
+0 EXPR EXPR ADD NUM "reduction_action=
+    res = std::stoi($-3->_value) + std::stoi($-1->_value);
+    $0->_value = std::to_string(res);";
+1 EXPR EXPR SUB NUM "reduction_action=
+    res = std::stoi($-3->_value) - std::stoi($-1->_value);
+    $0->_value = std::to_string(res);";
+2 EXPR NUM "reduction_action=
+    $0->_value = $-1->_value;";
 
-4 TDEF def id lc DECLS rc;
 
-5 DECLS DECL sg DECLS;
-6 DECLS null;
-
-7 DECL CDECL;
-8 DECL SDECL;
-
-9 CDECL TYPE DVAR;
-10 SDECL TYPE DVAR asng REXPR LSDECL;
-11 LSDECL null;
-12 LSDECL cm DVAR asng REXPR LSDECL;
-
-13 TYPE int;
-14 TYPE char;
-15 TYPE float;
-16 TYPE id;
-
-17 ASNG REXPR asng REXPR;
-
-18 FDEF def TYPE id lp PRMS rp BLK;
-
-19 PRMS null;
-20 PRM null;
-21 PRMS CDECL PRM;
-22 PRM cm CDECL PRM;
-
-23 FCALL id lp ARGS rp;
-
-24 ARGS null;
-25 ARG null;
-26 ARGS REXPR ARG;
-27 ARG cm REXPR ARG;
-
-28 BLK lc BLK rc;
-29 BLK lc EXPRS rc;
-30 BLK EXPR sg;
-
-31 EXPRS EXPR sg EXPRS;
-32 EXPRS CND EXPRS;
-33 EXPRS CYCLE EXPRS;
-34 EXPRS null;
-
-35 EXPR REXPR;
-36 EXPR NEXPR;
-
-37 NEXPR DECL;
-38 NEXPR MNOP REXPR;
-39 NEXPR break;
-40 NEXPR continue;
-
-41 VAL num;
-42 VAL id;
-43 VAL true;
-44 VAL false;
-
-45 REXPR FCALL;
-46 REXPR REXPR NOP REXPR;
-47 REXPR REXPR BOP REXPR;
-48 REXPR VAL;
-49 REXPR ASNG;
-50 REXPR MBOP REXPR;
-51 REXPR REXPR ls REXPR rs;
-52 REXPR REXPR dot id;
-
-53 NOP add;
-54 NOP sub;
-55 NOP mul;
-56 NOP div;
-
-57 MNOP return;
-
-58 BOP and;
-59 BOP or;
-60 BOP eq;
-61 BOP less;
-62 BOP grt;
-
-63 MBOP not;
-
-64 CND if lp REXPR rp BLK;
-65 CND if lp REXPR rp BLK else BLK;
-
-66 CYCLE while lp REXPR rp BLK;
-
-67 REXPR lp REXPR rp;
-68 TYPE void;
-69 SDECL TYPE DVAR LSDECL;
-70 LSDECL cm DVAR LSDECL;
-
-71 DVAR id;
-72 DVAR DVAR ls REXPR rs;
+3 ADD add;
+4 SUB sub;
+5 NUM num "reduction_action=
+    $0->_value = $-1->_value;";

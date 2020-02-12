@@ -40,20 +40,6 @@ struct StateTransInfo {
     StateTransInfo() = default;
 };
 
-struct StackInfo {
-    CfTreeNode* _cfNode;
-    int _state;
-
-    StackInfo(int state, const std::string& key, const std::string& value) : _state(state) {
-        this->_cfNode = new CfTreeNode(key, value);
-    }
-
-    StackInfo(int state, const std::string& key, const std::vector<CfTreeNode*>& cnodes, int reducedExprNumber, const std::string& reductionAction) 
-        : _state(state) {
-        this->_cfNode = new CfTreeNode(key, cnodes, reducedExprNumber, reductionAction);
-    }
-};
-
 /*
     效率提升： 生成转换表由读取文件代替
 */
@@ -73,17 +59,17 @@ private:
 
     CfState* AddState(CfState* state);
 
-    void MoveOn(std::stack<StackInfo>& infoStack, int nextState, const std::string& key, const std::string& value);
+    void MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, int nextState, const std::string& key, const std::string& value);
 
-    void Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr);
+    void Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec,CfExpr* cfExpr);
 
     CfExpr* GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs);
 
     CfExpr* GetReduceExpr(const StateTransInfo& info, CfSymbol* symbol);
 
-    int StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
+    int StateTrans(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value);
 
-    bool ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value);
+    bool ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value);
 
     void ReadCodeLexical(Buffer& codeLexicalBuf);
 

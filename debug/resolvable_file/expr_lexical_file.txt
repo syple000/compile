@@ -1,75 +1,9 @@
-PROG PROG 0 0 2
-TDEF TDEF 0 0 2
-FDEF FDEF 0 0 2
-PRMS PRMS 0 0 2
-PRM PRM 0 0 2
+EXPR EXPR 1 0 2
+NUM NUM 1 0 2
+ADD ADD 1 0 2
+SUB SUB 1 0 2
 
-FCALL FCALL 0 0 2
-ARGS ARGS 0 0 2
-ARG ARG 0 0 2
-
-BLK BLK 0 0 2
-
-EXPRS EXPRS 0 0 2
-EXPR EXPR 0 0 2
-REXPR REXPR 0 0 2
-NEXPR NEXPR 0 0 2
-
-NOP NOP 0 0 2
-BOP BOP 0 0 2
-MNOP MNOP 0 0 2
-MBOP MBOP 0 0 2
-
-DECLS DECLS 0 0 2
-DECL DECL 0 0 2
-CDECL CDECL 0 0 2
-SDECL SDECL 0 0 2
-LSDECL LSDECL 0 0 2
-
-TYPE TYPE 0 0 2
-
-CND CND 0 0 2
-CYCLE CYCLE 0 0 2
-
-ASNG ASNG 0 0 2
-VAL VAL 0 0 2
-
-DVAR DVAR 0 0 2
-
-def def 0 1 0
-id id 0 1 0
-num num 0 1 0
-rc rc 0 1 0
-lc lc 0 1 0
-rs rs 0 1 0
-ls ls 0 1 0
-rp rp 0 1 0
-lp lp 0 1 0
-sg sg 0 1 0
-cm cm 0 1 0
-dot dot 0 1 0
-asng asng 0 1 0
-int int 0 1 0
-char char 0 1 0
-float float 0 1 0
-eq eq 0 1 0
-add add 0 1 0
-sub sub 0 1 0
-mul mul 0 1 0
-div div 0 1 0
-and and 0 1 0
-or or 0 1 0
-not not 0 1 0
-less less 0 1 0
-grt grt 0 1 0
-return return 0 1 0
-if if 0 1 0
-else else 0 1 0
-while while 0 1 0
-break break 0 1 0
-continue continue 0 1 0
-true true 0 1 0
-false false 0 1 0
-void void 0 1 0
-
-null null 0 1 1
+add add 1 1 0
+sub sub 1 1 0
+num num 1 1 0
+null null 1 1 1

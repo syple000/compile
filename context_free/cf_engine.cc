@@ -151,8 +151,10 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     if (io.ReadFile(codeBuf, codeFile) != 0) {
         return nullptr;
     }
-    std::stack<StackInfo> infoStack;
-    infoStack.push(StackInfo(0, "_START_SYMBOL_", "_START_SYMBOL_"));
+    std::stack<int> stateStack;
+    std::vector<CfTreeNode*> infoVec;
+    stateStack.push(0);
+    infoVec.push_back(new CfTreeNode("_START_SYMBOL_", "_START_SYMBOL_"));
     CfSymbol* nullSymbol = this->_cfUtil->GetNullSymbol();
     bool matched = true;
 
@@ -183,7 +185,7 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
             continue;
         }
 
-        matched = ParsingSymbol(infoStack, symbol, value);
+        matched = ParsingSymbol(stateStack, infoVec, symbol, value);
         if (!matched) {
             HandleGrammarError(codeBuf);
 
@@ -197,40 +199,42 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
 
     if (matched) {
         CfSymbol* symbol = this->_cfUtil->GetCfSymbol("_END_SYMBOL_");
-        matched = ParsingSymbol(infoStack, symbol, "_END_SYMBOL_");
+        matched = ParsingSymbol(stateStack, infoVec, symbol, "_END_SYMBOL_");
     }
 
     CfTreeNode* root = nullptr;
+    int index = 0;
     if (matched) {
-        CfTreeNode::DestroyTree(infoStack.top()._cfNode);
-        infoStack.pop();
-        root = infoStack.top()._cfNode;
-        infoStack.pop();
+        CfTreeNode::DestroyTree(infoVec[0]);
+        root = infoVec[1];
+        index = 2;
     }
 
-    while (infoStack.size() != 0) {
-        CfTreeNode::DestroyTree(infoStack.top()._cfNode);
-        infoStack.pop();
+    for (; index < infoVec.size(); index++) {
+        CfTreeNode::DestroyTree(infoVec[index]);
     }
 
     return root;
 
 }
 
-void CfEngine::MoveOn(std::stack<StackInfo>& infoStack, int nextState, const std::string& key, const std::string& value) {
-    infoStack.push(StackInfo(nextState, key, value));
+void CfEngine::MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, int nextState, const std::string& key, const std::string& value) {
+    stateStack.push(nextState);
+    infoVec.push_back(new CfTreeNode(key, value));
 }
 
-void CfEngine::Reduce(std::stack<StackInfo>& infoStack, CfExpr* cfExpr) {
+void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfExpr* cfExpr) {
     int symbolCount = cfExpr->_production.size();
     std::vector<CfTreeNode*> cnodes(symbolCount, nullptr);
     for (int i = 0; i < symbolCount; i++) {
-        cnodes[symbolCount - i - 1] = infoStack.top()._cfNode;
-        infoStack.pop();
+        cnodes[symbolCount - i - 1] = infoVec[infoVec.size() - 1];
+        infoVec.pop_back();
+        stateStack.pop();
     }
-    int nextState = this->_stateTransInfoTable[infoStack.top()._state][cfExpr->_sourceSymbol->_number]._nextState;
-    infoStack.push(StackInfo(nextState, cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, cfExpr->_reductionAction));
-    HandleCfTreeNode(infoStack.top()._cfNode);
+    int nextState = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._nextState;
+    stateStack.push(nextState);
+    infoVec.push_back(new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, cfExpr->_reductionAction));
+    HandleCfTreeNode(infoVec[infoVec.size() - 1]);
 }
 
 CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
@@ -274,28 +278,28 @@ CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbo
     }
 }
 
-int CfEngine::StateTrans(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
-    StateTransInfo transInfo = this->_stateTransInfoTable[infoStack.top()._state][symbol->_number];
+int CfEngine::StateTrans(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value) {
+    StateTransInfo transInfo = this->_stateTransInfoTable[stateStack.top()][symbol->_number];
     CfExpr* expr = GetReduceExpr(transInfo, symbol);
     if (expr == nullptr) {
         if (transInfo._nextState != -1) {
-            MoveOn(infoStack, transInfo._nextState, symbol->_key, value);
+            MoveOn(stateStack, infoVec, transInfo._nextState, symbol->_key, value);
             return 0;
         } else {
             return -1;
         }
     } else {
-        Reduce(infoStack, expr);
+        Reduce(stateStack, infoVec, expr);
         return 1;
     }
 }
 
-bool CfEngine::ParsingSymbol(std::stack<StackInfo>& infoStack, CfSymbol* symbol, const std::string& value) {
+bool CfEngine::ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value) {
     while (true) {
         // 非空符号优先
-        int stateTransRes = StateTrans(infoStack, symbol, value);
+        int stateTransRes = StateTrans(stateStack, infoVec, symbol, value);
         if (stateTransRes == -1) {
-            stateTransRes = StateTrans(infoStack, this->_cfUtil->GetNullSymbol(), "");
+            stateTransRes = StateTrans(stateStack, infoVec, this->_cfUtil->GetNullSymbol(), "");
             if (stateTransRes == -1) {
                 return false;
             }
@@ -317,7 +321,20 @@ CfExpr* CfEngine::GetExpr(int exprNumber) {
 void CfEngine::ExecuteReductionAction(CfTreeNode* root) {
     auto itr = this->_auxCode.funcRegistry.find(CfUtil::GetReductionFuncName(root->_reducedExprNumber));
     if (itr != this->_auxCode.funcRegistry.end()) {
-        itr->second(root, root->_cnodes);
+        CfTreeNode* curNode = root;
+        while (curNode->_index == 0) {
+            curNode = curNode->_pnode;
+        }
+        std::vector<CfTreeNode*> vec;
+        if (curNode->_index > 0) {
+            for (int i = 0; i < curNode->_index; i++) {
+                vec.push_back(curNode->_pnode->_cnodes[i]);
+            }
+        }
+        for (auto node : root->_cnodes) {
+            vec.push_back(node);
+        }
+        itr->second(root, vec);
     }
 }
 

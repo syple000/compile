@@ -7,7 +7,7 @@ DEBUG_DIR=debug
 OBJS_DIR=$(DEBUG_DIR)/obj
 BIN_DIR=$(DEBUG_DIR)/bin
 VALGRIND=valgrind
-VALGRIND_PARAM=--tool=memcheck --leak-check=full
+VALGRIND_PARAM=--tool=memcheck --leak-check=full --show-leak-kinds=all
 START=start
 
 MKDIR_P=@mkdir -p

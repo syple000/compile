@@ -450,15 +450,15 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
 CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) : _commaRegExprEngine(",") {
     std::map<std::string, std::pair<std::string, int>> keyRegMap;
     keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("pnode", std::pair<std::string, int>("$0", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[0]", std::pair<std::string, int>("$1", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[1]", std::pair<std::string, int>("$2", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[2]", std::pair<std::string, int>("$3", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[3]", std::pair<std::string, int>("$4", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[4]", std::pair<std::string, int>("$5", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[5]", std::pair<std::string, int>("$6", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[6]", std::pair<std::string, int>("$7", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[7]", std::pair<std::string, int>("$8", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[8]", std::pair<std::string, int>("$9", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 1]", std::pair<std::string, int>("$-1", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 2]", std::pair<std::string, int>("$-2", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 3]", std::pair<std::string, int>("$-3", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 4]", std::pair<std::string, int>("$-4", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 5]", std::pair<std::string, int>("$-5", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 6]", std::pair<std::string, int>("$-6", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 7]", std::pair<std::string, int>("$-7", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 8]", std::pair<std::string, int>("$-8", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("cnodes[cnodes.size() - 9]", std::pair<std::string, int>("$-9", 0)));
     this->_paramParser = new LexicalParser(keyRegMap);
 
     LexicalParser lexicalParser = LexicalParser(ReadSymbol(lexicalBuffer));

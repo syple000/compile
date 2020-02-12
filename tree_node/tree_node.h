@@ -11,8 +11,9 @@
 
 struct CfTreeNode {
 
+    // 属性都必须继承该类
     struct Attribute {
-        // 属性都必须继承该类
+        std::string _name;
         virtual ~Attribute() {}
     };
 
@@ -20,21 +21,40 @@ struct CfTreeNode {
     std::vector<CfTreeNode*> _cnodes;
     std::string _key;
     std::string _value;
-
     int _reducedExprNumber;
+    // 节点在字节点中的位置
+    int _index;
     // 该属性暂时未被使用，做保留使用
     std::string _reductionAction;
     std::unordered_map<std::string, Attribute*> _attributes;
 
     CfTreeNode(const std::string& key, const std::string& value) 
-        : _key(key), _value(value), _reducedExprNumber(-1) {}
+        : _key(key), _value(value), _reducedExprNumber(-1), _index(-1) {}
 
     // reduced expr number用于确定代码生成分析时确定归约的表达式与归约方法
     CfTreeNode(const std::string& key, const std::vector<CfTreeNode*>& cnodes, int reducedExprNumber, const std::string& reductionAction) 
-        : _cnodes(cnodes), _key(key), _reducedExprNumber(reducedExprNumber), _reductionAction(reductionAction) {
+        : _cnodes(cnodes), _key(key), _reducedExprNumber(reducedExprNumber), _reductionAction(reductionAction), _index(-1) {
         for (int i = 0; i < this->_cnodes.size(); i++) {
             this->_cnodes[i]->_pnode = this;
+            this->_cnodes[i]->_index = i;
         }
+    }
+
+    Attribute* GetAttribute(const std::string& name) {
+        auto itr = this->_attributes.find(name);
+        if (itr == this->_attributes.end()) {
+            return nullptr;
+        } else {
+            return itr->second;
+        }
+    }
+
+    bool AddAttribute(Attribute* attribute) {
+        if (this->_attributes.find(attribute->_name) != this->_attributes.end()) {
+            return false;
+        }
+        this->_attributes.insert(std::pair<std::string, Attribute*>(attribute->_name, attribute));
+        return true;
     }
 
     static void DestroyTree(CfTreeNode* root) {
