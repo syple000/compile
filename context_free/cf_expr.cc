@@ -393,7 +393,7 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
     // 读取表达式并处理归约动作的代码生成
     auxiliaryCodeBuf.AppendToBuffer(5, "#define GEN_AUX_CODE_FILE 1\n#ifndef AUX_CODE\n#define AUX_CODE 1\n\n",
         "#include \"../../tree_node/tree_node.h\"\n", auxiliaryCode.substr(2, auxiliaryCode.size() - 4).c_str(),
-        "\nclass AuxCode {\npublic:\n", "\n    std::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)> funcRegistry;\n");
+        "\nclass AuxCode {\npublic:\n", "\n    std::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>&)> funcRegistry;\n");
 
     std::vector<std::string> funcNames;
     // 读取表达式
@@ -401,7 +401,7 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 
     auxiliaryCodeBuf.AppendToBuffer("\n    void registFuncs() {\n");
     for (auto func : funcNames) {
-        auxiliaryCodeBuf.AppendToBuffer(5, "        funcRegistry.insert(std::pair<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>)>(\"",
+        auxiliaryCodeBuf.AppendToBuffer(5, "        funcRegistry.insert(std::pair<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>&)>(\"",
             func.c_str() ,"\", ", func.c_str(), "));\n");
     }
     auxiliaryCodeBuf.AppendToBuffer(2, "    }\n};\n", "#endif\n");
