@@ -137,7 +137,7 @@ struct Buffer {
         va_start(args, argCount);
         for (int i = 0; i < argCount; i++) {
             char* str = va_arg(args, char*);
-            AppendToBuffer(str); 
+            AppendToBuffer(str, strlen(str)); 
         }
         va_end(args);
     }

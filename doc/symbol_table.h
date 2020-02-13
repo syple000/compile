@@ -56,17 +56,18 @@ struct Pointer {
 struct VarType {
     std::string _baseType;
     int _baseSize;
-    Array* _arrayInfo;
     Pointer* _ptrInfo;
+    Array* _arrayInfo;
 
     VarType(const std::string& baseType, int baseSize) : _baseType(baseType), _baseSize(_baseSize), _arrayInfo(nullptr), _ptrInfo(nullptr) {}
 
-    VarType(const std::string& baseType, int baseSize, Array* arrayInfo) : _baseType(baseType), _baseSize(baseSize), _arrayInfo(arrayInfo) {
-        this->_ptrInfo = new Pointer();
+    VarType(const std::string& baseType, int baseSize, Pointer* ptrInfo, Array* arrayInfo) 
+        : _baseType(baseType), _baseSize(baseSize), _arrayInfo(arrayInfo), _ptrInfo(ptrInfo) {
+        // array 相当于多了一层指针
+        if (this->_arrayInfo != nullptr) {
+            this->_ptrInfo = new Pointer(this->_ptrInfo);
+        }
     }
-
-    VarType(const std::string& baseType, int baseSize, Pointer* ptrInfo) 
-        : _baseType(baseType), _baseSize(baseSize), _ptrInfo(ptrInfo), _arrayInfo(nullptr) {}
 
     int GetSize() const {
         if (this->_arrayInfo == nullptr) {

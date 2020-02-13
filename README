@@ -13,9 +13,11 @@
         表达式词法：（key, key reg expr, priority, is terminator（0：no, 1:yes）, nullable(0: no, 1:yes, 2:unkwon)，前三者生成词法解析器，后两者为词法单元组成基本信息）
         表达式： 文件第一非空行：非终结字符解析开始位置
             辅助代码：%%***%%包括头文件包含，对象声明，归约动作所需的静态全局变量, 共用函数等;一般地，可以将辅助代码写入一个头文件进行包含
-            后续文件：编号 非终结字符 产生式 "reduction_priority=1" "reduction_first=symbol1, symbol2" "reduction_action=func1($1, arg2); func2()" ;
+            后续文件：编号 非终结字符 产生式 "reduction_priority=1" "reduction_first=symbol1, symbol2" "reduction_action=func1($-1, arg2); func2()" ;
                 约定： "reduction_action"中内容约定了归约动作, "reduction_first":表示该符号应该优先归约， "reduction_priority":归约表达式优先级
-                    reduction_action被解析为以(CfTreeNode* pnode, std::vector<CfTreeNode*> cnodes)为参数的动作函数，与辅助代码于同一文件下
+                    reduction_action被解析为以(CfTreeNode* pnode, std::vector<CfTreeNode*> knodes)为参数的动作函数，与辅助代码于同一文件下
+                    knodes表示当前已知节点（统计到上一归约点及前兄弟节点，对于分析过程及时运行动作，无此限制）
+                    $-1中数字表示偏移量，负号表示向前面已知节点偏移， $0表示父节点
                 自定义动作支持c++语言。采用二次编译生效，即编译第一次并运行产生目标文件，第二次编译，将目标文件编译生成代码
     cf_engine读取代码文件：
         生成分析树，目前词法与文法错误的处理为直接打印错误信息并结束,可以根据需要修改错误避让规则

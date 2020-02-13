@@ -14,6 +14,8 @@ struct CfTreeNode {
     // 属性都必须继承该类
     struct Attribute {
         std::string _name;
+        Attribute() {}
+        Attribute(const std::string& name) : _name(name) {}
         virtual ~Attribute() {}
     };
 
@@ -55,6 +57,32 @@ struct CfTreeNode {
         }
         this->_attributes.insert(std::pair<std::string, Attribute*>(attribute->_name, attribute));
         return true;
+    }
+
+    bool RemoveAttribute(const std::string& name) {
+        auto itr = this->_attributes.find(name);
+        if (itr == this->_attributes.end()) {
+            return false;
+        } else {
+            this->_attributes.erase(itr);
+            return true;
+        }
+    }
+
+    static bool MoveAttribute(CfTreeNode* src, CfTreeNode* dest, const std::string& attrName) {
+        auto attr = src->GetAttribute(attrName);
+        if (attr == nullptr) {
+            return false;
+        } else {
+            return dest->AddAttribute(attr);
+        }
+    }
+
+    static void MoveAttributes(CfTreeNode* src, CfTreeNode* dest) {
+        for (auto itr : src->_attributes) {
+            dest->AddAttribute(itr.second);
+        }
+        src->_attributes.clear();
     }
 
     static void DestroyTree(CfTreeNode* root) {
