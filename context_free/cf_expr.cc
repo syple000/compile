@@ -428,15 +428,30 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
         }
     } else if (StringUtil::StartWith(info, "reduction_priority=")) {
         expr->_reductionPriority = std::stoi(StringUtil::Trim(info.substr(19, info.size() - 19)));
-    } else if (StringUtil::StartWith(info, "reduction_action=")) {
-        std::string reductionAction = info.substr(17, info.size() - 17);
-        // expr->_reductionAction = reductionAction; 目前采取的策略模式不需要该变量赋值
-        // 将归约动作生成为相应的代码
-        std::string funcName = GetReductionFuncName(expr->_number);
+    } else if (StringUtil::StartWith(info, "reduction_action=") || StringUtil::StartWith(info, "action_")) {
+        std::string action;
+        std::string funcName;
+        if (StringUtil::StartWith(info, "reduction_action=")) {
+            funcName = GetFuncName(std::to_string(expr->_number), true);
+            action = info.substr(17, info.size() - 17);
+            expr->_actions.insert(std::pair<int, std::string>(-1, funcName));
+        } else {
+            std::string funcStr;
+            int i = 7;
+            for (; i < info.size(); i++) {
+                if (info[i] == '=') {
+                    break;
+                }
+                funcStr += info[i];
+            }
+            funcName = GetFuncName(funcStr, false);
+            action = info.substr(i + 1, info.size() - i - 1);
+            expr->_actions.insert(std::pair<int, std::string>(expr->_production.size(), funcName));
+        }
         funcNames.push_back(funcName);
-
+        // 生成归约动作代码
         auxiliaryCodeBuffer.AppendToBuffer(5, "    static void ", funcName.c_str(), "(CfTreeNode* pnode, std::vector<CfTreeNode*>& knodes) {\n", 
-            StringUtil::Replace(reductionAction, *this->_paramParser).c_str(), "\n    }\n");
+            StringUtil::Replace(action, *this->_paramParser).c_str(), "\n    }\n");
     } else {
 
 #ifdef DEBUG_CODE
@@ -527,6 +542,10 @@ CfExpr* CfUtil::GetExprByExprNumber(int exprNumber) {
     }
 }
 
-std::string CfUtil::GetReductionFuncName(int exprNumber) {
-    return "_func_" + std::to_string(exprNumber) + "_";
+std::string CfUtil::GetFuncName(const std::string& func, bool isReductionFunc) {
+    if (isReductionFunc) {
+        return "_func_reduction_" + func + "_";
+    } else {
+        return "_func_" + func + "_";
+    }
 }

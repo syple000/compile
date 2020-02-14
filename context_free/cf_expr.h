@@ -54,13 +54,14 @@ struct SymbolSubject {
 struct CfExpr {
     CfSymbol* _sourceSymbol = nullptr;
     std::vector<CfSymbol*> _production;
+
     int _nullable = 2;
-    // 归约约定
+    // 优先进行归约的符号
     std::set<CfSymbol*> _reductionFirst;
     int _reductionPriority = 0;
-    std::string _reductionAction;
-    // expression identifier
     int _number = -1;
+    // key: 对应表达式位置进行动作（-1表示归约动作）   value: 动作函数名
+    std::unordered_map<int, std::string> _actions;
 };
 
 struct SiblingExprs {
@@ -135,7 +136,7 @@ public:
 
     CfExpr* GetExprByExprNumber(int exprNumber);
 
-    static std::string GetReductionFuncName(int exprNumber);
+    static std::string GetFuncName(const std::string& func, bool isReductionFunc);
 
 };
 

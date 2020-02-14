@@ -34,9 +34,16 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
     std::set<CfExprPos> exprPosSet = CalcCfExprPosSetClosure(state->_exprPosSet);
     std::map<int, CfState*> newStates;
     for (auto& exprPos : exprPosSet) {
+        auto itr = exprPos._expr->_actions.find(exprPos._index == exprPos._expr->_production.size() ? -1 : exprPos._index + 1);
+        std::string action = itr == exprPos._expr->_actions.end() ? "" : itr->second;
         if (exprPos._index == exprPos._expr->_production.size()) {
             for (auto reducedSymbol : exprPos._expr->_sourceSymbol->_next) {
-                this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr.insert(exprPos._expr);
+                if (this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr == nullptr || 
+                    this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr != 
+                    GetHighPriorityExpr(this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr, exprPos._expr)) {
+                    this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr = exprPos._expr;
+                    this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._action = action;
+                }
             }
             continue;
         }
@@ -44,7 +51,11 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
         if (newStates.find(symbol->_number) == newStates.end()) {
             newStates.insert(std::pair<int, CfState*>(symbol->_number, new CfState()));
         }
-        newStates.find(symbol->_number)->second->_exprPosSet.insert(CfExprPos(exprPos._expr, exprPos._index + 1));
+        auto newState = newStates.find(symbol->_number)->second;
+        newState->_exprPosSet.insert(CfExprPos(exprPos._expr, exprPos._index + 1));
+        if (GetHighPriorityAction(newState->_action, action) == 1) {
+            newState->_action = action;
+        }
     }
     for (auto itr : newStates) {
         auto stateItr = this->_stateSet.find(itr.second);
@@ -56,6 +67,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
             nextState = *stateItr;
         }
         this->_stateTransInfoTable[state->_number][itr.first]._nextState = nextState->_number;
+        this->_stateTransInfoTable[state->_number][itr.first]._action = nextState->_action;
     }
 }
 
@@ -159,7 +171,7 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     std::stack<int> stateStack;
     std::vector<CfTreeNode*> infoVec;
     stateStack.push(0);
-    infoVec.push_back(new CfTreeNode("_START_SYMBOL_", "_START_SYMBOL_"));
+    infoVec.push_back(new CfTreeNode("_START_SYMBOL_", "_START_SYMBOL_", ""));
     CfSymbol* nullSymbol = this->_cfUtil->GetNullSymbol();
     bool matched = true;
 
@@ -223,65 +235,71 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
 
 }
 
-void CfEngine::MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, int nextState, const std::string& key, const std::string& value) {
-    stateStack.push(nextState);
-    infoVec.push_back(new CfTreeNode(key, value));
+void CfEngine::MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, const std::string& key, 
+    const std::string& value) {
+    stateStack.push(transInfo._nextState);
+    infoVec.push_back(new CfTreeNode(key, value, transInfo._action));
+    ExecuteAction(transInfo._action, nullptr, infoVec);
 }
 
-void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfExpr* cfExpr) {
+void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, CfExpr* cfExpr) {
     int symbolCount = cfExpr->_production.size();
     std::vector<CfTreeNode*> cnodes(symbolCount, nullptr);
     for (int i = 0; i < symbolCount; i++) {
         cnodes[symbolCount - i - 1] = infoVec[infoVec.size() - i - 1];
-        stateStack.pop();
     }
-    int nextState = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._nextState;
-    stateStack.push(nextState);
-
-    auto reducedNode = new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, cfExpr->_reductionAction);
-    HandleCfTreeNode(reducedNode, infoVec);
+    auto reducedNode = new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, "", transInfo._action);
+    ExecuteAction(transInfo._action, reducedNode, infoVec);
 
     for (int i = 0; i < symbolCount; i++) {
         infoVec.pop_back();
+        stateStack.pop();
     }
+    reducedNode->_action = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._action;
+    int nextState = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._nextState;
+    stateStack.push(nextState);
     infoVec.push_back(reducedNode);
+    ExecuteAction(reducedNode->_action, reducedNode, infoVec);
 }
 
-CfExpr* CfEngine::GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs) {
-    CfExpr* expr = *exprs.begin();
-    for (auto exprItr : exprs) {
-        if (expr->_reductionPriority < exprItr->_reductionPriority) {
-            expr = exprItr;
-        }
-    }
+CfExpr* CfEngine::GetHighPriorityExpr(CfExpr* expr1, CfExpr* expr2) {
 
 #ifdef DEBUG_CODE
-    if (exprs.size() > 1) {
-        for (auto exprItr : exprs) {
-            std::cout << exprItr->_sourceSymbol->_key << ": ";
-            for (auto symbol : exprItr->_production) {
-                std::cout << symbol->_key << " ";
-            }
-            std::cout << ";   ";
+    for (int i = 0; i < 2; i++) {
+        auto expr = i == 0 ? expr1 : expr2;
+        std::cout << expr->_sourceSymbol->_key << ":";
+        for (auto symbol : expr->_production) {
+            std::cout << symbol->_key << " ";
         }
-        std::cout << std::endl;
+        std::cout << ";   ";
+    }
+    std::cout << std::endl;
+#endif
+
+    return expr1->_reductionPriority < expr2->_reductionPriority ? expr2 : expr1;
+}
+
+int CfEngine::GetHighPriorityAction(const std::string& action1, const std::string& action2) {
+
+#ifdef DEBUG_CODE
+    if (action2.size() > 0 && action1.size() > 0) {
+        std::cout << "action: " << action1 << " and "<< action2 << "conflict!" << std::endl;
     }
 #endif
 
-    return expr;
+    if (action2.size() == 0 || (action1.size() != 0 && action1 > action2)) {
+        return 0;
+    } else {
+        return 1;
+    }
 }
 
 CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbol) {
-    if (transInfo._reducedExpr.size() == 0) {
+    if (transInfo._reducedExpr == nullptr) {
         return nullptr;
     } else {
-        for (auto expr : transInfo._reducedExpr) {
-            if (expr->_reductionFirst.find(symbol) != expr->_reductionFirst.end()) {
-                return expr;
-            }
-        }
-        if (transInfo._nextState == -1) {
-            return GetMaxReductionPriorityExpr(transInfo._reducedExpr);
+        if (transInfo._reducedExpr->_reductionFirst.find(symbol) != transInfo._reducedExpr->_reductionFirst.end() || transInfo._nextState == -1) {
+            return transInfo._reducedExpr;
         } else {
             return nullptr;
         }
@@ -293,13 +311,13 @@ int CfEngine::StateTrans(std::stack<int>& stateStack, std::vector<CfTreeNode*>& 
     CfExpr* expr = GetReduceExpr(transInfo, symbol);
     if (expr == nullptr) {
         if (transInfo._nextState != -1) {
-            MoveOn(stateStack, infoVec, transInfo._nextState, symbol->_key, value);
+            MoveOn(stateStack, infoVec, transInfo, symbol->_key, value);
             return 0;
         } else {
             return -1;
         }
     } else {
-        Reduce(stateStack, infoVec, expr);
+        Reduce(stateStack, infoVec, transInfo, expr);
         return 1;
     }
 }
@@ -319,45 +337,21 @@ bool CfEngine::ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode
     }
 }
 
-// hook function: 根据需要生成代码，对存储的优化
-void CfEngine::HandleCfTreeNode(CfTreeNode* root, std::vector<CfTreeNode*>& infoVec) {
-    auto itr = this->_auxCode.funcRegistry.find(CfUtil::GetReductionFuncName(root->_reducedExprNumber));
-    if (itr != this->_auxCode.funcRegistry.end()) {
-        itr->second(root, infoVec);
-    }
-}
-
 CfExpr* CfEngine::GetExpr(int exprNumber) {
     return this->_cfUtil->GetExprByExprNumber(exprNumber);
 }
 
-void CfEngine::ExecuteReductionAction(CfTreeNode* root) {
-    // 继承属性支持仅到父节点与前兄弟节点
-    auto itr = this->_auxCode.funcRegistry.find(CfUtil::GetReductionFuncName(root->_reducedExprNumber));
-    if (itr != this->_auxCode.funcRegistry.end()) {
-        CfTreeNode* curNode = root;
-        while (curNode->_index == 0) {
-            curNode = curNode->_pnode;
-        }
-        std::vector<CfTreeNode*> vec;
-        if (curNode->_index > 0) {
-            for (int i = 0; i < curNode->_index; i++) {
-                vec.push_back(curNode->_pnode->_cnodes[i]);
-            }
-        }
-        for (auto node : root->_cnodes) {
-            vec.push_back(node);
-        }
-        itr->second(root, vec);
-    }
-}
+void CfEngine::ExecuteAction(const std::string& action, CfTreeNode* pnode, std::vector<CfTreeNode*>& knodes) {
+    if (action.size() > 0) {
+        auto itr = this->_auxCode.funcRegistry.find(action);
+        if (itr != this->_auxCode.funcRegistry.end()) {
+            itr->second(pnode, knodes);
+        } else {
 
-void CfEngine::Analyze(CfTreeNode* root) {
-    if (root == nullptr) {
-        return;
+#ifdef DEBUG_CODE
+            std::cout << "action: " << action << " not found!" << std::endl;
+#endif
+
+        }
     }
-    for (auto cnode : root->_cnodes) {
-        Analyze(cnode);
-    }
-    ExecuteReductionAction(root);
 }

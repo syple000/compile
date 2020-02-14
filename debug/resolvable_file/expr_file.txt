@@ -4,22 +4,31 @@ EXPR
 static int res;
 %%
 
-0 EXPR EXPR ADD NUM "reduction_action=
-    std::cout << $-2->_value << $-1->_value << std::endl;
-    res = std::stoi($-3->_value) + std::stoi($-1->_value);
-    $0->_value = std::to_string(res);";
-1 EXPR EXPR SUB NUM "reduction_action=
-    std::cout << $-2->_value << $-1->_value << std::endl;
-    res = std::stoi($-3->_value) - std::stoi($-1->_value);
-    $0->_value = std::to_string(res);";
-2 EXPR NUM "reduction_action=
-    std::cout << $-1->_value << std::endl;
-    $0->_value = $-1->_value;";
+0 EXPR EXPR ADD 
+    "action_1= 
+        std::cout << \qaction: \q << $-1->_value << std::endl;" 
+    NUM 
+    "reduction_action=
+        std::cout << $-2->_value << $-1->_value << std::endl;
+        res = std::stoi($-3->_value) + std::stoi($-1->_value);
+        $0->_value = std::to_string(res);";
+1 EXPR EXPR SUB NUM 
+    "reduction_action=
+        std::cout << $-2->_value << $-1->_value << std::endl;
+        res = std::stoi($-3->_value) - std::stoi($-1->_value);
+        $0->_value = std::to_string(res);";
+2 EXPR NUM 
+    "reduction_action=
+        std::cout << $-1->_value << std::endl;
+        $0->_value = $-1->_value;";
 
 
-3 ADD add "reduction_action=
-    $0->_value = $-2->_value + \q \q + $-1->_value + \q \q;";
-4 SUB sub "reduction_action=
-    $0->_value = $-2->_value + \q \q + $-1->_value + \q \q;";
-5 NUM num "reduction_action=
-    $0->_value = $-1->_value;";
+3 ADD add 
+    "reduction_action=
+        $0->_value = $-2->_value + \q \q + $-1->_value + \q \q;";
+4 SUB sub 
+    "reduction_action=
+        $0->_value = $-2->_value + \q \q + $-1->_value + \q \q;";
+5 NUM num 
+    "reduction_action=
+        $0->_value = $-1->_value;";

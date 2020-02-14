@@ -27,6 +27,7 @@ struct CfExprPos {
 struct CfState {
     std::set<CfExprPos> _exprPosSet;
     int _number;
+    std::string _action;
 
     bool operator< (const CfState& state) const {
         return this->_exprPosSet < state._exprPosSet;
@@ -35,7 +36,8 @@ struct CfState {
 
 struct StateTransInfo {
     int _nextState = -1;
-    std::set<CfExpr*> _reducedExpr;
+    CfExpr* _reducedExpr = nullptr;
+    std::string _action;
 
     StateTransInfo() = default;
 };
@@ -59,11 +61,13 @@ private:
 
     CfState* AddState(CfState* state);
 
-    void MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, int nextState, const std::string& key, const std::string& value);
+    void MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, const std::string& key, const std::string& value);
 
-    void Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec,CfExpr* cfExpr);
+    void Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, CfExpr* cfExpr);
 
-    CfExpr* GetMaxReductionPriorityExpr(const std::set<CfExpr*>& exprs);
+    CfExpr* GetHighPriorityExpr(CfExpr* expr1, CfExpr* expr2);
+
+    int GetHighPriorityAction(const std::string& action1, const std::string& action2);
 
     CfExpr* GetReduceExpr(const StateTransInfo& info, CfSymbol* symbol);
 
@@ -73,15 +77,12 @@ private:
 
     void ReadCodeLexical(Buffer& codeLexicalBuf);
 
-    void ExecuteReductionAction(CfTreeNode* root);
+    void ExecuteAction(const std::string& action, CfTreeNode* pnode, std::vector<CfTreeNode*>& knodes);
 
     // error hook function
     void HandleLexicalError(Buffer& buffer);
 
     void HandleGrammarError(Buffer& buffer);
-
-    // hook function: 分析中处理context free tree node, 可生成局部代码等
-    void HandleCfTreeNode(CfTreeNode* root, std::vector<CfTreeNode*>& infoVec);
 
 public:
 
@@ -95,9 +96,6 @@ public:
     CfTreeNode* GenCfAnalysisTree(const std::string& codeFile);
 
     CfExpr* GetExpr(int exprNumber);
-
-    // 可根据需要改变分析的流程，目前采用后续递归分析方法
-    void Analyze(CfTreeNode* root);
 };
 
 
