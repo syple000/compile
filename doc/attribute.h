@@ -30,7 +30,7 @@ struct PtrAttribute : public CfTreeNode::Attribute {
     }
 
     virtual ~PtrAttribute() {
-        delete this->_ptr;
+        Pointer::DestroyPtr(this->_ptr);
     }
 };
 
@@ -55,5 +55,7 @@ struct ArrAttribute : public CfTreeNode::Attribute {
         }
     }
 
-    virtual ~ArrAttribute() {}
+    virtual ~ArrAttribute() {
+        Array::DestroyArray(this->_array);
+    }
 };

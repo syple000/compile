@@ -26,9 +26,7 @@ struct Array {
         }
     }
 
-    virtual ~Array() {
-        DestroyArray(this);
-    }
+    virtual ~Array() {}
 };
 
 #define PTR_SIZE 4
@@ -47,9 +45,7 @@ struct Pointer {
         }
     }
     
-    virtual ~Pointer() {
-        DestroyPtr(this);
-    }
+    virtual ~Pointer() {}
 };
 
 // 变量类型与变量内存大小
@@ -62,12 +58,7 @@ struct VarType {
     VarType(const std::string& baseType, int baseSize) : _baseType(baseType), _baseSize(_baseSize), _arrayInfo(nullptr), _ptrInfo(nullptr) {}
 
     VarType(const std::string& baseType, int baseSize, Pointer* ptrInfo, Array* arrayInfo) 
-        : _baseType(baseType), _baseSize(baseSize), _arrayInfo(arrayInfo), _ptrInfo(ptrInfo) {
-        // array 相当于多了一层指针
-        if (this->_arrayInfo != nullptr) {
-            this->_ptrInfo = new Pointer(this->_ptrInfo);
-        }
-    }
+        : _baseType(baseType), _baseSize(baseSize), _arrayInfo(arrayInfo), _ptrInfo(ptrInfo) {}
 
     int GetSize() const {
         if (this->_arrayInfo == nullptr) {
@@ -82,8 +73,8 @@ struct VarType {
     }
 
     virtual ~VarType() {
-        delete this->_arrayInfo;
-        delete this->_ptrInfo;
+        Pointer::DestroyPtr(this->_ptrInfo);
+        Array::DestroyArray(this->_arrayInfo);
     }
 };
 

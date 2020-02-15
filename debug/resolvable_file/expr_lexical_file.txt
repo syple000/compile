@@ -1,9 +1,16 @@
-EXPR EXPR 1 0 2
-NUM NUM 1 0 2
-ADD ADD 1 0 2
-SUB SUB 1 0 2
+DECLS DECLS 1 0 2
+DECL DECL 1 0 2
+QLFR QLFR 1 0 2
+TYPE TYPE 1 0 2
+PTR PTR 1 0 2
+ARR ARR 1 0 2
 
-add add 1 1 0
-sub sub 1 1 0
+id id 1 1 0
+int int 1 1 0
+static static 1 1 0
+ast ast 1 1 0
+ls ls 1 1 0
+rs rs 1 1 0
 num num 1 1 0
+sm sm 1 1 0
 null null 1 1 1

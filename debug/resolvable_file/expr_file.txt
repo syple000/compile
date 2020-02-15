@@ -1,34 +1,95 @@
-EXPR
+DECLS
 
 %% 
-static int res;
+#include "../../doc/attribute.h"
+
+static SymbolTableManager tableManager(1000);
 %%
 
-0 EXPR EXPR ADD 
-    "action_1= 
-        std::cout << \qaction: \q << $-1->_value << std::endl;" 
-    NUM 
-    "reduction_action=
-        std::cout << $-2->_value << $-1->_value << std::endl;
-        res = std::stoi($-3->_value) + std::stoi($-1->_value);
-        $0->_value = std::to_string(res);";
-1 EXPR EXPR SUB NUM 
-    "reduction_action=
-        std::cout << $-2->_value << $-1->_value << std::endl;
-        res = std::stoi($-3->_value) - std::stoi($-1->_value);
-        $0->_value = std::to_string(res);";
-2 EXPR NUM 
-    "reduction_action=
-        std::cout << $-1->_value << std::endl;
-        $0->_value = $-1->_value;";
+1 DECLS DECL sm DECLS;
+2 DECLS null;
 
+3 DECL QLFR TYPE PTR id 
+    "action_1=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 2], knodes[knodes.size() - 1]);" 
+    ARR 
+    "reduction_action= 
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 1], knodes[knodes.size() - 2]);
+        auto typeAttr = (TypeAttribute*)knodes[knodes.size() - 2]->GetAttribute(\qtype\q);
+        auto ptrAttr = (PtrAttribute*)knodes[knodes.size() - 2]->GetAttribute(\qpointer\q);
+        auto arrAttr = (ArrAttribute*)knodes[knodes.size() - 2]->GetAttribute(\qarray\q);
+        VarType* varType = new VarType(typeAttr->_typeName, typeAttr->_typeSize, 
+        ptrAttr == nullptr ? nullptr : ptrAttr->_ptr, arrAttr == nullptr ? nullptr : arrAttr->_array);
+        if (ptrAttr != nullptr) {
+            ptrAttr->_ptr = nullptr;
+        }
+        if (arrAttr != nullptr) {
+            arrAttr->_array = nullptr;
+        }
+        tableManager.AddVar(varType, knodes[knodes.size() - 2]->_value, 
+            ((QualifierAttribute*)knodes[knodes.size() - 2]->GetAttribute(\qqualifier\q))->_isStatic);";
 
-3 ADD add 
+4 QLFR static 
     "reduction_action=
-        $0->_value = $-2->_value + \q \q + $-1->_value + \q \q;";
-4 SUB sub 
+        pnode->AddAttribute(new QualifierAttribute(\qqualifier\q, true));";
+
+5 QLFR null
     "reduction_action=
-        $0->_value = $-2->_value + \q \q + $-1->_value + \q \q;";
-5 NUM num 
+        pnode->AddAttribute(new QualifierAttribute(\qqualifier\q, false));";
+
+6 TYPE int
     "reduction_action=
-        $0->_value = $-1->_value;";
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 2], pnode);
+        auto type = tableManager.GetTable(knodes[knodes.size() - 1]->_value);
+        if (type == nullptr || type->_type != 1) {
+            std::cout << \qtype: \q << knodes[knodes.size() - 1]->_value << \qnot found!\q << std::endl;
+        }
+        pnode->AddAttribute(new TypeAttribute(\qtype\q, knodes[knodes.size() - 1]->_value, 4));";
+
+7 TYPE id
+    "reduction_action=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 2], pnode);
+        auto type = tableManager.GetTable(knodes[knodes.size() - 1]->_value);
+        if (type == nullptr || type->_type != 1) {
+            std::cout << \qtype: \q << knodes[knodes.size() - 1]->_value << \qnot found!\q << std::endl;
+        }
+        pnode->AddAttribute(new TypeAttribute(\qtype\q, knodes[knodes.size() - 1]->_value, 4));";
+
+8 ARR ls num rs 
+    "action_2=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 4], knodes[knodes.size() - 1]);
+        auto arrAttr = (ArrAttribute*)knodes[knodes.size() - 1]->GetAttribute(\qarray\q);
+        if (arrAttr == nullptr) {
+            arrAttr = new ArrAttribute(\qarray\q);
+            knodes[knodes.size() - 1]->AddAttribute(arrAttr);
+        }
+        auto typeAttr = (TypeAttribute*)knodes[knodes.size() - 1]->GetAttribute(\qtype\q);
+        int typeSize = typeAttr->_typeSize;
+        if (knodes[knodes.size() - 1]->GetAttribute(\qpointer\q) != nullptr) {
+            typeSize = 4;
+        }
+        arrAttr->AddNestArr(typeSize, std::stoi(knodes[knodes.size() - 2]->_value));" 
+    ARR 
+    "reduction_action=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 1], pnode);";
+
+9 ARR null
+    "reduction_action=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 2], pnode);";
+
+10 PTR ast 
+    "action_3=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 2], knodes[knodes.size() -1]);
+        auto ptrAttr = (PtrAttribute*)knodes[knodes.size() - 2]->GetAttribute(\qpointer\q);
+        if (ptrAttr == nullptr) {
+            ptrAttr = new PtrAttribute(\qpointer\q);
+            knodes[knodes.size() - 1]->AddAttribute(ptrAttr);
+        }
+        ptrAttr->AddNestPtr();" 
+    PTR 
+    "reduction_action=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 1], pnode);";
+
+11 PTR null 
+    "reduction_action=
+        CfTreeNode::MoveAttributes(knodes[knodes.size() - 2], pnode);";

@@ -1,3 +1,8 @@
-add + 1
-sub - 1
+id ([a-z]|[A-Z]|_)([a-z]|[A-Z]|_|[0-9])* 0
+int int 1
+static static 1
+ast \* 1
+ls \[ 1
+rs \] 1
+sm ; 1
 num 0|([1-9][0-9]*) 0

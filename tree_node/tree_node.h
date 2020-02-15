@@ -75,6 +75,7 @@ struct CfTreeNode {
         if (attr == nullptr) {
             return false;
         } else {
+            src->_attributes.erase(attrName);
             return dest->AddAttribute(attr);
         }
     }
