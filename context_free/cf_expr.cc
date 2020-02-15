@@ -444,7 +444,7 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
                 }
                 funcStr += info[i];
             }
-            funcName = GetFuncName(funcStr, false);
+            funcName = GetFuncName(StringUtil::Trim(funcStr), false);
             action = info.substr(i + 1, info.size() - i - 1);
             expr->_actions.insert(std::pair<int, std::string>(expr->_production.size(), funcName));
         }
