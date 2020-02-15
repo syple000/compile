@@ -407,7 +407,7 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
     auxiliaryCodeBuf.AppendToBuffer(2, "    }\n};\n", "#endif\n");
 
     IO<std::string> io(String2String, String2String);
-    io.WriteFile(auxiliaryCodeBuf, "./debug/resolvable_file/aux_code.h", std::ios::binary);
+    io.WriteFile(auxiliaryCodeBuf, "./context/aux_code/aux_code.h", std::ios::binary);
 }
 
 void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalInfo, Buffer& auxiliaryCodeBuffer, std::vector<std::string>& funcNames) {

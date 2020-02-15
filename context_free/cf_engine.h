@@ -4,7 +4,7 @@
 #include "../cmp/cmp.h"
 #include "./lexical_parser.h"
 #include "../tree_node/tree_node.h"
-#include "../debug/resolvable_file/aux_code.h"
+#include "./aux_code/aux_code.h"
 
 #ifndef CONTEXT_FREE_ENGINE 
 #define CONTEXT_FREE_ENGINE 1
