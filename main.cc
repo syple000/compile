@@ -14,6 +14,7 @@
 #include "./context_free/cf_engine.h"
 #include "./io/format_conversion.h"
 #include "./string_util/string_util.h"
+#include "./bitset/bitset.h"
 
 void TraverseCfTreeNode(CfTreeNode* node) {
     if (node->_cnodes.size() == 0) {
@@ -25,6 +26,35 @@ int main() {
     char pwd[256];
     getcwd(pwd, sizeof(pwd));
     std::cout << "pwd: " << pwd << std::endl;
+    // bitset test
+    BitSet bitSet1(8);
+    bitSet1.Set(2);
+    bitSet1.Set(3);
+    bitSet1.Set(4);
+    bitSet1.Clear(3);
+    assert(bitSet1.ToString() == "00101000");
+    bitSet1.Set(8);
+    assert(bitSet1.ToString() == "00101000 10000000 00000000 00000000");
+    
+    BitSet bitSet2(8), bitSet3(8);
+    bitSet2.Set(0);
+    bitSet2.Set(2);
+    bitSet1.Union(bitSet2);
+    assert(bitSet1.ToString() == "10101000 10000000 00000000 00000000");
+    assert(bitSet1.Exist(0));
+    assert(!bitSet1.Exist(1));
+    assert(bitSet1.Exist(8));
+    assert(!bitSet1.Exist(16));
+    assert(!bitSet1.Exist(64));
+    bitSet1.Except(bitSet2);
+    assert(bitSet1.ToString() == "00001000 10000000 00000000 00000000");
+    bitSet1.Set(0);
+    bitSet1.Intersect(bitSet2);
+    assert(bitSet1.ToString() == "10000000 00000000 00000000 00000000");
+    bitSet3.Set(0);
+    assert(bitSet3 == bitSet1);
+    bitSet3.Set(7);
+    assert(!(bitSet3 == bitSet1));
 
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";
