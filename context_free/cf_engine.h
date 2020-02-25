@@ -37,6 +37,7 @@ struct CfState {
 struct StateTransInfo {
     int _nextState = -1;
     CfExpr* _reducedExpr = nullptr;
+    std::string _reducedAction;
     std::string _action;
 
     StateTransInfo() = default;

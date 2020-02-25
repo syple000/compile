@@ -42,7 +42,7 @@ void CfEngine::GenRelatedCfState(const CfState* state) {
                     this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr != 
                     GetHighPriorityExpr(this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr, exprPos._expr)) {
                     this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedExpr = exprPos._expr;
-                    this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._action = action;
+                    this->_stateTransInfoTable[state->_number][reducedSymbol->_number]._reducedAction = action;
                 }
             }
             continue;
@@ -248,8 +248,8 @@ void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& inf
     for (int i = 0; i < symbolCount; i++) {
         cnodes[symbolCount - i - 1] = infoVec[infoVec.size() - i - 1];
     }
-    auto reducedNode = new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, "", transInfo._action);
-    ExecuteAction(transInfo._action, reducedNode, infoVec);
+    auto reducedNode = new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, "", transInfo._reducedAction);
+    ExecuteAction(transInfo._reducedAction, reducedNode, infoVec);
 
     for (int i = 0; i < symbolCount; i++) {
         infoVec.pop_back();
@@ -301,6 +301,13 @@ CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbo
         if (transInfo._reducedExpr->_reductionFirst.find(symbol) != transInfo._reducedExpr->_reductionFirst.end() || transInfo._nextState == -1) {
             return transInfo._reducedExpr;
         } else {
+
+#ifdef DEBUG_CODE
+            if (transInfo._reducedExpr != nullptr) {
+                std::cout << "symbol: " << symbol->_key << " reduce: " << transInfo._reducedExpr->_number << " and move on conflict!"; 
+            }
+#endif
+
             return nullptr;
         }
     }
