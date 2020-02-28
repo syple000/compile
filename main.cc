@@ -16,12 +16,6 @@
 #include "./string_util/string_util.h"
 #include "./bitset/bitset.h"
 
-void TraverseCfTreeNode(CfTreeNode* node) {
-    if (node->_cnodes.size() == 0) {
-        std::cout << node->_value << " ";
-    }
-}
-
 int main() {
     char pwd[256];
     getcwd(pwd, sizeof(pwd));
@@ -103,12 +97,7 @@ int main() {
     CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
     assert(cfEngine.InitSuccess());
 
-    CfTreeNode* root = cfEngine.GenCfAnalysisTree("./debug/resolvable_file/code_file.txt");
-    assert(root != nullptr);
-    CfTreeNode::TraverseTree(root, TraverseCfTreeNode);
-    std::cout << std::endl << "-------------------" << std::endl;
-
-    CfTreeNode::DestroyTree(root);
+    cfEngine.GenCfAnalysisInfo("./debug/resolvable_file/code_file.txt");
 
     std::cout << std::endl;
 

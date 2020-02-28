@@ -3,7 +3,7 @@
 #include <vector>
 #include <string>
 
-#include "../tree_node/tree_node.h"
+#include "./reg_expr_node.h"
 
 #ifndef REGULAR_EXPR_ANALYSIS_TREE
 #define REGULAR_EXPR_ANALYSIS_TREE 1

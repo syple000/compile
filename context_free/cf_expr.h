@@ -134,8 +134,6 @@ public:
 
     int GetSymbolCount();
 
-    CfExpr* GetExprByExprNumber(int exprNumber);
-
     static std::string GetFuncName(const std::string& func, bool isReductionFunc);
 
 };

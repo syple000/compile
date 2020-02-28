@@ -1,7 +1,7 @@
-#include "../tree_node/tree_node.h"
+#include "../context_free/cf_analysis_info.h"
 #include "./symbol_table.h"
 
-struct TypeAttribute : public CfTreeNode::Attribute {
+struct TypeAttribute : public CfInfo::Attribute {
     std::string _typeName;
     int _typeSize;
 
@@ -11,7 +11,7 @@ struct TypeAttribute : public CfTreeNode::Attribute {
     virtual ~TypeAttribute() {}
 };
 
-struct QualifierAttribute : public CfTreeNode::Attribute {
+struct QualifierAttribute : public CfInfo::Attribute {
     bool _isStatic;
 
     QualifierAttribute(const std::string& attrName, bool isStatic) 
@@ -20,7 +20,7 @@ struct QualifierAttribute : public CfTreeNode::Attribute {
     virtual ~QualifierAttribute() {}
 };
 
-struct PtrAttribute : public CfTreeNode::Attribute {
+struct PtrAttribute : public CfInfo::Attribute {
     Pointer* _ptr;
 
     PtrAttribute(const std::string& attrName) : Attribute(attrName), _ptr(nullptr) {}
@@ -34,7 +34,7 @@ struct PtrAttribute : public CfTreeNode::Attribute {
     }
 };
 
-struct VarAttribute : public CfTreeNode::Attribute {
+struct VarAttribute : public CfInfo::Attribute {
     const std::string _varName;
 
     VarAttribute(const std::string& attrName, const std::string& varName) : Attribute(attrName), _varName(varName) {}
@@ -42,7 +42,7 @@ struct VarAttribute : public CfTreeNode::Attribute {
     virtual ~VarAttribute() {}
 };
 
-struct ArrAttribute : public CfTreeNode::Attribute {
+struct ArrAttribute : public CfInfo::Attribute {
     Array* _array;
 
     ArrAttribute(const std::string& attrName) : Attribute(attrName), _array(nullptr) {}

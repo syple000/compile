@@ -105,7 +105,7 @@ void CfEngine::ReadCodeLexical(Buffer& codeLexicalBuf) {
 }
 
 // lexical file is explanation of lexical parsing
-CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFile, const std::string& lexicalFile) {
+CfEngine::CfEngine(const std::string& exprLexicalFile, const std::string& exprFile, const std::string& lexicalFile) : _nullCfInfo("") {
     IO<std::string> io(String2String, String2String);
     Buffer exprLexicalBuf(100), exprBuf(100), lexicalBuf(100);
     if (io.ReadFile(exprLexicalBuf, exprLexicalFile) != 0 || io.ReadFile(exprBuf, exprFile) != 0) {
@@ -162,16 +162,16 @@ void CfEngine::HandleGrammarError(Buffer& buffer) {
     buffer._curPos = buffer._contentSize;
 }
 
-CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
+void CfEngine::GenCfAnalysisInfo(const std::string& codeFile) {
     Buffer codeBuf(100);
     IO<std::string> io(String2String, String2String);
     if (io.ReadFile(codeBuf, codeFile) != 0) {
-        return nullptr;
+        return;
     }
     std::stack<int> stateStack;
-    std::vector<CfTreeNode*> infoVec;
+    std::vector<CfInfo> infoVec;
     stateStack.push(0);
-    infoVec.push_back(new CfTreeNode("_START_SYMBOL_", "_START_SYMBOL_", ""));
+    infoVec.push_back(CfInfo("_START_SYMBOL_", "_START_SYMBOL_"));
     CfSymbol* nullSymbol = this->_cfUtil->GetNullSymbol();
     bool matched = true;
 
@@ -217,49 +217,43 @@ CfTreeNode* CfEngine::GenCfAnalysisTree(const std::string& codeFile) {
     if (matched) {
         CfSymbol* symbol = this->_cfUtil->GetCfSymbol("_END_SYMBOL_");
         matched = ParsingSymbol(stateStack, infoVec, symbol, "_END_SYMBOL_");
+
+#ifdef DEBUG_CODE
+        if (!matched) {
+            std::cout << "can not reduce to init symbol!" << std::endl;
+        }
+#endif
+
     }
 
-    CfTreeNode* root = nullptr;
-    int index = 0;
-    if (matched) {
-        CfTreeNode::DestroyTree(infoVec[0]);
-        root = infoVec[1];
-        index = 2;
-    }
-
-    for (; index < infoVec.size(); index++) {
-        CfTreeNode::DestroyTree(infoVec[index]);
-    }
-
-    return root;
-
+    return;
 }
 
-void CfEngine::MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, const std::string& key, 
-    const std::string& value) {
+void CfEngine::MoveOn(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, StateTransInfo& transInfo, const std::string& key, const std::string& value) {
     stateStack.push(transInfo._nextState);
-    infoVec.push_back(new CfTreeNode(key, value, transInfo._action));
-    ExecuteAction(transInfo._action, nullptr, infoVec);
+    infoVec.push_back(CfInfo(key, value));
+    ExecuteAction(transInfo._action, this->_nullCfInfo, infoVec);
+
+#ifdef DEBUG_CODE
+    if ("_END_SYMBOL_" != value) {
+        std::cout << value << " ";
+    }
+#endif
+
 }
 
-void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, CfExpr* cfExpr) {
+void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, StateTransInfo& transInfo, CfExpr* cfExpr) {
     int symbolCount = cfExpr->_production.size();
-    std::vector<CfTreeNode*> cnodes(symbolCount, nullptr);
-    for (int i = 0; i < symbolCount; i++) {
-        cnodes[symbolCount - i - 1] = infoVec[infoVec.size() - i - 1];
-    }
-    auto reducedNode = new CfTreeNode(cfExpr->_sourceSymbol->_key, cnodes, cfExpr->_number, "", transInfo._reducedAction);
-    ExecuteAction(transInfo._reducedAction, reducedNode, infoVec);
-
+    auto reducedInfo = CfInfo(cfExpr->_sourceSymbol->_key);
+    ExecuteAction(transInfo._reducedAction, reducedInfo, infoVec);
     for (int i = 0; i < symbolCount; i++) {
         infoVec.pop_back();
         stateStack.pop();
     }
-    reducedNode->_action = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._action;
     int nextState = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._nextState;
     stateStack.push(nextState);
-    infoVec.push_back(reducedNode);
-    ExecuteAction(reducedNode->_action, reducedNode, infoVec);
+    infoVec.push_back(std::move(reducedInfo));
+    ExecuteAction(this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._action, *infoVec.end(), infoVec);
 }
 
 CfExpr* CfEngine::GetHighPriorityExpr(CfExpr* expr1, CfExpr* expr2) {
@@ -313,7 +307,7 @@ CfExpr* CfEngine::GetReduceExpr(const StateTransInfo& transInfo, CfSymbol* symbo
     }
 }
 
-int CfEngine::StateTrans(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value) {
+int CfEngine::StateTrans(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, CfSymbol* symbol, const std::string& value) {
     StateTransInfo transInfo = this->_stateTransInfoTable[stateStack.top()][symbol->_number];
     CfExpr* expr = GetReduceExpr(transInfo, symbol);
     if (expr == nullptr) {
@@ -329,7 +323,7 @@ int CfEngine::StateTrans(std::stack<int>& stateStack, std::vector<CfTreeNode*>& 
     }
 }
 
-bool CfEngine::ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value) {
+bool CfEngine::ParsingSymbol(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, CfSymbol* symbol, const std::string& value) {
     while (true) {
         // 非空符号优先
         int stateTransRes = StateTrans(stateStack, infoVec, symbol, value);
@@ -344,15 +338,11 @@ bool CfEngine::ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode
     }
 }
 
-CfExpr* CfEngine::GetExpr(int exprNumber) {
-    return this->_cfUtil->GetExprByExprNumber(exprNumber);
-}
-
-void CfEngine::ExecuteAction(const std::string& action, CfTreeNode* pnode, std::vector<CfTreeNode*>& knodes) {
+void CfEngine::ExecuteAction(const std::string& action, CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     if (action.size() > 0) {
         auto itr = this->_auxCode.funcRegistry.find(action);
         if (itr != this->_auxCode.funcRegistry.end()) {
-            itr->second(pnode, knodes);
+            itr->second(pinfo, kinfos);
         } else {
 
 #ifdef DEBUG_CODE

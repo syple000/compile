@@ -392,8 +392,8 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 
     // 读取表达式并处理归约动作的代码生成
     auxiliaryCodeBuf.AppendToBuffer(5, "#define GEN_AUX_CODE_FILE 1\n#ifndef AUX_CODE\n#define AUX_CODE 1\n\n",
-        "#include \"../../tree_node/tree_node.h\"\n", auxiliaryCode.substr(2, auxiliaryCode.size() - 4).c_str(),
-        "\nclass AuxCode {\npublic:\n", "\n    std::unordered_map<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>&)> funcRegistry;\n");
+        "#include \"../cf_analysis_info.h\"\n", auxiliaryCode.substr(2, auxiliaryCode.size() - 4).c_str(),
+        "\nclass AuxCode {\npublic:\n", "\n    std::unordered_map<std::string, void(*)(CfInfo&, std::vector<CfInfo>&)> funcRegistry;\n");
 
     std::vector<std::string> funcNames;
     // 读取表达式
@@ -401,7 +401,7 @@ void CfUtil::ReadExpr(Buffer& exprBuffer, LexicalParser& lexicalParser) {
 
     auxiliaryCodeBuf.AppendToBuffer("\n    void registFuncs() {\n");
     for (auto func : funcNames) {
-        auxiliaryCodeBuf.AppendToBuffer(5, "        funcRegistry.insert(std::pair<std::string, void(*)(CfTreeNode*, std::vector<CfTreeNode*>&)>(\"",
+        auxiliaryCodeBuf.AppendToBuffer(5, "        funcRegistry.insert(std::pair<std::string, void(*)(CfInfo&, std::vector<CfInfo>&)>(\"",
             func.c_str() ,"\", ", func.c_str(), "));\n");
     }
     auxiliaryCodeBuf.AppendToBuffer(2, "    }\n};\n", "#endif\n");
@@ -450,7 +450,7 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
         }
         funcNames.push_back(funcName);
         // 生成归约动作代码
-        auxiliaryCodeBuffer.AppendToBuffer(5, "    static void ", funcName.c_str(), "(CfTreeNode* pnode, std::vector<CfTreeNode*>& knodes) {\n", 
+        auxiliaryCodeBuffer.AppendToBuffer(5, "    static void ", funcName.c_str(), "(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {\n", 
             StringUtil::Replace(action, *this->_paramParser).c_str(), "\n    }\n");
     } else {
 
@@ -465,12 +465,12 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
 CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) : _commaRegExprEngine(",") {
     std::map<std::string, std::pair<std::string, int>> keyRegMap;
     keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("\"", std::pair<std::string, int>("\\\\q", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("pnode", std::pair<std::string, int>("$0", 0)));
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("knodes", std::pair<std::string, int>("$1", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("pinfo", std::pair<std::string, int>("$0", 0)));
+    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("kinfos", std::pair<std::string, int>("$1", 0)));
     // 以下为快速元素定位，非必须
     for (int i = 1; i < 10; i++) {
         std::string numStr = std::to_string(i);
-        std::string key = "((knodes.size() >= " + numStr + ") ? knodes[knodes.size() - " + numStr + "] : nullptr)";
+        std::string key = "kinfos[kinfos.size() - " + numStr + "]";
         std::string keyReg = "$-" + numStr; 
         keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>(key, std::pair<std::string, int>(keyReg, 0)));
     }
@@ -528,15 +528,6 @@ CfSymbol* CfUtil::AddSymbol(const std::string& key, const std::string& keyRegExp
     this->_symbolVec.push_back(symbol);
     this->_symbolMap.insert(std::pair<std::string, CfSymbol*>(key, symbol));
     return symbol;
-}
-
-CfExpr* CfUtil::GetExprByExprNumber(int exprNumber) {
-    auto itr = this->_exprs.find(exprNumber);
-    if (itr == this->_exprs.end()) {
-        return nullptr;
-    } else {
-        return itr->second;
-    }
 }
 
 std::string CfUtil::GetFuncName(const std::string& func, bool isReductionFunc) {

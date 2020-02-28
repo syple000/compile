@@ -3,7 +3,7 @@
 #include "./cf_expr.h"
 #include "../cmp/cmp.h"
 #include "./lexical_parser.h"
-#include "../tree_node/tree_node.h"
+#include "./cf_analysis_info.h"
 #include "./aux_code/aux_code.h"
 
 #ifndef CONTEXT_FREE_ENGINE 
@@ -55,6 +55,7 @@ private:
     std::vector<std::vector<StateTransInfo>> _stateTransInfoTable;
     LexicalParser* _lexicalParser = nullptr;
     AuxCode _auxCode;
+    CfInfo _nullCfInfo;
     
     std::set<CfExprPos> CalcCfExprPosSetClosure(const std::set<CfExprPos>& basicState);
 
@@ -62,9 +63,10 @@ private:
 
     CfState* AddState(CfState* state);
 
-    void MoveOn(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, const std::string& key, const std::string& value);
+    void MoveOn(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, StateTransInfo& transInfo, const std::string& key, 
+        const std::string& value);
 
-    void Reduce(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, StateTransInfo& transInfo, CfExpr* cfExpr);
+    void Reduce(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, StateTransInfo& transInfo, CfExpr* cfExpr);
 
     CfExpr* GetHighPriorityExpr(CfExpr* expr1, CfExpr* expr2);
 
@@ -72,13 +74,13 @@ private:
 
     CfExpr* GetReduceExpr(const StateTransInfo& info, CfSymbol* symbol);
 
-    int StateTrans(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value);
+    int StateTrans(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, CfSymbol* symbol, const std::string& value);
 
-    bool ParsingSymbol(std::stack<int>& stateStack, std::vector<CfTreeNode*>& infoVec, CfSymbol* symbol, const std::string& value);
+    bool ParsingSymbol(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec, CfSymbol* symbol, const std::string& value);
 
     void ReadCodeLexical(Buffer& codeLexicalBuf);
 
-    void ExecuteAction(const std::string& action, CfTreeNode* pnode, std::vector<CfTreeNode*>& knodes);
+    void ExecuteAction(const std::string& action, CfInfo& pinfo, std::vector<CfInfo>& kinfos);
 
     // error hook function
     void HandleLexicalError(Buffer& buffer);
@@ -94,9 +96,7 @@ public:
 
     bool InitSuccess();
 
-    CfTreeNode* GenCfAnalysisTree(const std::string& codeFile);
-
-    CfExpr* GetExpr(int exprNumber);
+    void GenCfAnalysisInfo(const std::string& codeFile);
 };
 
 
