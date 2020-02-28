@@ -268,10 +268,11 @@ std::map<std::string, std::pair<std::string, int>> CfUtil::ReadSymbol(Buffer& le
 
     // 文法表达式解析中的特殊符号：（理论上文法表达式不要将, : ;等作为普通符号，该符号可以用相应英文替代, 在代码分析词法中将相应符号对应英文key进行翻译）
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_number_", std::pair<std::string, int>("0|([1-9][0-9]*)", 0)));
+    std::string matchStr = "[0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|\\\\|<|>|:|-|+|\\*|/|\\.|\"|#|\\[|\\]|?|!|\\|";
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_string_", 
-        std::pair<std::string, int>("\"([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|{|}|\\\\|<|>|:|-|+|\\*|/|\\.|\\\\q|#|\\[|\\]|?|!|\\|)*\"", 0)));
+        std::pair<std::string, int>("{(({(" + matchStr + ")*})|(" + matchStr + ")*)*}", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_code_block_",
-        std::pair<std::string, int>("%%([0-9]|[a-z]|[A-Z]|_|\\s|\\(|\\)|;|=|,|\n|&|$|{|}|\\\\|<|>|:|-|+|\\*|/|\\.|\"|#|\\[|\\]|?|!|\\|)*%%", 0)));
+        std::pair<std::string, int>("%%(" + matchStr + "|{|})*%%", 0)));
     keyRegExprMap.insert(std::pair<std::string, std::pair<std::string, int>>("_semicolon_", std::pair<std::string, int>(";", 0)));
     return keyRegExprMap;
 }
@@ -464,7 +465,6 @@ void CfUtil::GetExprAdditionalInfo(CfExpr* expr, const std::string& additionalIn
 // 词法与语法之间有一个空行
 CfUtil::CfUtil(Buffer& lexicalBuffer, Buffer& exprBuffer) : _commaRegExprEngine(",") {
     std::map<std::string, std::pair<std::string, int>> keyRegMap;
-    keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("\"", std::pair<std::string, int>("\\\\q", 0)));
     keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("pinfo", std::pair<std::string, int>("$0", 0)));
     keyRegMap.insert(std::pair<std::string, std::pair<std::string, int>>("kinfos", std::pair<std::string, int>("$1", 0)));
     // 以下为快速元素定位，非必须

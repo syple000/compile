@@ -3,7 +3,9 @@
 #include <set>
 #include <iostream>
 
+#ifndef DEBUG_CODE
 #define DEBUG_CODE 1
+#endif
 
 #ifndef TREE_NODE
 #define TREE_NODE 1

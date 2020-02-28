@@ -46,7 +46,7 @@ public:
         CfInfo::MoveAttributes(kinfos[kinfos.size() - 2], pinfo);
         auto type = tableManager.GetTable(kinfos[kinfos.size() - 1]._value);
         if (type == nullptr || type->_type != 1) {
-            std::cout << "type: " << kinfos[kinfos.size() - 1]._value << "not found!" << std::endl;
+            std::cout << "type: " << kinfos[kinfos.size() - 1]._value << " not found!" << std::endl;
         }
         pinfo.AddAttribute(new TypeAttribute("type", kinfos[kinfos.size() - 1]._value, 4));
     }
