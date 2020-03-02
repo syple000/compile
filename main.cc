@@ -45,10 +45,13 @@ int main() {
     bitSet1.Set(0);
     bitSet1.Intersect(bitSet2);
     assert(bitSet1.ToString() == "10000000 00000000 00000000 00000000");
+    assert(!bitSet1.Empty());
     bitSet3.Set(0);
     assert(bitSet3 == bitSet1);
     bitSet3.Set(7);
     assert(!(bitSet3 == bitSet1));
+    bitSet1.Clear(0);
+    assert(bitSet1.Empty());
 
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";

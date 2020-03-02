@@ -122,3 +122,14 @@ std::string BitSet::ToString() const {
     }
     return str;
 }
+
+bool BitSet::Empty() const {
+    for (int i = 0; i < this->_size; i++) {
+        for (int j = 0; j < 8; j++) {
+            if ((((unsigned char)0x80) >> j) & this->_setElems[i]) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
