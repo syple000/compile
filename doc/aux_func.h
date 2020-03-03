@@ -1,92 +1,100 @@
-#include "./attribute.h"
+#include "../ir/instr.h"
 
-// 该文件不做编译使用
-static SymbolTableManager tableManager; 
+static InstrFlow instrFlow;
 
-// DECL QLFR TYPE PTR id "1" ARR "2"
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 2], knodes[knodes.size() - 1]);
+// 1 STMTS STMT STMTS;
+
+// 2 STMTS null;
+
+// 3 STMT while lp M {1} BOOL rp M {2} STMT {3} M {4-not reduce};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    kinfos[kinfos.size() - 1]._value = instrFlow.GetTail()->_components[0];
 }
 
-static void _func_2_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 1], knodes[knodes.size() - 2]);
-    auto typeAttr = (TypeAttribute*)knodes[knodes.size() - 2].GetAttribute("type");
-    auto ptrAttr = (PtrAttribute*)knodes[knodes.size() - 2].GetAttribute("pointer");
-    auto arrAttr = (ArrAttribute*)knodes[knodes.size() - 2].GetAttribute("array");
-    VarType* varType = new VarType(typeAttr->_typeName, typeAttr->_typeSize, 
-    ptrAttr == nullptr ? nullptr : ptrAttr->_ptr, arrAttr == nullptr ? nullptr : arrAttr->_array);
-    if (ptrAttr != nullptr) {
-        ptrAttr->_ptr = nullptr;
-    }
-    if (arrAttr != nullptr) {
-        arrAttr->_array = nullptr;
-    }
-    tableManager.AddVar(varType, knodes[knodes.size() - 2]._value, 
-        ((QualifierAttribute*)knodes[knodes.size() - 2].GetAttribute("qualifier"))->_isStatic);
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
+    boolAttr->BackFill("true", instrFlow.GetTail()->_components[0]);
 }
 
-// QLFR static
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    pnode.AddAttribute(new QualifierAttribute("qualifier", true));
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertInstr({"goto", kinfos[kinfos.size() - 5]._value});
 }
 
-// QLFR null
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    pnode.AddAttribute(new QualifierAttribute("qualifier", false));
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 5].GetAttribute("back_fill");
+    boolAttr->BackFill("false", instrFlow.GetTail()->_components[0]);
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 2].GetAttribute("back_fill");
+    boolAttr->BackFill("break", instrFlow.GetTail()->_components[0]);
 }
 
-// TYPE int
-// TYPE id
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 2], pnode);
-    auto type = tableManager.GetTable(knodes[knodes.size() - 1]._value);
-    if (type == nullptr || type->_type != 1) {
-        std::cout << "type: " << knodes[knodes.size() - 1]._value << "not found!" << std::endl;
-    }
-    pnode.AddAttribute(new TypeAttribute("type", knodes[knodes.size() - 1]._value, 4));
+// 4 STMT break {1};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertInstr({"goto", ""});
+    auto attr = new BackFillAttr();
+    attr->AddListElem("break", instrFlow.GetTail(), 1);
+    pinfo.AddAttribute(attr);
 }
 
-// ARR ls num rs "1" ARR "2"
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 4], knodes[knodes.size() - 1]);
-    auto arrAttr = (ArrAttribute*)knodes[knodes.size() - 1].GetAttribute("array");
-    if (arrAttr == nullptr) {
-        arrAttr = new ArrAttribute("array");
-        knodes[knodes.size() - 1].AddAttribute(arrAttr);
-    }
-    auto typeAttr = (TypeAttribute*)knodes[knodes.size() - 1].GetAttribute("type");
-    int typeSize = typeAttr->_typeSize;
-    if (knodes[knodes.size() - 1].GetAttribute("pointer") != nullptr) {
-        typeSize = 4;
-    }
-    arrAttr->AddNestArr(typeSize, std::stoi(knodes[knodes.size() - 2]._value));
+// 5 STMT id sem {1};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertInstr({kinfos[kinfos.size() - 1]._value});
 }
 
-static void _func_2_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 1], pnode);
+// 6 TAF true {1};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertInstr({"goto", ""});
+    auto attr = new BackFillAttr();
+    attr->AddListElem("true", instrFlow.GetTail(), 1);
+    pinfo.AddAttribute(attr);
 }
 
-// ARR null
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 2], pnode);
+// 7 TAF false{1};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertInstr({"goto", ""});
+    auto attr = new BackFillAttr();
+    attr->AddListElem("false", instrFlow.GetTail(), 1);
+    pinfo.AddAttribute(attr);
 }
 
-// PTR ast "1" PTR "2"
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 2], knodes[knodes.size() -1]);
-    auto ptrAttr = (PtrAttribute*)knodes[knodes.size() - 2].GetAttribute("pointer");
-    if (ptrAttr == nullptr) {
-        ptrAttr = new PtrAttribute("pointer");
-        knodes[knodes.size() - 1].AddAttribute(ptrAttr);
-    }
-    ptrAttr->AddNestPtr();
+// 8 BOOL BOOL or M {1} JOIN {2};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
+    boolAttr->BackFill("false", instrFlow.GetTail()->_components[0]);
+    boolAttr->RemoveList("false");
 }
 
-static void _func_2_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 1], pnode);
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 4].GetAttribute("back_fill");
+    auto pattr = (BackFillAttr*)pinfo.GetAttribute("back_fill");
+    pattr->AddAllListElems("true", boolAttr);
 }
 
-// PTR null
-static void _func_1_(CfInfo& pnode, std::vector<CfInfo>& knodes) {
-    CfInfo::MoveAttributes(knodes[knodes.size() - 2], pnode);
+// 9 BOOL JOIN {1};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
+}
+
+// 10 JOIN JOIN and M {1} TAF {2};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    auto joinAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
+    joinAttr->BackFill("true", instrFlow.GetTail()->_components[0]);
+    joinAttr->RemoveList("true");
+}
+
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
+    auto pattr = (BackFillAttr*)pinfo.GetAttribute("back_fill");
+    auto joinAttr = (BackFillAttr*)kinfos[kinfos.size() - 4].GetAttribute("back_fill");
+    pattr->AddAllListElems("false", joinAttr);
+}
+
+// M null;
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertLabel(instrFlow.GetLabel());
+}
+
+// 11 JOIN TAF {1};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
 }

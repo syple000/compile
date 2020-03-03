@@ -1,2 +1,6 @@
-static int *a[2];
-int b[2][3];
+while (true || false && true || false && false) 
+    while (true) 
+        while (false)
+            id111;
+
+while (true) break;

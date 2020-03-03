@@ -10,7 +10,6 @@ struct CfInfo {
     // 属性都必须继承该类
     struct Attribute {
         std::string _name;
-        Attribute() {}
         Attribute(const std::string& name) : _name(name) {}
         virtual ~Attribute() {}
     };

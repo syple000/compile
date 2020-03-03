@@ -1,95 +1,109 @@
-DECLS
+STMTS
 
 %% 
-#include "../../doc/attribute.h"
+#include "../../ir/instr.h"
 
-static SymbolTableManager tableManager(1000);
+static InstrFlow instrFlow;
+
+static void ShowInstr(Instruction* instr) {
+    if (instr->_isLabel) {
+        std::cout << instr->_components[0] << ": ";
+    } else {
+        for (auto str : instr->_components) {
+            std::cout << str << " ";
+        }
+        std::cout << std::endl;
+    }
+}
+
 %%
 
-1 DECLS DECL sm DECLS;
-2 DECLS null;
-
-3 DECL QLFR TYPE PTR id 
+1 STMTS STMT STMTS;
+2 STMTS null
+    {reduction_action=
+        instrFlow.Traverse(ShowInstr);
+    };
+3 STMT while lp M 
     {action_1=
-        CfInfo::MoveAttributes($-2, $-1);} 
-    ARR 
-    {reduction_action= 
-        CfInfo::MoveAttributes($-1, $-2);
-        auto typeAttr = (TypeAttribute*)$-2.GetAttribute("type");
-        auto ptrAttr = (PtrAttribute*)$-2.GetAttribute("pointer");
-        auto arrAttr = (ArrAttribute*)$-2.GetAttribute("array");
-        VarType* varType = new VarType(typeAttr->_typeName, typeAttr->_typeSize, 
-        ptrAttr == nullptr ? nullptr : ptrAttr->_ptr, arrAttr == nullptr ? nullptr : arrAttr->_array);
-        if (ptrAttr != nullptr) {
-            ptrAttr->_ptr = nullptr;
-        }
-        if (arrAttr != nullptr) {
-            arrAttr->_array = nullptr;
-        }
-        tableManager.AddVar(varType, $-2._value, 
-            ((QualifierAttribute*)$-2.GetAttribute("qualifier"))->_isStatic);};
-
-4 QLFR static 
-    {reduction_action=
-        pinfo.AddAttribute(new QualifierAttribute("qualifier", true));};
-
-5 QLFR null
-    {reduction_action=
-        pinfo.AddAttribute(new QualifierAttribute("qualifier", false));};
-
-6 TYPE int
-    {reduction_action=
-        CfInfo::MoveAttributes($-2, pinfo);
-        auto type = tableManager.GetTable($-1._value);
-        if (type == nullptr || type->_type != 1) {
-            std::cout << "type: " << $-1._value << " not found!" << std::endl;
-        }
-        pinfo.AddAttribute(new TypeAttribute("type", $-1._value, 4));};
-
-7 TYPE id
-    {reduction_action=
-        CfInfo::MoveAttributes($-2, pinfo);
-        auto type = tableManager.GetTable($-1._value);
-        if (type == nullptr || type->_type != 1) {
-            std::cout << "type: " << $-1._value << "not found!" << std::endl;
-        }
-        pinfo.AddAttribute(new TypeAttribute("type", $-1._value, 4));};
-
-8 ARR ls num rs 
+        $-1._value = instrFlow.GetTail()->_components[0];
+    } 
+    BOOL rp M 
     {action_2=
-        CfInfo::MoveAttributes($-4, $-1);
-        auto arrAttr = (ArrAttribute*)$-1.GetAttribute("array");
-        if (arrAttr == nullptr) {
-            arrAttr = new ArrAttribute("array");
-            $-1.AddAttribute(arrAttr);
-        }
-        auto typeAttr = (TypeAttribute*)$-1.GetAttribute("type");
-        int typeSize = typeAttr->_typeSize;
-        if ($-1.GetAttribute("pointer") != nullptr) {
-            typeSize = 4;
-        }
-        arrAttr->AddNestArr(typeSize, std::stoi($-2._value));} 
-    ARR 
-    {reduction_action=
-        CfInfo::MoveAttributes($-1, pinfo);};
-
-9 ARR null
-    {reduction_action=
-        CfInfo::MoveAttributes($-2, pinfo);};
-
-10 PTR ast 
+        auto boolAttr = (BackFillAttr*)$-3.GetAttribute("back_fill");
+        boolAttr->BackFill("true", instrFlow.GetTail()->_components[0]);} 
+    STMT
     {action_3=
-        CfInfo::MoveAttributes($-2, $-1);
-        auto ptrAttr = (PtrAttribute*)$-2.GetAttribute("pointer");
-        if (ptrAttr == nullptr) {
-            ptrAttr = new PtrAttribute("pointer");
-            $-1.AddAttribute(ptrAttr);
+        instrFlow.InsertInstr({"goto", $-5._value});
+    } 
+    M 
+    {action_4=
+        auto boolAttr = (BackFillAttr*)$-5.GetAttribute("back_fill");
+        boolAttr->BackFill("false", instrFlow.GetTail()->_components[0]);
+        auto stmtAttr = (BackFillAttr*)$-2.GetAttribute("back_fill");
+        if (stmtAttr != nullptr) {
+            stmtAttr->BackFill("break", instrFlow.GetTail()->_components[0]);
         }
-        ptrAttr->AddNestPtr();} 
-    PTR 
+    };
+4 STMT break sem
     {reduction_action=
-        CfInfo::MoveAttributes($-1, pinfo);};
-
-11 PTR null 
+        instrFlow.InsertInstr({"goto", ""});
+        auto attr = new BackFillAttr();
+        attr->AddListElem("break", instrFlow.GetTail(), 1);
+        pinfo.AddAttribute(attr);
+    };
+5 STMT id sem 
     {reduction_action=
-        CfInfo::MoveAttributes($-2, pinfo);};
+        instrFlow.InsertInstr({$-2._value});
+    };
+6 TAF true 
+    {reduction_action=
+        instrFlow.InsertInstr({"goto", ""});
+        auto attr = new BackFillAttr();
+        attr->AddListElem("true", instrFlow.GetTail(), 1);
+        pinfo.AddAttribute(attr);
+    };
+7 TAF false
+    {reduction_action=
+        instrFlow.InsertInstr({"goto", ""});
+        auto attr = new BackFillAttr();
+        attr->AddListElem("false", instrFlow.GetTail(), 1);
+        pinfo.AddAttribute(attr); 
+    };
+8 BOOL BOOL or M 
+    {action_5=
+        auto boolAttr = (BackFillAttr*)$-3.GetAttribute("back_fill");
+        boolAttr->BackFill("false", instrFlow.GetTail()->_components[0]);
+        boolAttr->RemoveList("false");
+    }
+    JOIN 
+    {reduction_action=
+        CfInfo::MoveAttributes($-1, pinfo);
+        auto boolAttr = (BackFillAttr*)$-4.GetAttribute("back_fill");
+        auto pattr = (BackFillAttr*)pinfo.GetAttribute("back_fill");
+        pattr->AddAllListElems("true", boolAttr);
+    };
+9 BOOL JOIN 
+    {reduction_action=
+        CfInfo::MoveAttributes($-1, pinfo);
+    };
+10 JOIN JOIN and M 
+    {action_6=
+        auto joinAttr = (BackFillAttr*)$-3.GetAttribute("back_fill");
+        joinAttr->BackFill("true", instrFlow.GetTail()->_components[0]);
+        joinAttr->RemoveList("true");
+    } 
+    TAF 
+    {reduction_action=
+        CfInfo::MoveAttributes($-1, pinfo);
+        auto pattr = (BackFillAttr*)pinfo.GetAttribute("back_fill");
+        auto joinAttr = (BackFillAttr*)$-4.GetAttribute("back_fill");
+        pattr->AddAllListElems("false", joinAttr);
+    };
+11 JOIN TAF
+    {reduction_action=
+        CfInfo::MoveAttributes($-1, pinfo);
+    };
+12 M null
+    {reduction_action=
+        instrFlow.InsertLabel(instrFlow.GetLabel());
+    };

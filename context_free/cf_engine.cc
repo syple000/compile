@@ -251,9 +251,10 @@ void CfEngine::Reduce(std::stack<int>& stateStack, std::vector<CfInfo>& infoVec,
         stateStack.pop();
     }
     int nextState = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._nextState;
+    auto action = this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._action;
     stateStack.push(nextState);
     infoVec.push_back(std::move(reducedInfo));
-    ExecuteAction(this->_stateTransInfoTable[stateStack.top()][cfExpr->_sourceSymbol->_number]._action, *infoVec.end(), infoVec);
+    ExecuteAction(action, this->_nullCfInfo, infoVec);
 }
 
 CfExpr* CfEngine::GetHighPriorityExpr(CfExpr* expr1, CfExpr* expr2) {

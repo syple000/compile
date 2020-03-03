@@ -114,7 +114,7 @@ void CfUtil::GenNext() {
         for (auto expr : itr.second->_exprs) {
             for (int i = 0; i < expr->_production.size(); i++) {
                 if (!expr->_production[i]->_isTerminator) {
-                    expr->_production[i]->_positionInExpr.insert(std::pair<CfExpr*, int>(expr, i));
+                    expr->_production[i]->_positionInExpr.push_back(std::pair<CfExpr*, int>(expr, i));
                 }
             }
         }

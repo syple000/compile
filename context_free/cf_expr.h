@@ -28,7 +28,7 @@ struct CfSymbol {
     int _nullable;
     bool _isTerminator;
     std::set<CfSymbol*> _first, _next;
-    std::map<CfExpr*, int> _positionInExpr;
+    std::vector<std::pair<CfExpr*, int>> _positionInExpr;
     SymbolSubject *_subjects;
 
     CfSymbol(const std::string& key, const std::string& keyRegExpr,  int number, bool isTerminator, int nullable);

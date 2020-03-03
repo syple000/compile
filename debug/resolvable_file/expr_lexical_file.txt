@@ -1,16 +1,18 @@
-DECLS DECLS 1 0 2
-DECL DECL 1 0 2
-QLFR QLFR 1 0 2
-TYPE TYPE 1 0 2
-PTR PTR 1 0 2
-ARR ARR 1 0 2
-
 id id 1 1 0
-int int 1 1 0
-static static 1 1 0
-ast ast 1 1 0
-ls ls 1 1 0
-rs rs 1 1 0
-num num 1 1 0
-sm sm 1 1 0
 null null 1 1 1
+true true 1 1 0
+false false 1 1 0
+while while 1 1 0
+lp lp 1 1 0
+rp rp 1 1 0
+sem sem 1 1 0
+and and 1 1 0
+or or 1 1 0
+break break 1 1 0
+
+STMTS STMTS 1 0 2
+STMT STMT 1 0 2
+BOOL BOOL 1 0 2
+JOIN JOIN 1 0 2
+TAF TAF 1 0 2
+M M 1 0 2
