@@ -25,14 +25,23 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
 
     while (oldStateCount != stateCount) {
         for (int i = oldStateCount; i < stateCount; i++) {
+            std::unordered_map<int, std::set<RegExprNode*>*> newStates;
             std::set<RegExprNode*>* curSet = statesVec[i];
             for (RegExprNode* elem : *curSet) {
-                auto it = statesMap.find(elem->_next);
+                int curCh = (int)elem->_content;
+                if (newStates.find(curCh) == newStates.end()) {
+                    newStates.insert(std::pair<int, std::set<RegExprNode*>*>(curCh, new std::set<RegExprNode*>()));
+                }
+                newStates.find(curCh)->second->insert(elem->_next->begin(), elem->_next->end());
+            }
+            for (auto state : newStates) {
+                auto it = statesMap.find(state.second);
                 if (it == statesMap.end()) {
-                    RegExprEngine::AddState(statesMap, statesVec, elem->_next, terminalState);
-                    this->_stateTransTable[i][(int)elem->_content] = statesVec.size() - 1;
+                    RegExprEngine::AddState(statesMap, statesVec, state.second, terminalState);
+                    this->_stateTransTable[i][state.first] = statesVec.size() - 1;
                 } else {
-                    this->_stateTransTable[i][(int)elem->_content] = it->second;
+                    delete state.second;
+                    this->_stateTransTable[i][state.first] = it->second;
                 }
             }
         }
@@ -40,6 +49,9 @@ void RegExprEngine::CreateTableByExpr(const std::string& expr) {
         stateCount = statesVec.size();
     }
     RegExprNode::DestroyTree(root);
+    for (int i = 1; i < statesVec.size(); i++) {
+        delete statesVec[i];
+    }
 }
 
 RegExprEngine::RegExprEngine(const std::string& input) {

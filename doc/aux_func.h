@@ -4,27 +4,30 @@ static InstrFlow instrFlow;
 
 // 1 STMTS STMT STMTS;
 
-// 2 STMTS null;
-
-// 3 STMT while lp M {1} BOOL rp M {2} STMT {3} M {4-not reduce};
+// 2 STMTS null {1};
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    kinfos[kinfos.size() - 1]._value = instrFlow.GetTail()->_components[0];
+    instrFlow.InsertInstr({"goto", "end"});
+}
+
+// 3 STMT while lp {1} BOOL rp {2} STMT {3} {4};
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    kinfos[kinfos.size() - 1]._value = instrFlow.GetLabel();
+}
+
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 2].GetAttribute("back_fill");
+    instrFlow.AddNextInstrFillBackInfo("true", boolAttr);
+}
+
+static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
+    instrFlow.InsertInstr({"goto", kinfos[kinfos.size() - 4]._value});
 }
 
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
-    boolAttr->BackFill("true", instrFlow.GetTail()->_components[0]);
-}
-
-static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    instrFlow.InsertInstr({"goto", kinfos[kinfos.size() - 5]._value});
-}
-
-static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 5].GetAttribute("back_fill");
-    boolAttr->BackFill("false", instrFlow.GetTail()->_components[0]);
-    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 2].GetAttribute("back_fill");
-    boolAttr->BackFill("break", instrFlow.GetTail()->_components[0]);
+    instrFlow.AddNextInstrFillBackInfo("false", boolAttr);
+    auto breakAttr = (BackFillAttr*)kinfos[kinfos.size() - 1].GetAttribute("back_fill");
+    instrFlow.AddNextInstrFillBackInfo("break", breakAttr);
 }
 
 // 4 STMT break {1};
@@ -46,6 +49,12 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     auto attr = new BackFillAttr();
     attr->AddListElem("true", instrFlow.GetTail(), 1);
     pinfo.AddAttribute(attr);
+    if (kinfos.size() > 1) {
+        if (kinfos[kinfos.size() - 2]._value == "label") {
+            instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
+        }
+    }
 }
 
 // 7 TAF false{1};
@@ -54,18 +63,23 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     auto attr = new BackFillAttr();
     attr->AddListElem("false", instrFlow.GetTail(), 1);
     pinfo.AddAttribute(attr);
+    if (kinfos.size() > 1) {
+        if (kinfos[kinfos.size() - 2]._value == "label") {
+            instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
+        }
+    }
 }
 
-// 8 BOOL BOOL or M {1} JOIN {2};
+// 8 BOOL BOOL or {1} JOIN {2};
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
-    boolAttr->BackFill("false", instrFlow.GetTail()->_components[0]);
-    boolAttr->RemoveList("false");
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 2].GetAttribute("back_fill");
+    instrFlow.AddNextInstrFillBackInfo("false", boolAttr);
 }
 
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
-    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 4].GetAttribute("back_fill");
+    auto boolAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
     auto pattr = (BackFillAttr*)pinfo.GetAttribute("back_fill");
     pattr->AddAllListElems("true", boolAttr);
 }
@@ -75,23 +89,17 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
 }
 
-// 10 JOIN JOIN and M {1} TAF {2};
+// 10 JOIN JOIN and {1} TAF {2};
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    auto joinAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
-    joinAttr->BackFill("true", instrFlow.GetTail()->_components[0]);
-    joinAttr->RemoveList("true");
+    auto joinAttr = (BackFillAttr*)kinfos[kinfos.size() - 2].GetAttribute("back_fill");
+    instrFlow.AddNextInstrFillBackInfo("true", joinAttr);
 }
 
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     CfInfo::MoveAttributes(kinfos[kinfos.size() - 1], pinfo);
     auto pattr = (BackFillAttr*)pinfo.GetAttribute("back_fill");
-    auto joinAttr = (BackFillAttr*)kinfos[kinfos.size() - 4].GetAttribute("back_fill");
+    auto joinAttr = (BackFillAttr*)kinfos[kinfos.size() - 3].GetAttribute("back_fill");
     pattr->AddAllListElems("false", joinAttr);
-}
-
-// M null;
-static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    instrFlow.InsertLabel(instrFlow.GetLabel());
 }
 
 // 11 JOIN TAF {1};

@@ -51,13 +51,14 @@ struct CfInfo {
         return true;
     }
 
-    bool RemoveAttribute(const std::string& name) {
+    Attribute* RemoveAttribute(const std::string& name) {
         auto itr = this->_attributes.find(name);
         if (itr == this->_attributes.end()) {
-            return false;
+            return nullptr;
         } else {
+            auto eraseAttr = itr->second;
             this->_attributes.erase(itr);
-            return true;
+            return eraseAttr;
         }
     }
 

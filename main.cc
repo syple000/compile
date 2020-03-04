@@ -55,14 +55,25 @@ int main() {
 
     // regular expr test
     // std::string repat = "((a)(b|cd*|e))f*";
-    std::string repat1 = "((a)(b|cd*|e))f*";
+    std::string repat1 = "(((a)(b|cd*|e)))f*";
     std::string repat2 = "e(a|bb|c)**d\\[\\]";
     std::string repat3 = "a*";
     std::string repat4 = "[0-9][0-9]*";
+
+    std::string matchStr = "((({((a))*})|((a))*)*)";
+    for (int i = 0; i < 1; i++) {
+        matchStr = "({" + matchStr + "*})|" + matchStr;
+//        matchStr = "((({(" + matchStr + ")*})|(" + matchStr + ")*)*)";
+    }
+    std::cout << matchStr << std::endl;
+    RegExprEngine regExprEngine5(matchStr);
+    assert(regExprEngine5.IsMatched("{aa{aaa}{}aa{}{}}"));
+
     RegExprEngine regExprEngine1(repat1);
     RegExprEngine regExprEngine2(repat2);
     RegExprEngine regExprEngine3(repat3);
     RegExprEngine regExprEngine4(repat4);
+
     assert(regExprEngine1.InitSuccess());
     assert(regExprEngine2.InitSuccess());
     assert(regExprEngine3.InitSuccess());
