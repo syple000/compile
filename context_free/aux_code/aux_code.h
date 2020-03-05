@@ -61,7 +61,7 @@ public:
 
         instrFlow.InsertInstr({"goto", ""});
         auto attr = new BackFillAttr();
-        attr->AddListElem("break", instrFlow.GetTail(), 1);
+        attr->AddListElem("break", instrFlow.GetLast(), 1);
         pinfo.AddAttribute(attr);
     
     }
@@ -74,13 +74,13 @@ public:
 
         instrFlow.InsertInstr({"goto", ""});
         auto attr = new BackFillAttr();
-        attr->AddListElem("true", instrFlow.GetTail(), 1);
+        attr->AddListElem("true", instrFlow.GetLast(), 1);
         pinfo.AddAttribute(attr);
         if (kinfos.size() > 1) {
-            if (kinfos[kinfos.size() - 2]._value == "label" && instrFlow.GetTail()->_label.size() == 0) {
-                instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            if (kinfos[kinfos.size() - 2]._value == "label" && instrFlow.GetLast()->_label.size() == 0) {
+                instrFlow.AddLabel(instrFlow.GetLast());
             }
-            kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
+            kinfos[kinfos.size() - 2]._value = instrFlow.GetLast()->_label;
         }
     
     }
@@ -88,13 +88,13 @@ public:
 
         instrFlow.InsertInstr({"goto", ""});
         auto attr = new BackFillAttr();
-        attr->AddListElem("false", instrFlow.GetTail(), 1);
+        attr->AddListElem("false", instrFlow.GetLast(), 1);
         pinfo.AddAttribute(attr); 
         if (kinfos.size() > 1) {
-            if (kinfos[kinfos.size() - 2]._value == "label" && instrFlow.GetTail()->_label.size() == 0) {
-                instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            if (kinfos[kinfos.size() - 2]._value == "label" && instrFlow.GetLast()->_label.size() == 0) {
+                instrFlow.AddLabel(instrFlow.GetLast());
             }
-            kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
+            kinfos[kinfos.size() - 2]._value = instrFlow.GetLast()->_label;
         }
     
     }

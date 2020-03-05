@@ -5,25 +5,51 @@
 #ifndef IR_INSTR
 #define IR_INSTR 1
 
+#ifndef DEBUG_CODE
+#define DEBUG_CODE 1
+#endif
+
 struct Instruction {
-    Instruction* _pre, *_next = nullptr;
+    Instruction* _pre, *_next;
     std::vector<std::string> _components;
     std::string _label;
+    // 状态位：标记是否是跳转至，跳出等信息
+    int _state;
 
-    Instruction(Instruction* pre, std::vector<std::string>&& components) : _pre(pre) {
-        if (pre != nullptr) {
-            auto next = pre->_next;
-            pre->_next = this;
-            if (next != nullptr) {
-                next->_pre = this;
-            }
-            this->_next = next;
-        }
+    Instruction(Instruction* pre, std::vector<std::string>&& components) {
+        InsertInstrAfter(pre, this);
         this->_components = std::move(components);
     }
 
     void BackFill(int index, const std::string& content) {
         this->_components[index] = content;
+    }
+
+    static void LinkInstrs(Instruction* instr1, Instruction* instr2) {
+        if (instr1 != nullptr) {
+            instr1->_next = instr2;
+        }
+        if (instr2 != nullptr) {
+            instr2->_pre = instr1;
+        }
+    }
+
+    // 插入指令
+    static void InsertInstrAfter(Instruction* pre, Instruction* instr) {
+        InsertInstrsAfter(pre, instr, instr);
+    }
+
+    // 插入指令列
+    static void InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end) {
+        auto next = pre == nullptr ? nullptr : pre->_next;
+        start->_pre = pre;
+        end->_next = next;
+        if (pre != nullptr) {
+            pre->_next = start;
+        }
+        if (next != nullptr) {
+            next->_pre = end;
+        }
     }
 
 };
@@ -63,7 +89,7 @@ struct BackFillAttr : public CfInfo::Attribute {
             return false;
         }
         for (auto instrPos : instrList->second) {
-            instrPos.first->_components[instrPos.second] = content;
+            instrPos.first->BackFill(instrPos.second, content);
         }
         return true;
     }
@@ -72,94 +98,43 @@ struct BackFillAttr : public CfInfo::Attribute {
 class InstrFlow {
 private:
     Instruction* _head, *_tail;
+    std::unordered_map<std::string, Instruction*> _labelInstrMap;
     std::unordered_map<BackFillAttr*, std::vector<std::string>> _nextInstrFillBack;
 
     int _labelCnt = 0;
 
-    static void destroyInstr(Instruction* instr) {
-        delete instr;
-    }
+    static void destroyInstr(Instruction* instr);
+
+    std::string GetLabel();
 
 public:
-    InstrFlow() : _head(nullptr), _tail(nullptr) {}
+    InstrFlow();
 
-    virtual ~InstrFlow() {
-        Traverse(destroyInstr);
-    }
+    virtual ~InstrFlow();
 
-    void AddNextInstrFillBackInfo(const std::string& listName, BackFillAttr* attr) {
-        if (this->_nextInstrFillBack.find(attr) == this->_nextInstrFillBack.end()) {
-            this->_nextInstrFillBack.insert(std::pair<BackFillAttr*, std::vector<std::string>>(attr, std::vector<std::string>()));
-        }
-        this->_nextInstrFillBack.find(attr)->second.push_back(listName);
-    }
+    void AddNextInstrFillBackInfo(const std::string& listName, BackFillAttr* attr);
 
-    void InsertInstrAfter(Instruction* pre, std::vector<std::string>&& components) {
-        auto newInstr = new Instruction(pre, std::move(components));
-        if (newInstr->_next == nullptr) {
-            this->_tail = newInstr;
-        }
-        if (pre == nullptr) {
-            this->_head = newInstr;
-        }
-        if (this->_nextInstrFillBack.size() != 0 && newInstr == this->_tail) {
-            if (newInstr->_label.size() == 0) {
-                newInstr->_label = GetLabel();
-            }
-            for (auto listNameAttrPair : this->_nextInstrFillBack) {
-                for (auto listName : listNameAttrPair.second) {
-                    listNameAttrPair.first->BackFill(listName, newInstr->_label);
-                }
-            }
-            this->_nextInstrFillBack.clear();
-        }
-    }
+    void InsertInstrAfter(Instruction* pre, std::vector<std::string>&& components);
 
-    void InsertInstr(std::vector<std::string>&& components) {
-        InsertInstrAfter(this->_tail, std::move(components));
-    }
+    void InsertInstr(std::vector<std::string>&& components);
 
-    void Remove(Instruction* instr) {
-        auto pre = instr->_pre, next = instr->_next;
-        if (pre != nullptr) {
-            pre->_next = next;
-        } else {
-            this->_head = next;
-        }
+    void InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end);
 
-        if (next != nullptr) {
-            next->_pre = pre;
-        } else {
-            this->_tail = pre;
-        }
+    void InsertInstrs(Instruction* start, Instruction* end);
 
-        delete instr;
-    }
+    void Remove(Instruction* instr);
 
-    Instruction* GetHead() {
-        return this->_head;
-    }
+    Instruction* GetFirst();
 
-    Instruction* GetTail() {
-        return this->_tail;
-    }
+    Instruction* GetLast();
 
-    Instruction* Next(Instruction* instr) {
-        return instr->_next;
-    }
+    Instruction* Next(Instruction* instr);
 
-    void Traverse(void(*func)(Instruction*)) {
-        auto instr = this->_head;
-        while (instr != nullptr) {
-            auto next = instr->_next;
-            func(instr);
-            instr = next;
-        }
-    }
+    Instruction* GetInstrByLabel(const std::string& label);
 
-    std::string GetLabel() {
-        return "label_" + std::to_string(this->_labelCnt++);
-    }
+    void AddLabel(Instruction* instr);
+
+    void Traverse(void(*func)(Instruction*));
 };
 
 #endif

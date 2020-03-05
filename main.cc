@@ -53,8 +53,6 @@ int main() {
     bitSet1.Clear(0);
     assert(bitSet1.Empty());
 
-    // regular expr test
-    // std::string repat = "((a)(b|cd*|e))f*";
     std::string repat1 = "(((a)(b|cd*|e)))f*";
     std::string repat2 = "e(a|bb|c)**d\\[\\]";
     std::string repat3 = "a*";
@@ -63,9 +61,7 @@ int main() {
     std::string matchStr = "((({((a))*})|((a))*)*)";
     for (int i = 0; i < 1; i++) {
         matchStr = "({" + matchStr + "*})|" + matchStr;
-//        matchStr = "((({(" + matchStr + ")*})|(" + matchStr + ")*)*)";
     }
-    std::cout << matchStr << std::endl;
     RegExprEngine regExprEngine5(matchStr);
     assert(regExprEngine5.IsMatched("{aa{aaa}{}aa{}{}}"));
 
@@ -99,12 +95,7 @@ int main() {
     assert(regExprEngine4.IsMatched("0111"));
 
     std::vector<std::string> strs = StringUtil::Split(";;123456;1333114353;1", ";*1");
-    for (auto str : strs) {
-        std::cout << str << " ";
-    }
     std::cout << std::endl;
-    
-    std::cout << StringUtil::Replace(";;123456;1333114353;1", ";*1", "aaa") << std::endl;
 
     // context free test
     // 该过程会写入aux_code文件; 后续过程需要的正常进行需要再次编译

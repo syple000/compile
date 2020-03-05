@@ -50,7 +50,7 @@ static void ShowInstr(Instruction* instr) {
     {reduction_action=
         instrFlow.InsertInstr({"goto", ""});
         auto attr = new BackFillAttr();
-        attr->AddListElem("break", instrFlow.GetTail(), 1);
+        attr->AddListElem("break", instrFlow.GetLast(), 1);
         pinfo.AddAttribute(attr);
     };
 5 STMT id sem 
@@ -61,26 +61,26 @@ static void ShowInstr(Instruction* instr) {
     {reduction_action=
         instrFlow.InsertInstr({"goto", ""});
         auto attr = new BackFillAttr();
-        attr->AddListElem("true", instrFlow.GetTail(), 1);
+        attr->AddListElem("true", instrFlow.GetLast(), 1);
         pinfo.AddAttribute(attr);
         if ($1.size() > 1) {
-            if ($-2._value == "label" && instrFlow.GetTail()->_label.size() == 0) {
-                instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            if ($-2._value == "label" && instrFlow.GetLast()->_label.size() == 0) {
+                instrFlow.AddLabel(instrFlow.GetLast());
             }
-            $-2._value = instrFlow.GetTail()->_label;
+            $-2._value = instrFlow.GetLast()->_label;
         }
     };
 7 TAF false
     {reduction_action=
         instrFlow.InsertInstr({"goto", ""});
         auto attr = new BackFillAttr();
-        attr->AddListElem("false", instrFlow.GetTail(), 1);
+        attr->AddListElem("false", instrFlow.GetLast(), 1);
         pinfo.AddAttribute(attr); 
         if ($1.size() > 1) {
-            if ($-2._value == "label" && instrFlow.GetTail()->_label.size() == 0) {
-                instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            if ($-2._value == "label" && instrFlow.GetLast()->_label.size() == 0) {
+                instrFlow.AddLabel(instrFlow.GetLast());
             }
-            $-2._value = instrFlow.GetTail()->_label;
+            $-2._value = instrFlow.GetLast()->_label;
         }
     };
 8 BOOL BOOL or

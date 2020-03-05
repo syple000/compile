@@ -11,7 +11,6 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
 
 // 3 STMT while lp {1} BOOL rp {2} STMT {3} {4};
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
-    kinfos[kinfos.size() - 1]._value = instrFlow.GetLabel();
 }
 
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
@@ -51,7 +50,7 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     pinfo.AddAttribute(attr);
     if (kinfos.size() > 1) {
         if (kinfos[kinfos.size() - 2]._value == "label") {
-            instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            instrFlow.AddLabel(instrFlow.GetTail());
             kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
         }
     }
@@ -65,7 +64,7 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     pinfo.AddAttribute(attr);
     if (kinfos.size() > 1) {
         if (kinfos[kinfos.size() - 2]._value == "label") {
-            instrFlow.GetTail()->_label = instrFlow.GetLabel();
+            instrFlow.AddLabel(instrFlow.GetTail());
             kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
         }
     }
