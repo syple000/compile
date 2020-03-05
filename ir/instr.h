@@ -52,6 +52,14 @@ struct Instruction {
         }
     }
 
+    // 返回删除指令后的前后指令
+    static std::pair<Instruction*, Instruction*> Remove(Instruction* instr) {
+        auto pre = instr->_pre, next = instr->_next;
+        delete instr;
+        LinkInstrs(pre, next);
+        return std::pair<Instruction*, Instruction*>(pre, next);
+    }
+
 };
 
 struct BackFillAttr : public CfInfo::Attribute {
@@ -134,7 +142,9 @@ public:
 
     void AddLabel(Instruction* instr);
 
-    void Traverse(void(*func)(Instruction*));
+    void ForwardTraverse(void(*func)(Instruction*));
+
+    void ReverseTraverse(void(*func)(Instruction*));
 };
 
 #endif

@@ -25,7 +25,12 @@ public:
     static void _func_reduction_2_(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
 
         instrFlow.InsertInstr({"goto", "end"});
-        instrFlow.Traverse(ShowInstr);
+        instrFlow.Remove(instrFlow.GetLast()->_next);
+        instrFlow.Remove(instrFlow.GetFirst()->_pre);
+        //instrFlow.Remove(instrFlow.GetLast());
+        instrFlow.ForwardTraverse(ShowInstr);
+        //std::cout << std::endl;
+        //instrFlow.ReverseTraverse(ShowInstr);
     
     }
     static void _func_1_(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {

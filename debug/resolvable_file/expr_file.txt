@@ -20,7 +20,12 @@ static void ShowInstr(Instruction* instr) {
 2 STMTS null
     {reduction_action=
         instrFlow.InsertInstr({"goto", "end"});
-        instrFlow.Traverse(ShowInstr);
+        instrFlow.Remove(instrFlow.GetLast()->_next);
+        instrFlow.Remove(instrFlow.GetFirst()->_pre);
+        //instrFlow.Remove(instrFlow.GetLast());
+        instrFlow.ForwardTraverse(ShowInstr);
+        //std::cout << std::endl;
+        //instrFlow.ReverseTraverse(ShowInstr);
     };
 3 STMT while lp 
     {action_1=

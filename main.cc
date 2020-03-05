@@ -15,6 +15,7 @@
 #include "./io/format_conversion.h"
 #include "./string_util/string_util.h"
 #include "./bitset/bitset.h"
+#include "./ir/instr.h"
 
 int main() {
     char pwd[256];

@@ -14,7 +14,7 @@ InstrFlow::InstrFlow() {
 }
 
 InstrFlow::~InstrFlow() {
-    Traverse(destroyInstr);
+    ForwardTraverse(destroyInstr);
 }
 
 void InstrFlow::AddNextInstrFillBackInfo(const std::string& listName, BackFillAttr* attr) {
@@ -53,20 +53,13 @@ void InstrFlow::InsertInstrs(Instruction* start, Instruction* end) {
 }
 
 void InstrFlow::Remove(Instruction* instr) {
-    auto pre = instr->_pre, next = instr->_next;
-    if (pre != nullptr) {
-        pre->_next = next;
-    } else {
-        this->_head = next;
+    auto instrPair = Instruction::Remove(instr);
+    if (instrPair.first == nullptr) {
+        this->_head = instrPair.second;
     }
-
-    if (next != nullptr) {
-        next->_pre = pre;
-    } else {
-        this->_tail = pre;
+    if (instrPair.second == nullptr) {
+        this->_tail = instrPair.first;
     }
-
-    delete instr;
 }
 
 Instruction* InstrFlow::GetFirst() {
@@ -96,11 +89,20 @@ void InstrFlow::AddLabel(Instruction* instr) {
     this->_labelInstrMap.insert(std::pair<std::string, Instruction*>(label, instr));
 } 
 
-void InstrFlow::Traverse(void(*func)(Instruction*)) {
+void InstrFlow::ForwardTraverse(void(*func)(Instruction*)) {
     auto instr = this->_head;
     while (instr != nullptr) {
         auto next = instr->_next;
         func(instr);
         instr = next;
+    }
+}
+
+void InstrFlow::ReverseTraverse(void(*func)(Instruction*)) {
+    auto instr = this->_tail;
+    while (instr != nullptr) {
+        auto pre = instr->_pre;
+        func(instr);
+        instr = pre;
     }
 }

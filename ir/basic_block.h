@@ -7,7 +7,10 @@ struct BasicBlock {
     // 节点来源于原instruction list(保持原数据结构，增加新instruction时不应破坏原结构)
     Instruction* _head, *_tail;
 
-    BasicBlock() : _head(nullptr), _tail(nullptr) {}
+    BasicBlock() {
+        this->_head = new Instruction(nullptr, {});
+        this->_tail = new Instruction(this->_head, {});
+    }
 
     BasicBlock(Instruction* head, Instruction* tail) : _head(head), _tail(tail) {}
 
