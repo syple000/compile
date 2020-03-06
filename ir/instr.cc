@@ -1,106 +1,136 @@
 #include "instr.h"
 
-void InstrFlow::destroyInstr(Instruction* instr) {
+void InstrList::LinkInstrs(Instruction* instr1, Instruction* instr2) {
+    if (instr1 != nullptr) {
+        instr1->_next = instr2;
+    }
+    if (instr2 != nullptr) {
+        instr2->_pre = instr1;
+    }
+}
+
+void InstrList::DestroyInstr(Instruction* instr) {
     delete instr;
 }
 
-std::string InstrFlow::GetLabel() {
-    return "label_" + std::to_string(this->_labelCnt++);
+InstrList::InstrList() {
+    this->_head = new Instruction();
+    this->_tail = new Instruction();
+    this->_cur = this->_head;
+    LinkInstrs(this->_head, this->_tail);
+    this->_size = 0;
 }
 
-InstrFlow::InstrFlow() {
-    this->_head = new Instruction(nullptr, {});
-    this->_tail = new Instruction(this->_head, {});
+InstrList::~InstrList() {
+    ForwardTraverse(DestroyInstr);
+    delete this->_head;
+    delete this->_tail;
 }
 
-InstrFlow::~InstrFlow() {
-    ForwardTraverse(destroyInstr);
+void InstrList::LocFirst() {
+    this->_cur = this->_head->_next;
 }
 
-void InstrFlow::AddNextInstrFillBackInfo(const std::string& listName, BackFillAttr* attr) {
-    if (this->_nextInstrFillBack.find(attr) == this->_nextInstrFillBack.end()) {
-        this->_nextInstrFillBack.insert(std::pair<BackFillAttr*, std::vector<std::string>>(attr, std::vector<std::string>()));
-    }
-    this->_nextInstrFillBack.find(attr)->second.push_back(listName);
+void InstrList::LocLast() {
+    this->_cur = this->_tail->_pre;
 }
 
-void InstrFlow::InsertInstrAfter(Instruction* pre, std::vector<std::string>&& components) {
-    auto newInstr = new Instruction(pre, std::move(components));
-    if (this->_nextInstrFillBack.size() != 0 && newInstr == this->_tail->_pre) {
-        if (newInstr->_label.size() == 0) {
-            AddLabel(newInstr);
-        }
-        for (auto listNameAttrPair : this->_nextInstrFillBack) {
-            for (auto listName : listNameAttrPair.second) {
-                listNameAttrPair.first->BackFill(listName, newInstr->_label);
-            }
-        }
-        this->_nextInstrFillBack.clear();
-    }
+void InstrList::SetCurInstr(Instruction* instr) {
+    this->_cur = instr;
 }
 
-void InstrFlow::InsertInstr(std::vector<std::string>&& components) {
-    InsertInstrAfter(this->_tail->_pre, std::move(components));
+Instruction* InstrList::GetCurInstr() {
+    return this->_cur == this->_head || this->_cur == this->_tail ? nullptr : this->_cur;
 }
 
-
-void InstrFlow::InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end) {
-    Instruction::InsertInstrsAfter(pre, start, end);
-}
-
-void InstrFlow::InsertInstrs(Instruction* start, Instruction* end) {
-    Instruction::InsertInstrsAfter(this->_tail->_pre, start, end);
-}
-
-void InstrFlow::Remove(Instruction* instr) {
-    auto instrPair = Instruction::Remove(instr);
-    if (instrPair.first == nullptr) {
-        this->_head = instrPair.second;
-    }
-    if (instrPair.second == nullptr) {
-        this->_tail = instrPair.first;
-    }
-}
-
-Instruction* InstrFlow::GetFirst() {
-    return this->_head->_next == this->_tail ? nullptr : this->_head->_next;
-}
-
-Instruction* InstrFlow::GetLast() {
-    return this->_tail->_pre == this->_head ? nullptr : this->_tail->_pre;
-}
-
-Instruction* InstrFlow::Next(Instruction* instr) {
-    return instr->_next;
-}
-
-Instruction* InstrFlow::GetInstrByLabel(const std::string& label) {
-    auto labelInstrPair = this->_labelInstrMap.find(label);
-    if (labelInstrPair == this->_labelInstrMap.end()) {
+Instruction* InstrList::GoAhead() {
+    if (this->_cur == this->_tail) {
         return nullptr;
     } else {
-        return labelInstrPair->second;
+        this->_cur = this->_cur->_next;
+        return GetCurInstr();
     }
 }
 
-void InstrFlow::AddLabel(Instruction* instr) {
-    auto label = GetLabel();
-    instr->_label = label;
-    this->_labelInstrMap.insert(std::pair<std::string, Instruction*>(label, instr));
-} 
+Instruction* InstrList::GoBack() {
+    if (this->_cur == this->_head) {
+        return nullptr;
+    } else {
+        this->_cur = this->_cur->_pre;
+        return GetCurInstr();
+    }
+}
 
-void InstrFlow::ForwardTraverse(void(*func)(Instruction*)) {
-    auto instr = this->_head;
-    while (instr != nullptr) {
+void InstrList::InsertInstrAfter(Instruction* pre, Instruction* instr) {
+    InsertInstrsAfter(pre, instr, instr, 1);
+}
+
+void InstrList::InsertInstr(Instruction* instr) {
+    InsertInstrAfter(this->_tail->_pre, instr);
+}
+
+void InstrList::InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end, int size) {
+    auto next = pre->_next;
+    start->_pre = pre;
+    end->_next = next;
+    pre->_next = start;
+    next->_pre = end;
+    this->_size += size;
+}
+
+void InstrList::InsertInstrs(Instruction* start, Instruction* end, int size) {
+    InsertInstrsAfter(this->_tail->_pre, start, end, size);
+}
+
+// 参数中的instrList会被清空
+void InstrList::MergeInstrListAfter(Instruction* pre, InstrList* instrList) {
+    if (instrList->_size == 0) {
+        return;
+    } 
+    auto start = instrList->_head->_next, end = instrList->_tail->_pre;
+    LinkInstrs(instrList->_head, instrList->_tail);
+    InsertInstrsAfter(pre, start, end, instrList->_size);
+}
+
+void InstrList::MergeInstrList(InstrList* instrList) {
+    MergeInstrListAfter(this->_tail->_pre, instrList);
+}
+
+Instruction* InstrList::RemoveInstr(Instruction* instr) {
+    if (instr == this->_cur) {
+        GoAhead();
+    }
+    LinkInstrs(instr->_pre, instr->_next);
+    this->_size--;
+    return GetCurInstr();
+}
+
+Instruction* InstrList::RemoveInstrs(Instruction* start, Instruction* end) {
+    auto cur = start;       
+    bool removeCur = cur == this->_cur; 
+    while (cur != end) {
+        cur = cur->_next;
+        removeCur = removeCur || cur == this->_cur;
+    }
+    if (removeCur) {
+        this->_cur = end->_next;
+    }
+    LinkInstrs(start->_pre, end->_next);
+    return GetCurInstr();
+}
+
+void InstrList::ForwardTraverse(void(*func)(Instruction*)) {
+    auto instr = this->_head->_next;
+    while (instr != this->_tail) {
         auto next = instr->_next;
         func(instr);
         instr = next;
     }
 }
 
-void InstrFlow::ReverseTraverse(void(*func)(Instruction*)) {
-    auto instr = this->_tail;
-    while (instr != nullptr) {
+void InstrList::ReverseTraverse(void(*func)(Instruction*)) {
+    auto instr = this->_tail->_pre;
+    while (instr != this->_head) {
         auto pre = instr->_pre;
         func(instr);
         instr = pre;

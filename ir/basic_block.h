@@ -8,8 +8,6 @@ struct BasicBlock {
     Instruction* _head, *_tail;
 
     BasicBlock() {
-        this->_head = new Instruction(nullptr, {});
-        this->_tail = new Instruction(this->_head, {});
     }
 
     BasicBlock(Instruction* head, Instruction* tail) : _head(head), _tail(tail) {}

@@ -1,4 +1,4 @@
-#include "../ir/instr.h"
+#include "../doc/instr_flow.h"
 
 static InstrFlow instrFlow;
 
@@ -33,7 +33,7 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     instrFlow.InsertInstr({"goto", ""});
     auto attr = new BackFillAttr();
-    attr->AddListElem("break", instrFlow.GetTail(), 1);
+    attr->AddListElem("break", instrFlow.GetLast(), 1);
     pinfo.AddAttribute(attr);
 }
 
@@ -46,12 +46,12 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     instrFlow.InsertInstr({"goto", ""});
     auto attr = new BackFillAttr();
-    attr->AddListElem("true", instrFlow.GetTail(), 1);
+    attr->AddListElem("true", instrFlow.GetLast(), 1);
     pinfo.AddAttribute(attr);
     if (kinfos.size() > 1) {
         if (kinfos[kinfos.size() - 2]._value == "label") {
-            instrFlow.AddLabel(instrFlow.GetTail());
-            kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
+            instrFlow.AddLabel(instrFlow.GetLast());
+            kinfos[kinfos.size() - 2]._value = instrFlow.GetLast()->_label;
         }
     }
 }
@@ -60,12 +60,12 @@ static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
 static void func(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
     instrFlow.InsertInstr({"goto", ""});
     auto attr = new BackFillAttr();
-    attr->AddListElem("false", instrFlow.GetTail(), 1);
+    attr->AddListElem("false", instrFlow.GetLast(), 1);
     pinfo.AddAttribute(attr);
     if (kinfos.size() > 1) {
         if (kinfos[kinfos.size() - 2]._value == "label") {
-            instrFlow.AddLabel(instrFlow.GetTail());
-            kinfos[kinfos.size() - 2]._value = instrFlow.GetTail()->_label;
+            instrFlow.AddLabel(instrFlow.GetLast());
+            kinfos[kinfos.size() - 2]._value = instrFlow.GetLast()->_label;
         }
     }
 }

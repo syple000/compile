@@ -1,5 +1,7 @@
 #include <vector>
 #include <list>
+#include <unordered_map>
+
 #include "../context_free/cf_analysis_info.h"
 
 #ifndef IR_INSTR
@@ -16,135 +18,64 @@ struct Instruction {
     // 状态位：标记是否是跳转至，跳出等信息
     int _state;
 
-    Instruction(Instruction* pre, std::vector<std::string>&& components) {
-        InsertInstrAfter(pre, this);
+    Instruction(std::vector<std::string>&& components) : _pre(nullptr), _next(nullptr), _state(-1) {
         this->_components = std::move(components);
     }
+
+    Instruction() : _pre(nullptr), _next(nullptr), _state(-1) {}
 
     void BackFill(int index, const std::string& content) {
         this->_components[index] = content;
     }
-
-    static void LinkInstrs(Instruction* instr1, Instruction* instr2) {
-        if (instr1 != nullptr) {
-            instr1->_next = instr2;
-        }
-        if (instr2 != nullptr) {
-            instr2->_pre = instr1;
-        }
-    }
-
-    // 插入指令
-    static void InsertInstrAfter(Instruction* pre, Instruction* instr) {
-        InsertInstrsAfter(pre, instr, instr);
-    }
-
-    // 插入指令列
-    static void InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end) {
-        auto next = pre == nullptr ? nullptr : pre->_next;
-        start->_pre = pre;
-        end->_next = next;
-        if (pre != nullptr) {
-            pre->_next = start;
-        }
-        if (next != nullptr) {
-            next->_pre = end;
-        }
-    }
-
-    // 返回删除指令后的前后指令
-    static std::pair<Instruction*, Instruction*> Remove(Instruction* instr) {
-        auto pre = instr->_pre, next = instr->_next;
-        delete instr;
-        LinkInstrs(pre, next);
-        return std::pair<Instruction*, Instruction*>(pre, next);
-    }
-
 };
 
-struct BackFillAttr : public CfInfo::Attribute {
-
-    // 回填的vec名，回填的vec: 回填的指令， 回填指令中的位置
-    std::unordered_map<std::string, std::list<std::pair<Instruction*, int>>> _vecMap;
-
-    BackFillAttr() : CfInfo::Attribute("back_fill") {}
-
-    void AddListElem(const std::string& listName, Instruction* instr, int index) {
-        if (this->_vecMap.find(listName) == this->_vecMap.end()) {
-            this->_vecMap.insert(std::pair<std::string, std::list<std::pair<Instruction*, int>>>(listName, std::list<std::pair<Instruction*, int>>()));
-        }
-        this->_vecMap.find(listName)->second.push_back(std::pair<Instruction*, int>(instr, index));
-    }
-
-    void AddAllListElems(const std::string& listName, BackFillAttr* srcAttr) {
-        auto listItr = srcAttr->_vecMap.find(listName);
-        if (listItr == srcAttr->_vecMap.end()) {
-            return;
-        }
-        if (this->_vecMap.find(listName) == this->_vecMap.end()) {
-            this->_vecMap.insert(std::pair<std::string, std::list<std::pair<Instruction*, int>>>(listName, std::list<std::pair<Instruction*, int>>()));
-        }
-        this->_vecMap.find(listName)->second.merge(listItr->second);
-    }
-
-    void RemoveList(const std::string& listName) {
-        this->_vecMap.erase(listName);
-    }
-
-    bool BackFill(const std::string& listName, const std::string& content) {
-        auto instrList = this->_vecMap.find(listName);
-        if (instrList == this->_vecMap.end()) {
-            return false;
-        }
-        for (auto instrPos : instrList->second) {
-            instrPos.first->BackFill(instrPos.second, content);
-        }
-        return true;
-    }
-};
-
-class InstrFlow {
+class InstrList {
 private:
-    Instruction* _head, *_tail;
-    std::unordered_map<std::string, Instruction*> _labelInstrMap;
-    std::unordered_map<BackFillAttr*, std::vector<std::string>> _nextInstrFillBack;
+    Instruction* _head, *_tail, *_cur;
+    int _size;
 
-    int _labelCnt = 0;
+    void LinkInstrs(Instruction* instr1, Instruction* instr2);
 
-    static void destroyInstr(Instruction* instr);
-
-    std::string GetLabel();
+    static void DestroyInstr(Instruction* instr);
 
 public:
-    InstrFlow();
+    InstrList();
 
-    virtual ~InstrFlow();
+    virtual ~InstrList();
 
-    void AddNextInstrFillBackInfo(const std::string& listName, BackFillAttr* attr);
+    void LocFirst();
 
-    void InsertInstrAfter(Instruction* pre, std::vector<std::string>&& components);
+    void LocLast();
 
-    void InsertInstr(std::vector<std::string>&& components);
+    void SetCurInstr(Instruction* instr);
 
-    void InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end);
+    Instruction* GetCurInstr();
 
-    void InsertInstrs(Instruction* start, Instruction* end);
+    Instruction* GoAhead();
 
-    void Remove(Instruction* instr);
+    Instruction* GoBack();
 
-    Instruction* GetFirst();
+    void InsertInstrAfter(Instruction* pre, Instruction* instr);
 
-    Instruction* GetLast();
+    void InsertInstr(Instruction* instr);
 
-    Instruction* Next(Instruction* instr);
+    void InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end, int size);
 
-    Instruction* GetInstrByLabel(const std::string& label);
+    void InsertInstrs(Instruction* start, Instruction* end, int size);
 
-    void AddLabel(Instruction* instr);
+    // 参数中的instrList会被清空
+    void MergeInstrListAfter(Instruction* pre, InstrList* instrList);
+
+    void MergeInstrList(InstrList* instrList);
+
+    Instruction* RemoveInstr(Instruction* instr);
+
+    Instruction* RemoveInstrs(Instruction* start, Instruction* end);
 
     void ForwardTraverse(void(*func)(Instruction*));
 
     void ReverseTraverse(void(*func)(Instruction*));
+
 };
 
 #endif

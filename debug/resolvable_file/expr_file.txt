@@ -1,7 +1,7 @@
 STMTS
 
 %% 
-#include "../../ir/instr.h"
+#include "../../doc/instr_flow.h"
 
 static InstrFlow instrFlow;
 
@@ -20,11 +20,8 @@ static void ShowInstr(Instruction* instr) {
 2 STMTS null
     {reduction_action=
         instrFlow.InsertInstr({"goto", "end"});
-        instrFlow.Remove(instrFlow.GetLast()->_next);
-        instrFlow.Remove(instrFlow.GetFirst()->_pre);
-        //instrFlow.Remove(instrFlow.GetLast());
+        std::cout << std::endl;
         instrFlow.ForwardTraverse(ShowInstr);
-        //std::cout << std::endl;
         //instrFlow.ReverseTraverse(ShowInstr);
     };
 3 STMT while lp 

@@ -4,7 +4,7 @@
 
 #include "../cf_analysis_info.h"
  
-#include "../../ir/instr.h"
+#include "../../doc/instr_flow.h"
 
 static InstrFlow instrFlow;
 
@@ -25,11 +25,8 @@ public:
     static void _func_reduction_2_(CfInfo& pinfo, std::vector<CfInfo>& kinfos) {
 
         instrFlow.InsertInstr({"goto", "end"});
-        instrFlow.Remove(instrFlow.GetLast()->_next);
-        instrFlow.Remove(instrFlow.GetFirst()->_pre);
-        //instrFlow.Remove(instrFlow.GetLast());
+        std::cout << std::endl;
         instrFlow.ForwardTraverse(ShowInstr);
-        //std::cout << std::endl;
         //instrFlow.ReverseTraverse(ShowInstr);
     
     }
