@@ -43,9 +43,9 @@ public:
 
     virtual ~InstrList();
 
-    void LocFirst();
+    Instruction* LocFirst();
 
-    void LocLast();
+    Instruction* LocLast();
 
     void SetCurInstr(Instruction* instr);
 
@@ -75,6 +75,8 @@ public:
     void ForwardTraverse(void(*func)(Instruction*));
 
     void ReverseTraverse(void(*func)(Instruction*));
+
+    int GetSize();
 
 };
 

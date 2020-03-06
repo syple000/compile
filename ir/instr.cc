@@ -27,12 +27,14 @@ InstrList::~InstrList() {
     delete this->_tail;
 }
 
-void InstrList::LocFirst() {
+Instruction* InstrList::LocFirst() {
     this->_cur = this->_head->_next;
+    return this->_cur;
 }
 
-void InstrList::LocLast() {
+Instruction* InstrList::LocLast() {
     this->_cur = this->_tail->_pre;
+    return this->_cur;
 }
 
 void InstrList::SetCurInstr(Instruction* instr) {
@@ -108,13 +110,16 @@ Instruction* InstrList::RemoveInstr(Instruction* instr) {
 Instruction* InstrList::RemoveInstrs(Instruction* start, Instruction* end) {
     auto cur = start;       
     bool removeCur = cur == this->_cur; 
+    int cnt = 1;
     while (cur != end) {
         cur = cur->_next;
         removeCur = removeCur || cur == this->_cur;
+        cnt++;
     }
     if (removeCur) {
         this->_cur = end->_next;
     }
+    this->_size -= cnt;
     LinkInstrs(start->_pre, end->_next);
     return GetCurInstr();
 }
@@ -135,4 +140,8 @@ void InstrList::ReverseTraverse(void(*func)(Instruction*)) {
         func(instr);
         instr = pre;
     }
+}
+
+int InstrList::GetSize() {
+    return this->_size;
 }

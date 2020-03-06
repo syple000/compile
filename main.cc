@@ -17,11 +17,7 @@
 #include "./bitset/bitset.h"
 #include "./ir/instr.h"
 
-int main() {
-    char pwd[256];
-    getcwd(pwd, sizeof(pwd));
-    std::cout << "pwd: " << pwd << std::endl;
-    // bitset test
+void BitSetTest() {
     BitSet bitSet1(8);
     bitSet1.Set(2);
     bitSet1.Set(3);
@@ -53,7 +49,9 @@ int main() {
     assert(!(bitSet3 == bitSet1));
     bitSet1.Clear(0);
     assert(bitSet1.Empty());
+}
 
+void RegExprTest() {
     std::string repat1 = "(((a)(b|cd*|e)))f*";
     std::string repat2 = "e(a|bb|c)**d\\[\\]";
     std::string repat3 = "a*";
@@ -94,19 +92,101 @@ int main() {
 
     assert(regExprEngine4.IsMatched("123"));
     assert(regExprEngine4.IsMatched("0111"));
+}
 
+void StringUtilTest() {
     std::vector<std::string> strs = StringUtil::Split(";;123456;1333114353;1", ";*1");
-    std::cout << std::endl;
+    assert(strs[0] == "23456");
+    assert(strs[1] == "333");
+    assert(strs[2] == "4353");
+}
 
-    // context free test
-    // 该过程会写入aux_code文件; 后续过程需要的正常进行需要再次编译
+void InstructionListTest() {
+    InstrList instrList1, instrList2, instrList3;
+    assert(instrList1.GetCurInstr() == nullptr);
+    instrList1.LocFirst();
+    assert(instrList1.GetCurInstr() == nullptr);
+    instrList1.LocLast();
+    assert(instrList1.GetCurInstr() == nullptr);    
+    instrList1.InsertInstr(new Instruction({"1"}));
+    instrList1.LocFirst();
+    assert(instrList1.GetCurInstr()->_components[0] == "1");
+    instrList1.InsertInstr(new Instruction({"2"}));
+    instrList1.InsertInstr(new Instruction({"3"}));
+    instrList1.InsertInstr(new Instruction({"4"}));
+    instrList1.GoAhead();
+    instrList1.GoAhead();
+    instrList1.GoAhead();
+    instrList1.GoBack();
+    assert(instrList1.GetCurInstr()->_components[0] == "3");
+    instrList1.LocLast();
+    assert(instrList1.GetCurInstr()->_components[0] == "4");
+    assert(instrList1.GoAhead() == nullptr);
+    instrList1.GoBack();
+    instrList1.GoBack();
+    auto instr3 = instrList1.GetCurInstr();
+    instrList1.RemoveInstr(instrList1.GetCurInstr());
+    delete instr3;
+    assert(instrList1.GetCurInstr()->_components[0] == "4");
+    assert(instrList1.GetSize() == 3);
+    instrList1.GoBack();
+    instrList1.GoBack();
+    assert(instrList1.GoBack() == nullptr);
+    instrList1.GoAhead();
+    assert(instrList1.GetCurInstr()->_components[0] == "1");
+    instrList1.GoAhead();
+    instrList1.InsertInstrAfter(instrList1.GetCurInstr(), new Instruction({"3"}));
+    instrList1.LocLast();
+
+    instrList2.InsertInstr(new Instruction({"5"}));
+    instrList2.InsertInstr(new Instruction({"6"}));
+
+    instrList1.MergeInstrList(&instrList2);
+    assert(instrList1.GetSize() == 6);
+
+    instrList3.InsertInstr(new Instruction({"0"}));
+    instrList1.LocFirst();
+    instrList1.MergeInstrListAfter(instrList1.GetCurInstr()->_pre, &instrList3);
+    assert(instrList1.GetSize() == 7);
+
+    instrList1.LocFirst();
+    for (int i = 0; i < 7; i++) {
+        assert(instrList1.GetCurInstr()->_components[0] == std::to_string(i));
+        instrList1.GoAhead();
+    }
+
+    for (int i = 6; i >=0; i--) {
+        instrList1.GoBack();
+        assert(instrList1.GetCurInstr()->_components[0] == std::to_string(i));
+    }
+
+    auto start = instrList1.LocFirst(), end = instrList1.LocLast();
+    instrList1.RemoveInstrs(start, end);
+    assert(instrList1.GetSize() == 0);
+    instrList1.InsertInstrs(start, end, 7);
+    instrList1.LocFirst();
+    for (int i = 0; i < 7; i++) {
+        assert(instrList1.GetCurInstr()->_components[0] == std::to_string(i));
+        instrList1.GoAhead();
+    }
+}
+
+void CfEngineTest() {
     CfEngine cfEngine("./debug/resolvable_file/expr_lexical_file.txt", "./debug/resolvable_file/expr_file.txt", "./debug/resolvable_file/lexical_file.txt");
     assert(cfEngine.InitSuccess());
-
     cfEngine.GenCfAnalysisInfo("./debug/resolvable_file/code_file.txt");
+}
 
-    std::cout << std::endl;
+int main() {
+    char pwd[256];
+    getcwd(pwd, sizeof(pwd));
+    std::cout << "pwd: " << pwd << std::endl;
+    BitSetTest();
+    RegExprTest();
+    StringUtilTest();
+    InstructionListTest();
 
-    std::cout << "test over!" << std::endl;
+    CfEngineTest();
+    std::cout << std::endl << "test over!" << std::endl;
     return 0;
 }
