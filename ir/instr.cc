@@ -29,12 +29,12 @@ InstrList::~InstrList() {
 
 Instruction* InstrList::LocFirst() {
     this->_cur = this->_head->_next;
-    return this->_cur;
+    return GetCurInstr();
 }
 
 Instruction* InstrList::LocLast() {
     this->_cur = this->_tail->_pre;
-    return this->_cur;
+    return GetCurInstr();
 }
 
 void InstrList::SetCurInstr(Instruction* instr) {
