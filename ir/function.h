@@ -1,95 +1,210 @@
 #include <vector>
+#include <algorithm>
 
-template<typename C, typename P, typename T>
-class Function {
-private:
-    // 函数具有后效性均从该对象读出并存储
+#ifndef FUNCTION
+#define FUNCTION 1
+
+#ifndef DEBUG_CODE
+#define DEBUG_CODE 1
+#endif
+
+template<typename T, typename K>
+struct Function {
     T _object;
-    // 函数执行需要的系数(本出独立该参数，当函数不不更改object的值，可以将多个函数合并成一个函数，只需要更改系数)
-    std::vector<C> _coefficientVec;
-    // f1 f2 序列如上，从左至右; f1是f1*f2的前驱， f1*f2是f1的后驱; 多个前驱运算使用joinOp函数
-    std::vector<Function<C, P, T>*> _predFuncs;
-    std::vector<Function<C, P, T>*> _succFuncs;
-    
-    // 优化计算效率， 保存前一次计算结果; funcChanged： -1 0 1强度递增  -1表示初始化， 0表示未改变， 1表示有改变
-    std::vector<P> _prevInOut;
-    int _funcChanged;
+    std::vector<Function<T, K>*> _preds, _succs;
+    K _outData;
+    int _number = -1;
 
-    P CalcPredFuncsRes(const P& param) {
-        if (this->_predFuncs.size() == 0) {
-            return param;
-        }
-        P res = this->_predFuncs[0]->Execute(param);
-        for (int i = 1; i < this->_predFuncs.size(); i++) {
-            Join(res, this->_predFuncs[i]->Execute(param));
-        }
-        return res;
-    }
+    Function(const T& object) : _object(object) {}
 
-    static bool SetChanged(Function<C, P, T>* func) {
-        if (func->_funcChanged == 1) {
-            return false;
-        }
-        func->_funcChanged = 1;
-        return true;
-    }
-
-    static void UpdateFuncState(Function<C, P, T>* func, bool dir, bool(*updateFunc)(Function<C, P, T>*)) {
-        if (!updateFunc(func)) {
-            // 状态更新返回false，表示已更新或无需更新，返回
-            // 可以避免成环对更新造成的影响
-            return;
-        }
-        auto& funcVec = dir ? func->_succFuncs : func->_predFuncs;
-        for (int i = 0; i < funcVec.size(); i++) {
-            UpdateFuncState(funcVec[i], dir, updateFunc);
-        }
-    }
-
-public:
-
-    Function(T object, const std::vector<C>& coefficientVec) {
-        // 初始化changed为1
-        this->_funcChanged = 1;
-
-        this->_object = object;
-        this->_coefficientVec = coefficientVec;
-    }
+    Function() {}
 
     virtual ~Function() {}
 
-    void AddPredFunc(Function<C, P, T>* func) {
-        this->_predFuncs.push_back(func);
-        func->_succFuncs.push_back(this);
-        UpdateFuncState(this, true, SetChanged);
+    bool operator<(const Function<T, K>& func) const {
+        return this->_number < func._number;
     }
+};
 
-    void AddSuccFunc(Function<C, P, T>* func) {
-        this->_succFuncs.push_back(func);
-        func->_predFuncs.push_back(this);
-        UpdateFuncState(func, true, SetChanged);
-    }
+template<typename T, typename K>
+struct ExecEntity {
+    // func: 在entity list不为空时， func为entity list的第一执行函数;在entity list为空时， func为执行体的执行函数
+    Function<T, K> *_func;
+    std::vector<ExecEntity<T, K>*> _entityVec;
+    bool _executed = false;
+    K _inData;
 
-    P Execute(const P& param) {
-        if (this->_prevInOut.size() != 0 && this->_prevInOut[0] == param && this->_funcChanged == 0) {
-            return this->_prevInOut[1];
-        } else {
-            this->_funcChanged = 0;
-            auto rval = CalCurFuncRes(CalcPredFuncsRes(param));
-            if (this->_prevInOut.size() == 0) {
-                this->_prevInOut.push_back(param);
-                this->_prevInOut.push_back(rval);
-            } else {
-                this->_prevInOut[0] = param;
-                this->_prevInOut[1] = rval;
+    ExecEntity(Function<T, K>* func) : _func(func) {}
+
+    ExecEntity(std::vector<ExecEntity<T, K>*>&& entityList) 
+        : _entityVec(std::move(entityList)), _func((*this->_entityVec.begin())->_func) {}
+};
+
+template<typename T, typename K>
+class FuncGraph {
+private:
+    // 每一个function都和一个instr对应，具体关系对应与流图一致
+    Function<T, K>* _entry, *_exit;
+    void(*_unionOp)(K& dest, const K& src);
+    bool(*_exec)(const T& obj, const K& inData, K& outData);
+
+    void GenTopoFuncVec(Function<T, K>* curFunc, std::vector<Function<T, K>*>& funcVec) {
+        curFunc->_number = 0;
+        for (int i = 0; i < curFunc->_preds.size(); i++) {
+            if (curFunc->_preds[i]->_number == -1) {
+                GenTopoFuncVec(curFunc->_preds[i], funcVec);
             }
-            return rval;
+        }
+        curFunc->_number = funcVec.size();
+        funcVec.push_back(curFunc);
+    }
+
+    // 根据number排序
+    std::vector<Function<T, K>*> GetRollbackFuncVec(Function<T, K>* func) {
+        std::vector<Function<T, K>*> rollbackFuncVec;
+        for (Function<T, K>* succFunc : func->_succs) {
+            if (succFunc->_number <= func->_number) {
+                rollbackFuncVec.push_back(succFunc);
+            }
+        }
+        std::sort(rollbackFuncVec.begin(), rollbackFuncVec.end());
+        return rollbackFuncVec;
+    }
+
+    int GetIndexInExecEntityVec(const std::vector<ExecEntity<T, K>*>& execEntityVec, int funcNum) {
+        int index = execEntityVec.size() - 1;
+        while (index >= 0) {
+            if (((ExecEntity<T, K>*)execEntityVec[index])->_func->_number == funcNum) {
+                break;
+            } else {
+                index--;
+            }
+        }
+
+#ifdef DEBUG_CODE
+        if (index < 0) {
+            std::cout << "func graph is not reducible" << std::endl;
+        }
+#endif  
+
+        return index;
+    }
+
+    K CalcItrExecInData(Function<T, K>* func) {
+        K inData;
+        for (Function<T, K>* predFunc : func->_preds) {
+            this->_unionOp(inData, predFunc->_outData);
+        }
+        return inData;
+    }
+
+    K CalcRegionExecInData(Function<T, K>* func) {
+        K inData;
+        for (Function<T, K>* predFunc : func->_preds) {
+            if (predFunc->_number < func->_number) {
+                this->_unionOp(inData, predFunc->_outData);
+            }
+        }
+        return inData;
+    }
+
+    // 区域执行中的循环执行
+    bool LoopExecEntityVec(const std::vector<ExecEntity<T, K>*>& entityVec, K inData, K(*calcInData)(Function<T, K>*)) {
+        bool changed = false;
+        K loopIndata;
+        // 得到循环不变分析结果
+        while (true) {
+            this->_unionOp(loopIndata, inData);
+            if (!ExecEntityVec(entityVec, inData, calcInData)) {
+                break;
+            }
+            inData = entityVec[entityVec.size() - 1]->_func->_outData;
+        }
+        // 循环各个出口的函数约束
+        ExecEntityVec(entityVec, loopIndata, calcInData);
+        // 默认返回true
+        return true;
+    }
+
+    bool ExecEntityVec(const std::vector<ExecEntity<T, K>*>& entityVec, K inData, K(*calcInData)(Function<T, K>*)) {
+        bool changed = false;
+        for (int i = 0; i < entityVec.size(); i++) {
+            ExecEntity<T, K>* entity = entityVec[i];
+            if (entity->_inData != inData || !entity->_executed) {
+                if (entity->_entityVec.size() == 0) {
+                    changed = changed || this->_exec(entity->_func->_object, inData, entity->_func->_outData);
+                } else {
+                    changed = changed || LoopExecEntityVec(entity->_entityVec, inData, calcInData);
+                }
+                entity->_executed = true;
+                entity->_inData = inData;
+            }
+            if (i + 1 < entityVec.size()) {
+                inData = calcInData(entityVec[i + 1]->_func);
+            }
+        }
+        return changed;
+    }
+
+public:
+    FuncGraph(void(*unionOp)(K&, const K&), bool(*exec)(const T&, const K&, K&)) : _unionOp(unionOp), _exec(exec) {
+        this->_entry = new Function<T, K>();
+        this->_exit = new Function<T, K>();
+        AddSuccFunc(this->_entry, this->_exit);
+    }
+
+    void AddSuccFunc(Function<T, K>* curFunc, Function<T, K>* succFunc) {
+        curFunc->_succs.push_back(succFunc);
+        succFunc->_preds.push_back(curFunc);
+    }
+
+    // is region 为 true 需要检查function是否为可归约
+    std::vector<ExecEntity<T, K>*> GenExecEntityVec(bool isRegionExec) {
+        std::vector<Function<T, K>*> funcVec;
+        std::vector<ExecEntity<T, K>*> execEntityVec;
+        GenTopoFuncVec(this->_exit, funcVec);
+        if (isRegionExec) {
+            for (Function<T, K>* func : funcVec) {
+                std::vector<Function<T, K>*> rollbackFuncs = GetRollbackFuncVec(func);
+                if (rollbackFuncs.size() == 0) {
+                    execEntityVec.push_back(new ExecEntity(func));
+                } else {
+                    for (int i = rollbackFuncs.size() - 1; i >= 0; i--) {
+                        int index = GetIndexInExecEntityVec(func->_number);
+                        int size = execEntityVec.size() - index;
+                        std::vector<ExecEntity<T, K>*> subExecEntityVec(size, nullptr);
+                        for (int j = 0; j < size; j++) {
+                            subExecEntityVec[size - 1 - j] = execEntityVec[execEntityVec.size() - 1];
+                            execEntityVec.pop_back();
+                        }
+                        execEntityVec.push_back(new ExecEntity<T, K>(subExecEntityVec));
+                    }
+                }
+            }
+        } else {
+            for (Function<T, K>* func : funcVec) {
+                execEntityVec.push_back(new ExecEntity<T, K>(func));
+            }
+        }
+        return execEntityVec;
+    }
+
+    // 迭代执行
+    void IterativeExec(const K& initData) {
+        std::vector<ExecEntity<T, K>*> execEntityVec = GenExecEntityVec(false);
+        while (true) {
+            bool changed = false;
+            if (!ExecEntityVec(execEntityVec, initData, CalcItrExecInData)) {
+                break;
+            }
         }
     }
 
-    // 以下两个工厂函数，可由函数指针取代
-    virtual P CalcCurFuncRes(const P& param) = 0;
-
-    // 将src与dest合并, 返回dest
-    virtual void Join(P& dest, const P& src) = 0;
+    // 区域执行
+    void RegionExec(const K& initData) {
+        std::vector<ExecEntity<T, K>*> execEntityVec = GenExecEntityVec(true);
+        ExecEntityVec(execEntityVec, initData, CalcRegionExecInData);
+    }
 };
+
+#endif
