@@ -12,17 +12,16 @@
 #endif
 
 struct Instruction {
-    Instruction* _pre, *_next;
     std::vector<std::string> _components;
     std::string _label;
     // 状态位：标记是否是跳转至，跳出等信息
     int _state;
 
-    Instruction(std::vector<std::string>&& components) : _pre(nullptr), _next(nullptr), _state(-1) {
+    Instruction(std::vector<std::string>&& components) : _state(-1) {
         this->_components = std::move(components);
     }
 
-    Instruction() : _pre(nullptr), _next(nullptr), _state(-1) {}
+    Instruction() : _state(-1) {}
 
     void BackFill(int index, const std::string& content) {
         this->_components[index] = content;
@@ -31,10 +30,8 @@ struct Instruction {
 
 class InstrList {
 private:
-    Instruction* _head, *_tail, *_cur;
-    int _size;
-
-    void LinkInstrs(Instruction* instr1, Instruction* instr2);
+    std::list<Instruction*> _instrList;
+    std::list<Instruction*>::iterator _curItr;
 
     static void DestroyInstr(Instruction* instr);
 
@@ -43,11 +40,11 @@ public:
 
     virtual ~InstrList();
 
-    Instruction* LocFirst();
+    void LocFirst();
 
-    Instruction* LocLast();
+    void LocLast();
 
-    void SetCurInstr(Instruction* instr);
+    void SetCurInstr(const std::string& label);
 
     Instruction* GetCurInstr();
 
@@ -55,22 +52,12 @@ public:
 
     Instruction* GoBack();
 
-    void InsertInstrAfter(Instruction* pre, Instruction* instr);
-
     void InsertInstr(Instruction* instr);
 
-    void InsertInstrsAfter(Instruction* pre, Instruction* start, Instruction* end, int size);
+    Instruction* RemoveInstr();
 
-    void InsertInstrs(Instruction* start, Instruction* end, int size);
-
-    // 参数中的instrList会被清空
-    void MergeInstrListAfter(Instruction* pre, InstrList* instrList);
-
-    void MergeInstrList(InstrList* instrList);
-
-    Instruction* RemoveInstr(Instruction* instr);
-
-    Instruction* RemoveInstrs(Instruction* start, Instruction* end);
+    // 清空被合并列表
+    void MergeInstrList(InstrList& instrList);
 
     void ForwardTraverse(void(*func)(Instruction*));
 

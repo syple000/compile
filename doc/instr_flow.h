@@ -60,7 +60,10 @@ private:
 public:
 
     Instruction* GetLast() {
-        return this->_instrList->GetCurInstr();
+        this->_instrList->GoBack();
+        auto instr = this->_instrList->GetCurInstr();
+        this->_instrList->GoAhead();
+        return instr;
     }
 
     InstrFlow() {
@@ -81,7 +84,6 @@ public:
     void InsertInstr(std::vector<std::string>&& components) {
         auto instr = new Instruction(std::move(components));
         this->_instrList->InsertInstr(instr);
-        this->_instrList->GoAhead();
         if (this->_nextInstrFillBack.size() != 0) {
             instr->_label = GetLabel();
             for (auto listNameAttrPair : this->_nextInstrFillBack) {

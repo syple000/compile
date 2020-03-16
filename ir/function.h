@@ -1,4 +1,5 @@
 #include <vector>
+#include <unordered_set>
 #include <algorithm>
 
 #ifndef FUNCTION
@@ -36,8 +37,8 @@ struct ExecEntity {
 
     ExecEntity(Function<T, K>* func) : _func(func) {}
 
-    ExecEntity(std::vector<ExecEntity<T, K>*>&& entityList) 
-        : _entityVec(std::move(entityList)), _func((*this->_entityVec.begin())->_func) {}
+    ExecEntity(std::vector<ExecEntity<T, K>*>&& entityVec) 
+        : _entityVec(std::move(entityVec)), _func(_entityVec[0]->_func) {}
 };
 
 template<typename T, typename K>
@@ -45,6 +46,7 @@ class FuncGraph {
 private:
     // 每一个function都和一个instr对应，具体关系对应与流图一致
     Function<T, K>* _entry, *_exit;
+    std::unordered_set<Function<T, K>*> _funcSet;
     void(*_unionOp)(K& dest, const K& src);
     bool(*_exec)(const T& obj, const K& inData, K& outData);
 
@@ -146,18 +148,6 @@ private:
         return changed;
     }
 
-public:
-    FuncGraph(void(*unionOp)(K&, const K&), bool(*exec)(const T&, const K&, K&)) : _unionOp(unionOp), _exec(exec) {
-        this->_entry = new Function<T, K>();
-        this->_exit = new Function<T, K>();
-        AddSuccFunc(this->_entry, this->_exit);
-    }
-
-    void AddSuccFunc(Function<T, K>* curFunc, Function<T, K>* succFunc) {
-        curFunc->_succs.push_back(succFunc);
-        succFunc->_preds.push_back(curFunc);
-    }
-
     // is region 为 true 需要检查function是否为可归约
     std::vector<ExecEntity<T, K>*> GenExecEntityVec(bool isRegionExec) {
         std::vector<Function<T, K>*> funcVec;
@@ -170,7 +160,7 @@ public:
                     execEntityVec.push_back(new ExecEntity(func));
                 } else {
                     for (int i = rollbackFuncs.size() - 1; i >= 0; i--) {
-                        int index = GetIndexInExecEntityVec(func->_number);
+                        int index = GetIndexInExecEntityVec(rollbackFuncs[i]->_number);
                         int size = execEntityVec.size() - index;
                         std::vector<ExecEntity<T, K>*> subExecEntityVec(size, nullptr);
                         for (int j = 0; j < size; j++) {
@@ -189,21 +179,51 @@ public:
         return execEntityVec;
     }
 
+    void DestroyExecEntityVec(const std::vector<ExecEntity<T, K>*>& vec) {
+        for (ExecEntity<T, K>* entity : vec) {
+            if (entity->_entityVec.size() != 0) {
+                DestroyExecEntityVec(entity->_entityVec);
+            }
+            delete entity;
+        }
+    }
+
+public:
+    FuncGraph(void(*unionOp)(K&, const K&), bool(*exec)(const T&, const K&, K&)) : _unionOp(unionOp), _exec(exec) {
+        this->_entry = new Function<T, K>();
+        this->_exit = new Function<T, K>();
+        AddSuccFunc(this->_entry, this->_exit);
+        this->_funcSet.insert(this->_entry);
+    }
+
+    virtual ~FuncGraph() {
+        for (Function<T, K>* func : this->_funcSet) {
+            delete func;
+        }   
+    }
+
+    void AddSuccFunc(Function<T, K>* curFunc, Function<T, K>* succFunc) {
+        curFunc->_succs.push_back(succFunc);
+        succFunc->_preds.push_back(curFunc);
+        this->_funcSet.insert(succFunc);
+    }
+
     // 迭代执行
     void IterativeExec(const K& initData) {
         std::vector<ExecEntity<T, K>*> execEntityVec = GenExecEntityVec(false);
         while (true) {
-            bool changed = false;
             if (!ExecEntityVec(execEntityVec, initData, CalcItrExecInData)) {
                 break;
             }
         }
+        DestroyExecEntityVec(execEntityVec);
     }
 
     // 区域执行
     void RegionExec(const K& initData) {
         std::vector<ExecEntity<T, K>*> execEntityVec = GenExecEntityVec(true);
         ExecEntityVec(execEntityVec, initData, CalcRegionExecInData);
+        DestroyExecEntityVec(execEntityVec);
     }
 };
 

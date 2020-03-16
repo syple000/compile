@@ -111,42 +111,42 @@ void InstructionListTest() {
     instrList1.InsertInstr(new Instruction({"1"}));
     instrList1.LocFirst();
     assert(instrList1.GetCurInstr()->_components[0] == "1");
+    instrList1.LocLast();
     instrList1.InsertInstr(new Instruction({"2"}));
     instrList1.InsertInstr(new Instruction({"3"}));
     instrList1.InsertInstr(new Instruction({"4"}));
-    instrList1.GoAhead();
-    instrList1.GoAhead();
-    instrList1.GoAhead();
     instrList1.GoBack();
+    instrList1.GoBack();
+    instrList1.GoBack();
+    instrList1.GoAhead();
     assert(instrList1.GetCurInstr()->_components[0] == "3");
     instrList1.LocLast();
+    instrList1.GoBack();
     assert(instrList1.GetCurInstr()->_components[0] == "4");
     assert(instrList1.GoAhead() == nullptr);
     instrList1.GoBack();
     instrList1.GoBack();
-    auto instr3 = instrList1.GetCurInstr();
-    instrList1.RemoveInstr(instrList1.GetCurInstr());
-    delete instr3;
+    delete instrList1.RemoveInstr();
     assert(instrList1.GetCurInstr()->_components[0] == "4");
     assert(instrList1.GetSize() == 3);
     instrList1.GoBack();
     instrList1.GoBack();
     assert(instrList1.GoBack() == nullptr);
-    instrList1.GoAhead();
     assert(instrList1.GetCurInstr()->_components[0] == "1");
     instrList1.GoAhead();
-    instrList1.InsertInstrAfter(instrList1.GetCurInstr(), new Instruction({"3"}));
+    instrList1.GoAhead();
+    instrList1.InsertInstr(new Instruction({"3"}));
     instrList1.LocLast();
 
     instrList2.InsertInstr(new Instruction({"5"}));
     instrList2.InsertInstr(new Instruction({"6"}));
 
-    instrList1.MergeInstrList(&instrList2);
+    instrList1.MergeInstrList(instrList2);
     assert(instrList1.GetSize() == 6);
 
     instrList3.InsertInstr(new Instruction({"0"}));
     instrList1.LocFirst();
-    instrList1.MergeInstrListAfter(instrList1.GetCurInstr()->_pre, &instrList3);
+    instrList1.MergeInstrList(instrList3);
     assert(instrList1.GetSize() == 7);
 
     instrList1.LocFirst();
@@ -160,14 +160,9 @@ void InstructionListTest() {
         assert(instrList1.GetCurInstr()->_components[0] == std::to_string(i));
     }
 
-    auto start = instrList1.LocFirst(), end = instrList1.LocLast();
-    instrList1.RemoveInstrs(start, end);
-    assert(instrList1.GetSize() == 0);
-    instrList1.InsertInstrs(start, end, 7);
     instrList1.LocFirst();
     for (int i = 0; i < 7; i++) {
-        assert(instrList1.GetCurInstr()->_components[0] == std::to_string(i));
-        instrList1.GoAhead();
+        delete instrList1.RemoveInstr();
     }
 }
 

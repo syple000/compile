@@ -28,19 +28,10 @@ bool BlockGraph::AddSuccBlock(BasicBlock* block, BasicBlock* succBlock) {
     }
 }
 
-bool BlockGraph::AddPredBlock(BasicBlock* block, BasicBlock* prodBlock) {
-    if (Find(block->_pred, prodBlock) != nullptr) {
-        return false;
-    } else {
-        block->_pred.push_back(prodBlock);
-        prodBlock->_succ.push_back(block);
-        return true;
-    }
-}
-
 void BlockGraph::PushBlock(BasicBlock* basicBlock) {
     this->_blockVec.push_back(basicBlock);
-    auto firstInstr = basicBlock->_instrList->LocFirst();
+    basicBlock->_instrList->LocFirst();
+    auto firstInstr = basicBlock->_instrList->GetCurInstr();
     if (firstInstr != nullptr) {
         this->_instrBlockMap.insert(std::pair<Instruction*, BasicBlock*>(firstInstr, basicBlock));
     }

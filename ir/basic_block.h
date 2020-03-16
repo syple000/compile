@@ -34,8 +34,6 @@ public:
 
     bool AddSuccBlock(BasicBlock* block, BasicBlock* succBlock);
 
-    bool AddPredBlock(BasicBlock* block, BasicBlock* prodBlock);
-
     void PushBlock(BasicBlock* basicBlock);
 
     BasicBlock* FindByFirstInstr(Instruction* instr);
