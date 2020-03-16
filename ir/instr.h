@@ -1,8 +1,11 @@
 #include <vector>
 #include <list>
 #include <unordered_map>
+#include <iostream>
 
-#include "../context_free/cf_analysis_info.h"
+#include "../io/io.h"
+#include "../io/format_conversion.h"
+#include "../string_util/string_util.h"
 
 #ifndef IR_INSTR
 #define IR_INSTR 1
@@ -37,6 +40,8 @@ private:
 
 public:
     InstrList();
+
+    InstrList(const std::string& filePath);
 
     virtual ~InstrList();
 

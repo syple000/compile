@@ -9,6 +9,43 @@ InstrList::InstrList() {
     this->_curItr = this->_instrList.begin();
 }
 
+InstrList::InstrList(const std::string& filePath) {
+    this->_curItr = this->_instrList.begin();
+
+    IO<std::string> io(String2String, String2String);
+    Buffer buf(64);
+    if (io.ReadFile(buf, filePath) != 0) {
+        std::cout << "can not open " << filePath << std::endl;
+        return;
+    }
+    RegExprEngine blankRegExpr("\\s*");
+    RegExprEngine colonRegExpr(":*");
+    while (true) {
+        auto instrStr = buf.GetNextLine();
+        if (instrStr.size() == 0) {
+            break;
+        } else {
+            auto instrComps = StringUtil::Split(instrStr, colonRegExpr);
+            Instruction* instr;
+            // label : components
+            if (instrComps.size() == 2) {
+                instr = new Instruction(StringUtil::Split(instrComps[1], blankRegExpr));
+                instr->_label = instrComps[0];
+            } else {
+
+#ifdef DEBUG_CODE
+                if (instrComps.size() != 1) {
+                    std::cout << "instr: " << instrStr << " format error!" << std::endl;
+                }
+#endif
+
+                instr = new Instruction(StringUtil::Split(instrComps[0], blankRegExpr));
+            }
+            InsertInstr(instr);
+        }
+    }
+}
+
 InstrList::~InstrList() {
     ForwardTraverse(DestroyInstr);
 }

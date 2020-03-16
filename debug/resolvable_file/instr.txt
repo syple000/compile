@@ -1,0 +1,11 @@
+i = 0
+label0: iffalse i < 10 goto label4
+a = 1
+b = 2
+c = a + b
+iffalse a < b goto label2
+label1: c = c + 1
+goto label3
+label2: c = c - 1
+label3: goto label0
+label4: ret

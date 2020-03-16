@@ -164,6 +164,20 @@ void InstructionListTest() {
     for (int i = 0; i < 7; i++) {
         delete instrList1.RemoveInstr();
     }
+
+    InstrList instrList4("./debug/resolvable_file/instr.txt");
+    instrList4.LocFirst();
+    while (instrList4.GetCurInstr() != nullptr) {
+        // auto instr = instrList4.GetCurInstr();
+        // if (instr->_label.size() != 0) {
+        //     std::cout << instr->_label << ": ";
+        // }
+        // for (auto component : instr->_components) {
+        //     std::cout << component << " ";
+        // }
+        // std::cout << std::endl;
+        instrList4.GoAhead();
+    }
 }
 
 void CfEngineTest() {
