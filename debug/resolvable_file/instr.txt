@@ -1,11 +1,17 @@
-i = 0
-label0: iffalse i < 10 goto label4
-a = 1
-b = 2
-c = a + b
-iffalse a < b goto label2
-label1: c = c + 1
-goto label3
-label2: c = c - 1
-label3: goto label0
-label4: ret
+mov a 0
+mov b 0
+label1: cmp a 10
+
+je label2 
+add b a
+add a 1
+jmp label1
+
+label2: mov a 0
+cmp b 50
+jl label1
+
+mov c b
+label3: sub c 1
+cmp c a
+jg label3

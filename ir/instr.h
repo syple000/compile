@@ -35,6 +35,7 @@ class InstrList {
 private:
     std::list<Instruction*> _instrList;
     std::list<Instruction*>::iterator _curItr;
+    std::unordered_map<std::string, Instruction*> _labelInstrMap;
 
     static void DestroyInstr(Instruction* instr);
 
@@ -49,7 +50,7 @@ public:
 
     void LocLast();
 
-    void SetCurInstr(const std::string& label);
+    Instruction* SetCurInstr(const std::string& label);
 
     Instruction* GetCurInstr();
 
@@ -69,6 +70,8 @@ public:
     void ReverseTraverse(void(*func)(Instruction*));
 
     int GetSize();
+
+    Instruction* GetInstrByLabel(const std::string& label);
 
 };
 

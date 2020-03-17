@@ -8,10 +8,10 @@
 class BitSet {
 private:
     unsigned char *_setElems;
-    // size表示setElems的个数，集合大小为size * 8
     int _size;
+    int _capacity;
 
-    int CalcSize(int setSize);
+    int CalcCapacity(int setSize);
 
     unsigned char* AllocSetElems(int size);
 
@@ -24,13 +24,17 @@ public:
 
     BitSet();
 
+    BitSet(const BitSet&);
+
+    BitSet& operator=(const BitSet&);
+
     virtual ~BitSet();
 
     void Set(int pos);
 
     void Clear(int pos);
 
-    bool operator== (const BitSet&) const;
+    bool operator==(const BitSet&) const;
 
     bool Exist(int pos) const;
 
@@ -43,6 +47,8 @@ public:
     void Intersect(const BitSet&);
 
     void Except(const BitSet&);
+
+    int GetSize() const;
 
 };
 

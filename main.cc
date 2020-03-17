@@ -16,6 +16,7 @@
 #include "./string_util/string_util.h"
 #include "./bitset/bitset.h"
 #include "./ir/instr.h"
+#include "./doc/data_flow.h"
 
 void BitSetTest() {
     BitSet bitSet1(8);
@@ -26,6 +27,7 @@ void BitSetTest() {
     assert(bitSet1.ToString() == "00101000");
     bitSet1.Set(8);
     assert(bitSet1.ToString() == "00101000 10000000 00000000 00000000");
+    assert(bitSet1.GetSize() == 9);
     
     BitSet bitSet2(8), bitSet3(8);
     bitSet2.Set(0);
@@ -42,6 +44,9 @@ void BitSetTest() {
     bitSet1.Set(0);
     bitSet1.Intersect(bitSet2);
     assert(bitSet1.ToString() == "10000000 00000000 00000000 00000000");
+    BitSet bitSet4(8);
+    bitSet4 = bitSet1;
+    assert(bitSet4.ToString() == "10000000 00000000 00000000 00000000");
     assert(!bitSet1.Empty());
     bitSet3.Set(0);
     assert(bitSet3 == bitSet1);
@@ -186,6 +191,12 @@ void CfEngineTest() {
     cfEngine.GenCfAnalysisInfo("./debug/resolvable_file/code_file.txt");
 }
 
+void FunctionGraphTest() {
+    VarArrivalAnalysis varArrivalAnalysis("./debug/resolvable_file/instr.txt");
+    varArrivalAnalysis.ItrExec();
+    //varArrivalAnalysis.RegionExec();
+}
+
 int main() {
     char pwd[256];
     getcwd(pwd, sizeof(pwd));
@@ -194,6 +205,7 @@ int main() {
     RegExprTest();
     StringUtilTest();
     InstructionListTest();
+    FunctionGraphTest();
 
     CfEngineTest();
     std::cout << std::endl << "test over!" << std::endl;

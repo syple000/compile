@@ -58,13 +58,16 @@ void InstrList::LocLast() {
     this->_curItr = this->_instrList.end();
 }
 
-void InstrList::SetCurInstr(const std::string& label) {
+Instruction* InstrList::SetCurInstr(const std::string& label) {
+    Instruction* instr = nullptr;
     for (auto instrItr = this->_instrList.begin(); instrItr != this->_instrList.end(); instrItr++) {
         if ((*instrItr)->_label == label) {
             this->_curItr = instrItr;
+            instr = *instrItr;
             break;
         }
     }
+    return instr;
 }
 
 Instruction* InstrList::GetCurInstr() {
@@ -91,11 +94,23 @@ Instruction* InstrList::GoBack() {
 }
 
 void InstrList::InsertInstr(Instruction* instr) {
+    if (instr->_label.size() != 0) {
+
+#ifdef DEBUG_CODE
+        if (this->_labelInstrMap.find(instr->_label) != this->_labelInstrMap.end()) {
+            std::cout << "instruction label: " << instr->_label << "" << std::endl;
+        }
+#endif
+
+        this->_labelInstrMap.insert(std::pair<std::string, Instruction*>(instr->_label, instr));
+    }
     this->_instrList.insert(this->_curItr, instr);
 }
 
 void InstrList::MergeInstrList(InstrList& instrList) {
-    this->_instrList.insert(this->_curItr, instrList._instrList.begin(), instrList._instrList.end());
+    for (auto instr : instrList._instrList) {
+        InsertInstr(instr);
+    }
     instrList._instrList.clear();
 }
 
@@ -123,4 +138,12 @@ void InstrList::ReverseTraverse(void(*func)(Instruction*)) {
 
 int InstrList::GetSize() {
     return this->_instrList.size();
+}
+
+Instruction* InstrList::GetInstrByLabel(const std::string& label) {
+    auto itr = this->_labelInstrMap.find(label);
+    if (itr != this->_labelInstrMap.end()) {
+        return itr->second;
+    }
+    return nullptr;
 }
