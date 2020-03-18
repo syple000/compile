@@ -73,9 +73,27 @@ private:
         for (auto func : funcVec) {
             funcs.push_back(func);
         }
+
+        // 函数显示，仅调试用
+        // for (auto func : funcs) {
+        //     auto instr = func->_object._instr;
+        //     if (instr == nullptr) {
+        //         continue;
+        //     }
+        //     std::cout << func->_number << "    ";
+        //     if (instr->_label.size() != 0) {
+        //         std::cout << instr->_label << ": ";
+        //     }
+        //     for (auto component : instr->_components) {
+        //         std::cout << component << " ";
+        //     }
+        //     std::cout << std::endl;
+        // }
+
         return funcs;
     }
 
+    // 循环路径中的函数(约束循环结构最小)
     void GetCyclicFuncSet(Function<T, K>* curFunc, Function<T, K>* cyclicEntry, std::unordered_set<Function<T, K>*>& funcSet) {
         funcSet.insert(curFunc);
         if (curFunc != cyclicEntry) {
@@ -106,26 +124,37 @@ private:
         return rollbackFuncVec;
     }
 
-    void ReplaceCycle(std::list<ExecEntity<T, K>*>& execEntities, Function<T, K>* cyclicEntry,
-        const std::unordered_set<Function<T, K>*>& cyclicFuncs) {
+    // 循环入口节点的编号总是循环路径函数中最小
+    bool ReplaceCycle(std::list<ExecEntity<T, K>*>& execEntities, Function<T, K>* cyclicEntry,
+        const std::unordered_set<Function<T, K>*>& cyclicFuncs, std::list<ExecEntity<T, K>*>& cyclicEntities) {
+        int cnt = execEntities.size();
         auto entityItr = --execEntities.end();
-        std::list<ExecEntity<T, K>*> cyclicEntities;
         std::list<ExecEntity<T, K>*> outCyclicEntities;
-        while (true) {
+        bool success = false;
+        while (cnt > 0) {
             ExecEntity<T, K>* entity = *entityItr;
-            if (cyclicFuncs.find(entity->_func) == cyclicFuncs.end()) {
-                outCyclicEntities.push_front(entity);
-            } else {
+            if (cyclicFuncs.find(entity->_func) != cyclicFuncs.end()) {
                 cyclicEntities.push_front(entity);
+            } else if (entity->_func->_number < cyclicEntry->_number && 
+                ReplaceCycle(entity->_entities, cyclicEntry, cyclicFuncs, cyclicEntities)) {
+                success = true;
+                break;
+            } else {
+                outCyclicEntities.push_front(entity);
             }
-
             execEntities.erase(entityItr--);
             if (entity->_func == cyclicEntry) {
+                success = true;
                 break;
             }
+            cnt--;
         }
-        execEntities.push_back(new ExecEntity<T, K>(std::move(cyclicEntities)));
+        if (success && cyclicEntities.size() != 0) {
+            execEntities.push_back(new ExecEntity<T, K>(std::move(cyclicEntities)));
+            cyclicEntities.clear();
+        }
         execEntities.insert(execEntities.end(), outCyclicEntities.begin(), outCyclicEntities.end());
+        return success;
     }
 
     static K CalcItrExecInData(Function<T, K>* func, void(*unionOp)(K& dest, const K& src)) {
@@ -198,7 +227,8 @@ private:
                 for (int i = rollbackFuncs.size() - 1; i >= 0; i--) {
                     std::unordered_set<Function<T, K>*> funcSet;
                     GetCyclicFuncSet(func, rollbackFuncs[i], funcSet);
-                    ReplaceCycle(execEntities, rollbackFuncs[i], funcSet);
+                    std::list<ExecEntity<T, K>*> cyclicEntities;
+                    ReplaceCycle(execEntities, rollbackFuncs[i], funcSet, cyclicEntities);
                 }
             }
         } else {
@@ -216,6 +246,19 @@ private:
             }
             delete entity;
         }
+    }
+
+    int CountExecEntity(const std::list<ExecEntity<T, K>*>& entities) {
+        int addCnt = 0;
+        for (ExecEntity<T, K>* entity : entities) {
+            if (entity->_entities.size() != 0) {
+               int cnt = CountExecEntity(entity->_entities);
+               if (cnt > addCnt) {
+                   addCnt = cnt;
+               }
+            }
+        }
+        return 1 + addCnt;
     }
 
 public:
@@ -267,6 +310,11 @@ public:
     // 区域执行
     void RegionExec(const K& initData) {
         std::list<ExecEntity<T, K>*> execEntities = GenExecEntities(true);
+
+#ifdef DEBUG_CODE
+            std::cout << "exec entities count: " << CountExecEntity(execEntities) << std::endl;
+#endif
+
         ExecEntities(execEntities, initData, CalcRegionExecInData);
         DestroyExecEntities(execEntities);
     }

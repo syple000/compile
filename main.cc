@@ -192,9 +192,11 @@ void CfEngineTest() {
 }
 
 void FunctionGraphTest() {
-    VarArrivalAnalysis varArrivalAnalysis("./debug/resolvable_file/instr.txt");
-    // varArrivalAnalysis.ItrExec();
-    varArrivalAnalysis.RegionExec();
+    VarArrivalAnalysis analysis1("./debug/resolvable_file/instr.txt"), analysis2("./debug/resolvable_file/instr.txt");
+    std::cout << "iterate exec: ";
+    analysis1.ItrExec();
+    std::cout << "region exec: ";
+    analysis2.RegionExec();
 }
 
 int main() {

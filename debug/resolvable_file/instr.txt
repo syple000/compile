@@ -1,16 +1,18 @@
+
 mov a 0
-mov b 0
+mov b 2
+mov c 4
+label0: cmp c 100
+jg label5
 label1: cmp a 10
-je label2 
-add b a
-add a 1
-add a d
-cmp a b
-jmp label1
-label2: mov a 0
-cmp b 50
-jl label1
-mov c b
-label3: sub c 1
-cmp c a
-jg label3
+jg label4
+cmp a 5
+jl label2
+add a b
+jmp label3
+label2: add a 1
+label3: add a d
+jg label1
+label4: mov c 10
+jmp label0
+label5: mov c 100
