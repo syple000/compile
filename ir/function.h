@@ -33,14 +33,14 @@ template<typename T, typename K>
 struct ExecEntity {
     // func: 在entity list不为空时， func为entity list的第一执行函数;在entity list为空时， func为执行体的执行函数
     Function<T, K> *_func;
-    std::vector<ExecEntity<T, K>*> _entityVec;
+    std::list<ExecEntity<T, K>*> _entities;
     bool _executed = false;
     K _inData;
 
     ExecEntity(Function<T, K>* func) : _func(func) {}
 
-    ExecEntity(std::vector<ExecEntity<T, K>*>&& entityVec) 
-        : _entityVec(std::move(entityVec)), _func(_entityVec[0]->_func) {}
+    ExecEntity(std::list<ExecEntity<T, K>*>&& entities) 
+        : _entities(std::move(entities)), _func((*_entities.begin())->_func) {}
 };
 
 template<typename T, typename K>
@@ -52,18 +52,70 @@ private:
     void(*_unionOp)(K& dest, const K& src);
     bool(*_exec)(T& obj, const K& inData, K& outData);
 
-    // 区域执行有bug
-    int GenTopoFuncVec(Function<T, K>* curFunc, std::vector<Function<T, K>*>& funcVec, int number) {
+    int LabelNumber(Function<T, K>* curFunc, int number) {
         curFunc->_number = 0;
         int numIncr = 1;
         for (int i = 0; i < curFunc->_succs.size(); i++) {
             if (curFunc->_succs[i]->_number == -1) {
-                numIncr += GenTopoFuncVec(curFunc->_succs[i], funcVec, number + numIncr);
+                numIncr += LabelNumber(curFunc->_succs[i], number + numIncr);
             }
         }
         curFunc->_number = number;
-        funcVec[curFunc->_number] = curFunc;
         return numIncr;
+    }
+
+    int GetAcyclicPredFuncCnt(Function<T, K>* func) {
+        int cnt = 0;
+        for (Function<T, K>* pred : func->_preds) {
+            if (pred->_number < func->_number) {
+                cnt++;
+            }
+        }
+        return cnt;
+    }
+
+    void UpdateDependInfo(std::unordered_map<int, std::unordered_set<Function<T, K>*>>& dependCntInfo, 
+        std::unordered_map<Function<T, K>*, int>& funcDependMap, Function<T, K>* func, int newDependCnt, int oldDependCnt) {
+        if (oldDependCnt != -1) {
+            dependCntInfo.find(oldDependCnt)->second.erase(func);
+            funcDependMap.erase(func);
+        }
+        if (dependCntInfo.find(newDependCnt) == dependCntInfo.end()) {
+            dependCntInfo.insert(
+                std::pair<int, std::unordered_set<Function<T, K>*>>(newDependCnt, std::unordered_set<Function<T, K>*>()));
+        }
+        dependCntInfo.find(newDependCnt)->second.insert(func);
+        funcDependMap.insert(std::pair<Function<T, K>*, int>(func, newDependCnt));
+    }
+
+    std::list<Function<T, K>*> GenTopoSortedFuncList() {
+        // 对function进行标号
+        assert(LabelNumber(this->_entry, 0) == this->_funcSet.size());
+
+        std::unordered_map<int, std::unordered_set<Function<T, K>*>> dependCntInfo;
+        std::unordered_map<Function<T, K>*, int> funcDependMap;
+        std::list<Function<T, K>*> sortedFuncList;
+        for (Function<T, K>* func : this->_funcSet) {
+            UpdateDependInfo(dependCntInfo, funcDependMap, func, GetAcyclicPredFuncCnt(func), -1);
+        }
+
+        while (dependCntInfo.find(0)->second.size() != 0) {
+            auto funcSet = dependCntInfo.find(0)->second;
+            for (Function<T, K>* func : funcSet) {
+                dependCntInfo.find(0)->second.erase(func);
+                funcDependMap.erase(func);
+                for (Function<T, K>* succ : func->_succs) {
+                    if (succ->_number > func->_number) {
+                        int succDepCnt = funcDependMap.find(succ)->second;
+                        UpdateDependInfo(dependCntInfo, funcDependMap, succ, succDepCnt - 1, succDepCnt);
+                    }
+                }                
+                sortedFuncList.push_back(func);
+            }
+        }
+
+        assert(sortedFuncList.size() == this->_funcSet.size());
+        return sortedFuncList;
     }
 
     // 根据number排序
@@ -116,79 +168,79 @@ private:
     }
 
     // 区域执行中的循环执行
-    bool LoopExecEntityVec(const std::vector<ExecEntity<T, K>*>& entityVec, K inData, 
+    bool LoopExecEntities(const std::list<ExecEntity<T, K>*>& entities, K inData, 
         K(*calcInData)(Function<T, K>*, void(*)(K&, const K&))) {
         K loopIndata;
         // 得到循环不变分析结果
         while (true) {
             this->_unionOp(loopIndata, inData);
-            if (!ExecEntityVec(entityVec, inData, calcInData)) {
+            if (!ExecEntities(entities, inData, calcInData)) {
                 break;
             }
-            inData = entityVec[entityVec.size() - 1]->_func->_outData;
+            inData = (*entities.rbegin())->_func->_outData;
         }
         // 循环各个出口的函数约束
-        ExecEntityVec(entityVec, loopIndata, calcInData);
+        ExecEntities(entities, loopIndata, calcInData);
         // 默认返回true
         return true;
     }
 
-    bool ExecEntityVec(const std::vector<ExecEntity<T, K>*>& entityVec, K inData, 
+    bool ExecEntities(const std::list<ExecEntity<T, K>*>& entities, K inData, 
         K(*calcInData)(Function<T, K>*, void(*)(K&, const K&))) {
         bool changed = false;
-        for (int i = 0; i < entityVec.size(); i++) {
-            ExecEntity<T, K>* entity = entityVec[i];
+        auto entityItr = entities.begin();
+        while (entityItr != entities.end()) {
+            ExecEntity<T, K>* entity = *entityItr;
             if (!(entity->_inData == inData) || !entity->_executed) {
-                if (entity->_entityVec.size() == 0) {
+                if (entity->_entities.size() == 0) {
                     changed = this->_exec(entity->_func->_object, inData, entity->_func->_outData) || changed;
                 } else {
-                    changed = LoopExecEntityVec(entity->_entityVec, inData, calcInData) || changed;
+                    changed = LoopExecEntities(entity->_entities, inData, calcInData) || changed;
                 }
                 entity->_executed = true;
                 entity->_inData = inData;
             }
-            if (i + 1 < entityVec.size()) {
-                inData = calcInData(entityVec[i + 1]->_func, this->_unionOp);
+            entityItr++;
+            if (entityItr != entities.end()) {
+                inData = calcInData((*entityItr)->_func, this->_unionOp);
             }
         }
         return changed;
     }
 
     // is region 为 true 需要检查function是否为可归约
-    std::vector<ExecEntity<T, K>*> GenExecEntityVec(bool isRegionExec) {
-        std::vector<Function<T, K>*> funcVec(this->_funcSet.size(), nullptr);
-        std::vector<ExecEntity<T, K>*> execEntityVec;
-        GenTopoFuncVec(this->_entry, funcVec, 0);
-        if (isRegionExec) {
-            for (Function<T, K>* func : funcVec) {
-                std::vector<Function<T, K>*> rollbackFuncs = GetRollbackFuncVec(func);
-                if (rollbackFuncs.size() == 0) {
-                    execEntityVec.push_back(new ExecEntity<T, K>(func));
-                } else {
-                    for (int i = rollbackFuncs.size() - 1; i >= 0; i--) {
-                        int index = GetIndexInExecEntityVec(execEntityVec, rollbackFuncs[i]->_number);
-                        int size = execEntityVec.size() - index;
-                        std::vector<ExecEntity<T, K>*> subExecEntityVec(size, nullptr);
-                        for (int j = 0; j < size; j++) {
-                            subExecEntityVec[size - 1 - j] = execEntityVec[execEntityVec.size() - 1];
-                            execEntityVec.pop_back();
-                        }
-                        execEntityVec.push_back(new ExecEntity<T, K>(std::move(subExecEntityVec)));
-                    }
-                }
+    std::list<ExecEntity<T, K>*> GenExecEntities(bool isRegionExec) {
+        std::list<Function<T, K>*> funcs = GenTopoSortedFuncList();
+        std::list<ExecEntity<T, K>*> execEntities;
+        // 测试用
+        for (auto func : funcs) {
+            auto instr = func->_object._instr;
+            if (instr == nullptr) {
+                continue;
             }
+            std::cout << func->_number << "    ";
+            if (instr->_label.size() != 0) {
+                std::cout << instr->_label << ": ";
+            }
+            for (auto component : instr->_components) {
+                std::cout << component << " ";
+            }
+            std::cout << std::endl;
+        }
+
+        if (isRegionExec) {
         } else {
-            for (Function<T, K>* func : funcVec) {
-                execEntityVec.push_back(new ExecEntity<T, K>(func));
+            for (Function<T, K>* func : funcs) {
+                execEntities.push_back(new ExecEntity<T, K>(func));
             }
         }
-        return execEntityVec;
+        return execEntities;
     }
 
-    void DestroyExecEntityVec(const std::vector<ExecEntity<T, K>*>& vec) {
-        for (ExecEntity<T, K>* entity : vec) {
-            if (entity->_entityVec.size() != 0) {
-                DestroyExecEntityVec(entity->_entityVec);
+    void DestroyExecEntities(const std::list<ExecEntity<T, K>*>& entities) {
+        for (ExecEntity<T, K>* entity : entities) {
+            if (entity->_entities.size() != 0) {
+                DestroyExecEntities(entity->_entities);
             }
             delete entity;
         }
@@ -231,20 +283,20 @@ public:
 
     // 迭代执行
     void IterativeExec(const K& initData) {
-        std::vector<ExecEntity<T, K>*> execEntityVec = GenExecEntityVec(false);
+        std::list<ExecEntity<T, K>*> execEntities = GenExecEntities(false);
         while (true) {
-            if (!ExecEntityVec(execEntityVec, initData, CalcItrExecInData)) {
+            if (!ExecEntities(execEntities, initData, CalcItrExecInData)) {
                 break;
             }
         }
-        DestroyExecEntityVec(execEntityVec);
+        DestroyExecEntities(execEntities);
     }
 
     // 区域执行
     void RegionExec(const K& initData) {
-        std::vector<ExecEntity<T, K>*> execEntityVec = GenExecEntityVec(true);
-        ExecEntityVec(execEntityVec, initData, CalcRegionExecInData);
-        DestroyExecEntityVec(execEntityVec);
+        std::list<ExecEntity<T, K>*> execEntities = GenExecEntities(true);
+        ExecEntities(execEntities, initData, CalcRegionExecInData);
+        DestroyExecEntities(execEntities);
     }
 };
 
