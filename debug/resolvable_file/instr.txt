@@ -4,8 +4,9 @@ label1: cmp a 10
 je label2 
 add b a
 add a 1
+add a d
 cmp a b
-jg label1
+jmp label1
 label2: mov a 0
 cmp b 50
 jl label1

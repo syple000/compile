@@ -40,7 +40,9 @@ struct ExecEntity {
     ExecEntity(Function<T, K>* func) : _func(func) {}
 
     ExecEntity(std::list<ExecEntity<T, K>*>&& entities) 
-        : _entities(std::move(entities)), _func((*_entities.begin())->_func) {}
+        : _entities(std::move(entities)) {
+        this->_func = (*this->_entities.begin())->_func;
+    }
 };
 
 template<typename T, typename K>
@@ -52,70 +54,44 @@ private:
     void(*_unionOp)(K& dest, const K& src);
     bool(*_exec)(T& obj, const K& inData, K& outData);
 
-    int LabelNumber(Function<T, K>* curFunc, int number) {
+    void LabelNumber(Function<T, K>* curFunc, std::vector<Function<T, K>*>& funcVec, int& number) {
         curFunc->_number = 0;
-        int numIncr = 1;
-        for (int i = 0; i < curFunc->_succs.size(); i++) {
+        for (int i = curFunc->_succs.size() - 1; i >= 0; i--) {
             if (curFunc->_succs[i]->_number == -1) {
-                numIncr += LabelNumber(curFunc->_succs[i], number + numIncr);
+                LabelNumber(curFunc->_succs[i], funcVec, number);
             }
         }
-        curFunc->_number = number;
-        return numIncr;
-    }
-
-    int GetAcyclicPredFuncCnt(Function<T, K>* func) {
-        int cnt = 0;
-        for (Function<T, K>* pred : func->_preds) {
-            if (pred->_number < func->_number) {
-                cnt++;
-            }
-        }
-        return cnt;
-    }
-
-    void UpdateDependInfo(std::unordered_map<int, std::unordered_set<Function<T, K>*>>& dependCntInfo, 
-        std::unordered_map<Function<T, K>*, int>& funcDependMap, Function<T, K>* func, int newDependCnt, int oldDependCnt) {
-        if (oldDependCnt != -1) {
-            dependCntInfo.find(oldDependCnt)->second.erase(func);
-            funcDependMap.erase(func);
-        }
-        if (dependCntInfo.find(newDependCnt) == dependCntInfo.end()) {
-            dependCntInfo.insert(
-                std::pair<int, std::unordered_set<Function<T, K>*>>(newDependCnt, std::unordered_set<Function<T, K>*>()));
-        }
-        dependCntInfo.find(newDependCnt)->second.insert(func);
-        funcDependMap.insert(std::pair<Function<T, K>*, int>(func, newDependCnt));
+        curFunc->_number = number--;
+        funcVec[curFunc->_number] = curFunc;
     }
 
     std::list<Function<T, K>*> GenTopoSortedFuncList() {
-        // 对function进行标号
-        assert(LabelNumber(this->_entry, 0) == this->_funcSet.size());
-
-        std::unordered_map<int, std::unordered_set<Function<T, K>*>> dependCntInfo;
-        std::unordered_map<Function<T, K>*, int> funcDependMap;
-        std::list<Function<T, K>*> sortedFuncList;
-        for (Function<T, K>* func : this->_funcSet) {
-            UpdateDependInfo(dependCntInfo, funcDependMap, func, GetAcyclicPredFuncCnt(func), -1);
+        int funcNum = this->_funcSet.size() - 1;
+        std::vector<Function<T, K>*> funcVec(funcNum + 1, nullptr);
+        std::list<Function<T, K>*> funcs;
+        LabelNumber(this->_entry, funcVec, funcNum);
+        for (auto func : funcVec) {
+            funcs.push_back(func);
         }
+        return funcs;
+    }
 
-        while (dependCntInfo.find(0)->second.size() != 0) {
-            auto funcSet = dependCntInfo.find(0)->second;
-            for (Function<T, K>* func : funcSet) {
-                dependCntInfo.find(0)->second.erase(func);
-                funcDependMap.erase(func);
-                for (Function<T, K>* succ : func->_succs) {
-                    if (succ->_number > func->_number) {
-                        int succDepCnt = funcDependMap.find(succ)->second;
-                        UpdateDependInfo(dependCntInfo, funcDependMap, succ, succDepCnt - 1, succDepCnt);
-                    }
-                }                
-                sortedFuncList.push_back(func);
+    void GetCyclicFuncSet(Function<T, K>* curFunc, Function<T, K>* cyclicEntry, std::unordered_set<Function<T, K>*>& funcSet) {
+        funcSet.insert(curFunc);
+        if (curFunc != cyclicEntry) {
+
+#ifdef DEBUG_CODE
+            if (curFunc->_preds.size() == 0) {
+                std::cout << "cyclic is invalid!" << std::endl;
+            }
+#endif
+
+            for (Function<T, K>* pred : curFunc->_preds) {
+                if (funcSet.find(pred) == funcSet.end()) {
+                    GetCyclicFuncSet(pred, cyclicEntry, funcSet);
+                }
             }
         }
-
-        assert(sortedFuncList.size() == this->_funcSet.size());
-        return sortedFuncList;
     }
 
     // 根据number排序
@@ -130,23 +106,26 @@ private:
         return rollbackFuncVec;
     }
 
-    int GetIndexInExecEntityVec(const std::vector<ExecEntity<T, K>*>& execEntityVec, int funcNum) {
-        int index = execEntityVec.size() - 1;
-        while (index >= 0) {
-            if (((ExecEntity<T, K>*)execEntityVec[index])->_func->_number == funcNum) {
-                break;
+    void ReplaceCycle(std::list<ExecEntity<T, K>*>& execEntities, Function<T, K>* cyclicEntry,
+        const std::unordered_set<Function<T, K>*>& cyclicFuncs) {
+        auto entityItr = --execEntities.end();
+        std::list<ExecEntity<T, K>*> cyclicEntities;
+        std::list<ExecEntity<T, K>*> outCyclicEntities;
+        while (true) {
+            ExecEntity<T, K>* entity = *entityItr;
+            if (cyclicFuncs.find(entity->_func) == cyclicFuncs.end()) {
+                outCyclicEntities.push_front(entity);
             } else {
-                index--;
+                cyclicEntities.push_front(entity);
+            }
+
+            execEntities.erase(entityItr--);
+            if (entity->_func == cyclicEntry) {
+                break;
             }
         }
-
-#ifdef DEBUG_CODE
-        if (index < 0) {
-            std::cout << "func graph is not reducible" << std::endl;
-        }
-#endif  
-
-        return index;
+        execEntities.push_back(new ExecEntity<T, K>(std::move(cyclicEntities)));
+        execEntities.insert(execEntities.end(), outCyclicEntities.begin(), outCyclicEntities.end());
     }
 
     static K CalcItrExecInData(Function<T, K>* func, void(*unionOp)(K& dest, const K& src)) {
@@ -212,23 +191,16 @@ private:
     std::list<ExecEntity<T, K>*> GenExecEntities(bool isRegionExec) {
         std::list<Function<T, K>*> funcs = GenTopoSortedFuncList();
         std::list<ExecEntity<T, K>*> execEntities;
-        // 测试用
-        for (auto func : funcs) {
-            auto instr = func->_object._instr;
-            if (instr == nullptr) {
-                continue;
-            }
-            std::cout << func->_number << "    ";
-            if (instr->_label.size() != 0) {
-                std::cout << instr->_label << ": ";
-            }
-            for (auto component : instr->_components) {
-                std::cout << component << " ";
-            }
-            std::cout << std::endl;
-        }
-
         if (isRegionExec) {
+            for (Function<T, K>* func : funcs) {
+                execEntities.push_back(new ExecEntity<T, K>(func));
+                std::vector<Function<T, K>*> rollbackFuncs = GetRollbackFuncVec(func);
+                for (int i = rollbackFuncs.size() - 1; i >= 0; i--) {
+                    std::unordered_set<Function<T, K>*> funcSet;
+                    GetCyclicFuncSet(func, rollbackFuncs[i], funcSet);
+                    ReplaceCycle(execEntities, rollbackFuncs[i], funcSet);
+                }
+            }
         } else {
             for (Function<T, K>* func : funcs) {
                 execEntities.push_back(new ExecEntity<T, K>(func));

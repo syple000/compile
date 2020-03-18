@@ -193,8 +193,8 @@ void CfEngineTest() {
 
 void FunctionGraphTest() {
     VarArrivalAnalysis varArrivalAnalysis("./debug/resolvable_file/instr.txt");
-    varArrivalAnalysis.ItrExec();
-    //varArrivalAnalysis.RegionExec();
+    // varArrivalAnalysis.ItrExec();
+    varArrivalAnalysis.RegionExec();
 }
 
 int main() {
