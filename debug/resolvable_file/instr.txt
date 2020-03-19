@@ -12,7 +12,7 @@ add a b
 jmp label3
 label2: add a 1
 label3: add a d
-jg label1
+jmp label0
 label4: mov c 10
 jmp label0
 label5: mov c 100

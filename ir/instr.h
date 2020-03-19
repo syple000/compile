@@ -29,6 +29,16 @@ struct Instruction {
     void BackFill(int index, const std::string& content) {
         this->_components[index] = content;
     }
+
+    static void ShowInstr(const Instruction* instr) {
+        if (instr->_label.size() != 0) {
+            std::cout << instr->_label << ": ";
+        }
+        for (int i = 0; i < instr->_components.size() - 1; i++) {
+            std::cout << instr->_components[i] << " "; 
+        }
+        std::cout << instr->_components[instr->_components.size() - 1];
+    }
 };
 
 class InstrList {

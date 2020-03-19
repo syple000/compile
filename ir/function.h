@@ -74,22 +74,6 @@ private:
             funcs.push_back(func);
         }
 
-        // 函数显示，仅调试用
-        // for (auto func : funcs) {
-        //     auto instr = func->_object._instr;
-        //     if (instr == nullptr) {
-        //         continue;
-        //     }
-        //     std::cout << func->_number << "    ";
-        //     if (instr->_label.size() != 0) {
-        //         std::cout << instr->_label << ": ";
-        //     }
-        //     for (auto component : instr->_components) {
-        //         std::cout << component << " ";
-        //     }
-        //     std::cout << std::endl;
-        // }
-
         return funcs;
     }
 
@@ -248,17 +232,26 @@ private:
         }
     }
 
-    int CountExecEntity(const std::list<ExecEntity<T, K>*>& entities) {
-        int addCnt = 0;
+    std::string GetIndentSpaceStr(int indent) {
+        std::string str;
+        for (int i = 0; i < indent; i++) {
+            str += ' ';
+        }
+        return str;
+    }
+
+    void ShowExecEntity(const std::list<ExecEntity<T, K>*>& entities, int indent, void(*showFuncObj)(const T& obj)) {
         for (ExecEntity<T, K>* entity : entities) {
             if (entity->_entities.size() != 0) {
-               int cnt = CountExecEntity(entity->_entities);
-               if (cnt > addCnt) {
-                   addCnt = cnt;
-               }
+                std::cout << GetIndentSpaceStr(indent) << "{" << std::endl;
+                ShowExecEntity(entity->_entities, indent + 4, showFuncObj);
+                std::cout << GetIndentSpaceStr(indent) << "}" << std::endl;
+            } else {
+                std::cout << entity->_func->_number << "  " << GetIndentSpaceStr(indent);
+                showFuncObj(entity->_func->_object);
+                std::cout << std::endl;
             }
         }
-        return 1 + addCnt;
     }
 
 public:
@@ -308,11 +301,14 @@ public:
     }
 
     // 区域执行
-    void RegionExec(const K& initData) {
+    void RegionExec(const K& initData, void(*showFuncObj)(const T&)) {
         std::list<ExecEntity<T, K>*> execEntities = GenExecEntities(true);
 
 #ifdef DEBUG_CODE
-            std::cout << "exec entities count: " << CountExecEntity(execEntities) << std::endl;
+            if (showFuncObj != nullptr) {
+                std::cout << "region execute entities: " << std::endl; 
+                ShowExecEntity(execEntities, 0, showFuncObj);
+            }
 #endif
 
         ExecEntities(execEntities, initData, CalcRegionExecInData);

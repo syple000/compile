@@ -15,6 +15,12 @@ struct FuncObj {
     FuncObj(Instruction* instr, FuncAdditionInfo* additionInfo) : _instr(instr), _additionInfo(additionInfo) {}
 
     FuncObj() : _instr(nullptr), _additionInfo(nullptr) {}
+
+    static void ShowFuncObj(const FuncObj& obj) {
+        if (obj._instr != nullptr) {
+            Instruction::ShowInstr(obj._instr);
+        }
+    }
 };
 
 class VarArrivalAnalysis {
@@ -193,7 +199,7 @@ public:
     }
 
     void RegionExec() {
-        this->_funcGraph->RegionExec(BitSet(8));
+        this->_funcGraph->RegionExec(BitSet(8), FuncObj::ShowFuncObj);
         std::cout << "invalid instrs:" << std::endl;
         for (auto instr : this->_addtionInfo->_invalidInstrs) {
             if (instr->_label.size() != 0) {
