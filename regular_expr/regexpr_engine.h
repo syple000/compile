@@ -20,8 +20,6 @@ private:
     void CreateTableByExpr(const std::string& expr);
     void AddState(std::map<std::set<RegExprNode*>*, int, SetCmp<RegExprNode*>> &statesMap, 
         std::vector<std::set<RegExprNode*>*> &statesVec, std::set<RegExprNode*>* posSet, RegExprNode* terminalState);
-    // hook function
-    std::string StandardizeExpr(const std::string& expr);
 
 public:
 
@@ -31,6 +29,7 @@ public:
     bool IsTerminalState(int);
     bool InitSuccess();
     virtual ~RegExprEngine() = default;
+    virtual std::string StandardizeExpr(const std::string& expr);
 };
 
 #endif
